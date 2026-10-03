@@ -1,0 +1,15 @@
+{
+  "name": "Algaroba Comandas",
+  "short_name": "Algaroba",
+  "start_url": "./tablet.html",
+  "display": "standalone",
+  "background_color": "#183f2b",
+  "theme_color": "#183f2b",
+  "icons": [
+    {
+      "src": "algaroba-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
