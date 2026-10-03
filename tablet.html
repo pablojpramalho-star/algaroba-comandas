@@ -18,7 +18,7 @@
  <div id='authMsg' class='authmsg'>Entre com seu e-mail e senha.</div>
  <label>E-mail</label><input id='loginEmail' type='email' autocomplete='username' placeholder='seuemail@exemplo.com'>
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
- <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='return tabletLoginUser()'>ENTRAR</button><div id='tabletDiag' style='display:none'></div>
+ <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='return tabletLoginUser()'>ENTRAR</button><div id='tabletDiag' style='margin-top:10px;font-size:12px;line-height:1.4;white-space:pre-wrap;background:#fff7e6;border:1px solid #e7b66f;border-radius:8px;padding:8px;color:#5b3a00'>Diagnóstico T110 carregando...</div>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
 </div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.8 • TABLET T110</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
@@ -75,5 +75,700 @@ window.onerror=function(message,source,lineno,colno,error){
   var txt='ERRO DO MOTOR: '+String(message)+' | linha '+String(lineno||'?')+' coluna '+String(colno||'?');
   window.T110_PARSE_ERROR=txt;
   try{localStorage.setItem('t110ParseError',txt);}catch(e){}
-  setTimeout(function(){try{localStorage.removeItem('t110ParseError');}catch(ex){}})();
+  setTimeout(function(){
+    var d=document.getElementById('tabletDiag');
+    if(d)d.textContent=txt;
+  },0);
+  return true;
+};
+</script>
+<script>
+const catalog={
+'Espetinhos':[['Frango',6],['Tulipa de Frango',6],['Coxinha de Frango',6],['Moela',6],['Linguiça Toscana de Frango',6],['Pão de Carne de Sol',6],['Queijo Coalho',6],['Linguiça Toscana',6],['Linguiça Calabresa',6],['Pão de Alho',6],['Pão com Creme de Queijo',6],['Carne',7],['Kafta',7],['Coração',7],['Carneiro',7],['Picanha Suína',7],['Língua',7],['Cupim',8],['Medalhão de Frango com Bacon',8],['Medalhão de Carne com Bacon',8],['Queijo Coalho com Bacon',8],['Camarão',8]],
+'Porções':[['Filé com Fritas',30],['Frango com Fritas',25],['Calabresa com Fritas',25],['Língua com Macaxeira',30],['Batata Frita P',12],['Batata Frita G',20],['Macaxeira Frita',15]],
+'Caldos/Sopas':[['Sopa de Costela 500 ml',15],['Caldo da Casa 500 ml',15]],
+'Bases':[['Pastel (base)',1],['Tapioca (base)',3],['Cuscuz (base)',3],['Rap10 (base)',3],['Muçarela',3],['Queijo Coalho',3],['Queijo Manteiga',3],['Presunto',3],['Calabresa',3],['Carne Moída',3],['Frango recheio',3],['Catupiry',3],['Cheddar',3],['Carne de Sol',4],['Bacon',4],['Ovo Frito',2]],
+'Bebidas':[['KS 290 ml',5],['Refrigerante 1 L',10],['Brahma litrinho',5],['Skol litrinho',5],['Original litrinho',6],['Budweiser long neck',10],['Heineken long neck',12],['Corona Extra long neck',12],['Água sem gás',3],['Água com gás',4],['Café pequeno',1],['Café grande',3],['Café com leite',4],['Suco 400 ml',6]],
+'Shakes':[['Shake 300 ml',7],['Shake 500 ml',10]],
+'Combos':[['Só na Brasa',20],['Combo Algaroba',20],['Combo Casal',40],['Bonde da Algaroba',60]]};
+const shakeFlavors=['Abacaxi','Abacaxi com Hortelã','Açaí','Banana','Banana com Canela','Baunilha aos Quatro Leites','Beijinho','Biscoito (Oreo)','Bombom Supreme','Brigadeiro','Café','Cajá','Capuccino','Cartola','Chiclete','Chiclete com Banana','Chocomalt (Ovomaltine)','Chocomenta','Chocolate','Chocolate Branco','Coco','Coco Queimado','Cupuaçu','Danoninho','Doce de Leite','Flocos','Frutas Tropicais','Goiaba','Graviola','Kiwi','Leite Condensado','Limão','Maçã Verde','Maracujá','Mega Shake','Mentol','Milho Verde','Morango','Nata Goiaba','Pedacinho do Céu','Pistache','Power Milk (Leite Ninho)','Prestígio','Sensações','Tradicional com Açúcar Mascavo','Tradicional Zero Açúcar','Uva'];
+let state=JSON.parse(localStorage.getItem('algarobaState')||'null')||{tables:Array.from({length:10},(_,i)=>({id:i+1,items:[],orders:[],status:'livre'})),counter:{items:[],orders:[],status:'livre'},revenue:0,history:[]}; if(!state.history)state.history=[];if(!state.cash)state.cash={open:false,openedAt:null,opening:0,movements:[],closures:[]};if(!state.cash.movements)state.cash.movements=[];if(!state.cash.closures)state.cash.closures=[];if(!state.cancellations)state.cancellations=[];if(!state.operators)state.operators=['Pablo','Cláudia','Claudevânia'];if(!state.activeOperator)state.activeOperator=state.operators[0];state.activeOperator=localStorage.getItem('algarobaActiveOperator')||state.activeOperator;if(!state.inventory)state.inventory={items:{},movements:[]};if(!state.inventory.items)state.inventory.items={};if(!state.inventory.movements)state.inventory.movements=[];if(!state.internalAccounts)state.internalAccounts={withdrawals:[],settlements:[]};if(!state.internalAccounts.withdrawals)state.internalAccounts.withdrawals=[];if(!state.internalAccounts.settlements)state.internalAccounts.settlements=[];if(!state.counterQueue)state.counterQueue=[];if(!state.counterTicket)state.counterTicket={date:'',last:0};let current=null,cart=[];
+const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+let cloudPausePullUntil=0;let cloudReady=false,cloudApplying=false,cloudTimer=null,cloudPoll=null;
+let cloudLastError='',cloudFailures=0,cloudSnapshot={};
+let authSession=null,authProfile=null;
+const roleViews={
+ administrador:['mesas','cozinha','caixa','estoque','relatorios','usuarios'],
+ gerente:['mesas','cozinha','caixa','estoque','relatorios'],
+ atendimento:['mesas','cozinha'],
+ cozinha:['cozinha'],
+ caixa:['caixa'],
+ estoque:['estoque']
+};
+function authToken(){return authSession&&authSession.access_token?authSession.access_token:null}
+function authMessage(msg,err=false){let e=document.getElementById('authMsg');if(e){e.textContent=msg;e.className='authmsg '+(err?'autherr':'authok')}}
+async function authFetch(path,opts={}){
+ let cfg=cloudConfig();if(!cfg||!cfg.url||!cfg.key)throw new Error('Configure primeiro a conexão online do Supabase na versão anterior.');
+ let headers={'apikey':cfg.key,'Content-Type':'application/json',...(opts.headers||{})};
+ if(authToken())headers.Authorization='Bearer '+authToken();
+ let r=await fetch(cfg.url.replace(/\/$/,'')+path,{...opts,headers});
+ let txt=await r.text(),data=null;try{data=txt?JSON.parse(txt):null}catch(e){data=txt}
+ if(!r.ok)throw new Error((data&&data.msg)||(data&&data.message)||(data&&data.error_description)||('HTTP '+r.status));
+ return data
+}
+function updateLoginServerStatus(){
+ let e=document.getElementById('loginServerStatus');if(!e)return;
+ let cfg=cloudConfig();
+ e.textContent=cfg&&cfg.url&&cfg.key?'☁️ Servidor configurado neste aparelho':'⚠️ Servidor não configurado neste aparelho';
+}
+function toggleLoginServerSetup(){
+ let box=document.getElementById('loginServerSetup');if(!box)return;
+ let opening=box.classList.contains('hide');
+ box.classList.toggle('hide');
+ if(opening){
+  let cfg=cloudConfig()||{};
+  document.getElementById('loginCloudUrlInline').value=cfg.url||'';
+  document.getElementById('loginCloudKeyInline').value=cfg.key||'';
+ }
+}
+function saveLoginCloudConfigInline(){
+ let url=document.getElementById('loginCloudUrlInline').value.trim(),key=document.getElementById('loginCloudKeyInline').value.trim();
+ if(!url||!key)return authMessage('Informe o Project URL e a Publishable Key.',true);
+ if(!/^https:\/\/.+\.supabase\.co\/?$/i.test(url))return authMessage('Confira o Project URL do Supabase.',true);
+ if(!key.startsWith('sb_publishable_')&&!key.startsWith('eyJ'))return authMessage('Use a Publishable Key do projeto.',true);
+ localStorage.setItem('algarobaCloudConfig',JSON.stringify({url,key}));
+ document.getElementById('loginServerSetup').classList.add('hide');
+ updateLoginServerStatus();authMessage('Servidor configurado. Agora entre com e-mail e senha.');
+}
+function openLoginOnlineSetup(){
+ let cfg=cloudConfig()||{};
+ document.getElementById('modalContent').innerHTML=`<h2>☁️ Configurar servidor</h2>
+ <p class="muted">Esta configuração é necessária uma vez em cada aparelho. Use somente a Project URL e a Publishable Key do projeto.</p>
+ <label>Project URL</label><input id="loginCloudUrl" placeholder="https://xxxx.supabase.co" value="${cfg.url||''}">
+ <label>Publishable Key</label><input id="loginCloudKey" placeholder="sb_publishable_..." value="${cfg.key||''}">
+ <div class="sheet-actions"><button class="btn" onclick="closeModal()">CANCELAR</button><button class="btn primary" onclick="saveLoginCloudConfig()">SALVAR SERVIDOR</button></div>`;
+ document.getElementById('modal').classList.remove('hide');
+}
+function saveLoginCloudConfig(){
+ let url=document.getElementById('loginCloudUrl').value.trim(),key=document.getElementById('loginCloudKey').value.trim();
+ if(!url||!key)return alert('Informe o Project URL e a Publishable Key.');
+ if(!/^https:\/\/.+\.supabase\.co\/?$/i.test(url))return alert('Confira o Project URL do Supabase.');
+ if(!key.startsWith('sb_publishable_')&&!key.startsWith('eyJ'))return alert('Use a Publishable Key do projeto.');
+ localStorage.setItem('algarobaCloudConfig',JSON.stringify({url,key}));
+ closeModal();updateLoginServerStatus();authMessage('Servidor configurado. Agora entre com e-mail e senha.');
+}
+async function loginUser(){
+ let email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;
+ if(!email||!password)return authMessage('Informe e-mail e senha.',true);
+ let b=document.getElementById('loginBtn');b.disabled=true;b.textContent='ENTRANDO…';
+ try{
+   let sess=await authFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+   authSession=sess;localStorage.setItem('algarobaAuthSession',JSON.stringify(sess));
+   await loadProfile();
+ }catch(e){authMessage('Acesso não autorizado: '+e.message,true)}
+ finally{b.disabled=false;b.textContent='ENTRAR'}
+}
+async function loadProfile(){
+ if(!authSession||!authSession.user)throw new Error('Sessão inválida.');
+ let rows=await authFetch('/rest/v1/algaroba_users?select=id,nome,perfil,ativo&id=eq.'+encodeURIComponent(authSession.user.id),{method:'GET'});
+ let p=Array.isArray(rows)?rows[0]:null;
+ if(!p||!p.ativo){authSession=null;localStorage.removeItem('algarobaAuthSession');throw new Error('Usuário sem perfil ativo no Algaroba Comandas.')}
+ authProfile=p;state.activeOperator=p.nome;localStorage.setItem('algarobaActiveOperator',p.nome);
+ document.getElementById('loggedUser').textContent=p.nome;
+ document.getElementById('loggedRole').textContent=p.perfil.toUpperCase();
+ document.getElementById('authGate').classList.add('hide');
+ applyPermissions();
+ await initCloud();
+}
+function applyPermissions(){
+ let allowed=roleViews[(authProfile&&authProfile.perfil)]||[];
+ document.querySelectorAll('.tabs button[data-view]').forEach(b=>b.style.display=allowed.includes(b.dataset.view)?'':'none');
+ let first=allowed[0]||null;if(first){let btn=document.querySelector('.tabs button[data-view="'+first+'"]');view(first,btn)}
+}
+function canView(id){return !!authProfile&&(roleViews[authProfile.perfil]||[]).includes(id)}
+
+function esc(v){return String((v==null?'':v)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function createAdminUser(){
+ if((authProfile&&authProfile.perfil)!=='administrador')return alert('Somente administrador.');
+ const nome=document.getElementById('newUserName').value.trim();
+ const email=document.getElementById('newUserEmail').value.trim().toLowerCase();
+ const password=document.getElementById('newUserPassword').value;
+ const perfil=document.getElementById('newUserRole').value;
+ const msg=document.getElementById('createUserMsg');
+ const btn=document.getElementById('createUserBtn');
+ if(!nome||!email||!password){msg.textContent='Preencha nome, e-mail e senha.';return}
+ if(password.length<6){msg.textContent='A senha inicial precisa ter pelo menos 6 caracteres.';return}
+ let cfg=cloudConfig();
+ if(!cfg||!cfg.url||!cfg.key){msg.textContent='Configure primeiro a conexão online.';return}
+ btn.disabled=true;btn.textContent='CRIANDO…';msg.textContent='Criando usuário…';
+ try{
+   const r=await fetch(cfg.url.replace(/\/$/,'')+'/functions/v1/algaroba-create-user',{
+     method:'POST',
+     headers:{'apikey':cfg.key,'Authorization':'Bearer '+authToken(),'Content-Type':'application/json'},
+     body:JSON.stringify({nome,email,password,perfil})
+   });
+   let data=null,txt=await r.text();try{data=txt?JSON.parse(txt):{}}catch(e){data={error:txt}}
+   if(!r.ok)throw new Error((data&&data.error)||(data&&data.message)||('HTTP '+r.status));
+   msg.textContent='✅ Usuário criado com sucesso.';
+   document.getElementById('newUserName').value='';
+   document.getElementById('newUserEmail').value='';
+   document.getElementById('newUserPassword').value='';
+   document.getElementById('newUserRole').value='atendimento';
+   await loadUsersAdmin();
+ }catch(e){msg.textContent='❌ '+e.message}
+ finally{btn.disabled=false;btn.textContent='CRIAR USUÁRIO'}
+}
+async function loadUsersAdmin(){
+ if((authProfile&&authProfile.perfil)!=='administrador')return alert('Somente administrador.');
+ let box=document.getElementById('usersAdminList');box.innerHTML="<div class='card'>Carregando…</div>";
+ try{
+  let rows=await authFetch('/rest/v1/algaroba_users?select=id,nome,perfil,ativo,created_at&order=nome.asc',{method:'GET'});
+  box.innerHTML='';
+  if(!Array.isArray(rows)||rows.length===0){box.innerHTML="<div class='card'><b>Nenhum usuário retornado.</b><div class='muted'>A sessão está autenticada, mas a consulta não recebeu perfis.</div></div>";return}
+  (rows||[]).forEach(u=>{
+   let d=document.createElement('div');d.className='card';
+   d.innerHTML=`<b>${esc(u.nome)}</b><div class="muted">ID: ${esc(u.id)}</div>
+   <label>Nome</label><input data-name value="${esc(u.nome)}">
+   <label>Perfil</label><select data-role>
+    ${['administrador','gerente','atendimento','cozinha','caixa','estoque'].map(r=>`<option value="${r}" ${u.perfil===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+   </select>
+   <label style="display:flex;gap:8px;align-items:center;margin:10px 0"><input data-active type="checkbox" ${u.ativo?'checked':''} style="width:auto"> Usuário ativo</label>
+   <button class="btn primary" data-save>SALVAR ALTERAÇÕES</button>`;
+   d.querySelector('[data-save]').onclick=()=>saveAdminUser(u.id,d);
+   box.appendChild(d);
+  });
+ }catch(e){box.innerHTML=`<div class="card"><b>Erro:</b> ${esc(e.message)}</div>`}
+}
+async function saveAdminUser(id,card){
+ if((authProfile&&authProfile.perfil)!=='administrador')return;
+ let nome=card.querySelector('[data-name]').value.trim(),perfil=card.querySelector('[data-role]').value,ativo=card.querySelector('[data-active]').checked;
+ if(!nome)return alert('Informe o nome.');
+ if(id===authProfile.id && (!ativo || perfil!=='administrador'))return alert('Por segurança, você não pode retirar seu próprio acesso de administrador nesta tela.');
+ try{
+  await authFetch('/rest/v1/algaroba_users?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({nome,perfil,ativo})});
+  alert('Usuário atualizado.');
+  await loadUsersAdmin();
+ }catch(e){alert('Não foi possível atualizar: '+e.message)}
+}
+
+async function logoutUser(){
+ try{if(authToken())await authFetch('/auth/v1/logout',{method:'POST'}).catch(()=>{})}finally{
+   authSession=null;authProfile=null;localStorage.removeItem('algarobaAuthSession');cloudReady=false;clearInterval(cloudPoll);
+   document.getElementById('authGate').classList.remove('hide');authMessage('Sessão encerrada. Entre novamente.');
+ }
+}
+async function initAuth(){
+ let raw=localStorage.getItem('algarobaAuthSession');if(!raw)return;
+ try{authSession=JSON.parse(raw);await loadProfile()}catch(e){authSession=null;authProfile=null;localStorage.removeItem('algarobaAuthSession');authMessage('Entre novamente para continuar.',true)}
+}
+function setSyncStatus(kind,text){let e=document.getElementById('syncStatus');if(!e)return;e.className='syncpill '+kind;e.textContent='● '+text;e.title=cloudLastError||''}
+const BUILTIN_CLOUD_CONFIG={url:'https://dlwrmpfurphccaeuwsfj.supabase.co',key:'sb_publishable_0Yr-97uqdGFXAcSvpZ2IGA_G3DpnaB7'};
+function cloudConfig(){
+ try{
+  let saved=JSON.parse(localStorage.getItem('algarobaCloudConfig')||'null');
+  return saved&&saved.url&&saved.key?saved:BUILTIN_CLOUD_CONFIG;
+ }catch(e){return BUILTIN_CLOUD_CONFIG}
+}
+function save(){localStorage.setItem('algarobaState',JSON.stringify(state));if(cloudReady&&!cloudApplying)scheduleCloudSave()}
+function scheduleCloudSave(){clearTimeout(cloudTimer);cloudTimer=setTimeout(pushChangedRecords,300)}
+function cloudHeaders(cfg,prefer){let h={'apikey':cfg.key,'Authorization':'Bearer '+(authToken()||cfg.key),'Content-Type':'application/json'};if(prefer)h['Prefer']=prefer;return h}
+async function cloudRequest(path,opts={}){let cfg=cloudConfig();if(!cfg)throw new Error('Configuração online ausente');let url=cfg.url.replace(/\/$/,'')+'/rest/v1/'+path;let ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),10000);try{let r=await fetch(url,{...opts,signal:ctrl.signal,headers:{...cloudHeaders(cfg,opts.prefer),...(opts.headers||{})}});let txt=await r.text();if(!r.ok)throw new Error('HTTP '+r.status+' • '+(txt||r.statusText));return txt?JSON.parse(txt):null}finally{clearTimeout(tm)}}
+function stateRecords(s){let rows=[];(s.tables||[]).forEach(t=>rows.push({record_key:'table:'+t.id,data:t}));rows.push({record_key:'counter',data:s.counter||{items:[],orders:[],status:'livre'}});rows.push({record_key:'inventory',data:s.inventory||{items:{},movements:[]}});let meta={revenue:s.revenue||0,history:s.history||[],cash:s.cash||{open:false,openedAt:null,opening:0,movements:[],closures:[]},cancellations:s.cancellations||[],operators:s.operators||['Pablo','Cláudia','Claudevânia'],transfers:s.transfers||[],internalAccounts:s.internalAccounts||{withdrawals:[],settlements:[]},counterQueue:s.counterQueue||[],counterTicket:s.counterTicket||{date:'',last:0}};rows.push({record_key:'meta',data:meta});return rows}
+function snapOf(s){let o={};for(let r of stateRecords(s))o[r.record_key]=JSON.stringify(r.data);return o}
+function applyRows(rows){let by={};(rows||[]).forEach(r=>by[r.record_key]=r.data);if(!by.meta&&!Object.keys(by).some(k=>k.startsWith('table:')))return false;let ns=JSON.parse(JSON.stringify(state));ns.tables=Array.from({length:10},(_,i)=>by['table:'+(i+1)]||(ns.tables&&ns.tables[i])||{id:i+1,items:[],orders:[],status:'livre'});ns.counter=by.counter||ns.counter||{items:[],orders:[],status:'livre'};let m=by.meta||{};for(let k of ['revenue','history','cash','cancellations','operators','transfers','internalAccounts','counterQueue','counterTicket'])if(m[k]!==undefined)ns[k]=m[k];if(by.inventory!==undefined)ns.inventory=by.inventory;else if(m.inventory!==undefined)ns.inventory=m.inventory;ns.activeOperator=localStorage.getItem('algarobaActiveOperator')||ns.activeOperator||((ns.operators||[])[0]||'Pablo');state=ns;localStorage.setItem('algarobaState',JSON.stringify(state));cloudSnapshot=snapOf(state);return true}
+async function pushChangedRecords(){if(!cloudReady)return;try{let cur=stateRecords(state),changed=cur.filter(r=>cloudSnapshot[r.record_key]!==JSON.stringify(r.data));if(!changed.length){setSyncStatus('online','ONLINE');return}setSyncStatus('offline','SINCRONIZANDO…');let payload=changed.map(r=>({...r,updated_at:new Date().toISOString()}));await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify(payload)});for(let r of changed)cloudSnapshot[r.record_key]=JSON.stringify(r.data);cloudFailures=0;cloudLastError='';setSyncStatus('online','ONLINE')}catch(e){cloudLastError=e.message||String(e);cloudFailures++;console.error(e);setSyncStatus('error','ERRO: TOQUE AQUI')}}
+function userIsEditing(){let a=document.activeElement;if(!a)return false;let tag=a.tagName;return (tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')&&!!(a.closest('#caixa')||a.closest('#relatorios')||a.closest('#modal'))}
+function refreshVisible(){renderOperator();renderTables();if(!document.getElementById('cozinha').classList.contains('hide'))renderKitchen();if(!document.getElementById('caixa').classList.contains('hide'))renderCash();if(!document.getElementById('estoque').classList.contains('hide'))renderInventory();/* Relatórios: não reconstruir durante sincronização automática */if(!document.getElementById('comanda').classList.contains('hide')&&current!==null)renderCart()}
+async function pullRecords(first=false){if(!first&&userIsEditing())return false;if(!first&&Date.now()<cloudPausePullUntil)return false;if(!cloudReady&&!first)return;try{let rows=await cloudRequest('algaroba_records?select=record_key,data,updated_at',{method:'GET'});if(!rows||!rows.length){if(first){let legacy=await cloudRequest('algaroba_state?id=eq.principal&select=data',{method:'GET'}).catch(()=>[]);if(legacy&&legacy[0]&&legacy[0].data){cloudApplying=true;state=legacy[0].data;state.activeOperator=localStorage.getItem('algarobaActiveOperator')||state.activeOperator||'Pablo';localStorage.setItem('algarobaState',JSON.stringify(state));cloudApplying=false;cloudSnapshot={};await pushChangedRecords();return true}throw new Error('Banco online vazio. Confira a configuração do Supabase.')}return false}cloudApplying=true;let changed=applyRows(rows);cloudApplying=false;if(changed)refreshVisible();cloudFailures=0;cloudLastError='';setSyncStatus('online','ONLINE');return true}catch(e){cloudApplying=false;cloudLastError=e.message||String(e);cloudFailures++;console.error(e);if(first||cloudFailures>=3)setSyncStatus('error','ERRO: TOQUE AQUI');throw e}}
+async function initCloud(){let cfg=cloudConfig();if(!cfg||!cfg.url||!cfg.key){setSyncStatus('offline','LOCAL');return}try{setSyncStatus('offline','CONECTANDO…');cloudReady=true;await pullRecords(true);cloudReady=true;setSyncStatus('online','ONLINE');clearInterval(cloudPoll);cloudPoll=setInterval(()=>pullRecords(false).catch(()=>{}),2000)}catch(err){cloudReady=false;clearInterval(cloudPoll);setSyncStatus('error','ERRO: TOQUE AQUI')}}
+function showCloudError(){if(cloudLastError)alert('Diagnóstico da conexão:\n\n'+cloudLastError+'\n\nO sistema mantém os dados locais e não apaga a comanda por causa de uma falha de internet.');else alert('Conexão online ativa. Nenhum erro registrado.')}
+function openOnlineSetup(){if(authProfile&&authProfile.perfil!=='administrador')return alert('Somente o administrador pode alterar a conexão online.');let cfg=cloudConfig()||{};document.getElementById('modalContent').innerHTML=`<h2>☁️ Sincronização online 2.2</h2><p class=muted>Banco dividido por registros. Cada mesa é sincronizada separadamente, reduzindo conflitos entre aparelhos.</p>${cloudLastError?`<div class=cancelled-item><b>Diagnóstico:</b><div>${cloudLastError.replace(/</g,'&lt;')}</div></div>`:''}<div class=setupgrid><div><label>Project URL</label><input id=cloudUrl placeholder='https://xxxx.supabase.co' value='${cfg.url||''}'></div><div><label>Publishable Key</label><input id=cloudKey placeholder='sb_publishable_...' value='${cfg.key||''}'></div></div><div class=sheet-actions><button class=btn onclick=disableCloud()>Usar somente local</button><button class='btn primary' onclick=saveCloudConfig()>SALVAR E CONECTAR</button></div>`;document.getElementById('modal').classList.remove('hide')}
+function saveCloudConfig(){let url=document.getElementById('cloudUrl').value.trim(),key=document.getElementById('cloudKey').value.trim();if(!url||!key)return alert('Informe o Project URL e a Publishable Key.');if(!/^https:\/\/.+\.supabase\.co\/?$/i.test(url))return alert('Confira o Project URL do Supabase.');if(!key.startsWith('sb_publishable_')&&!key.startsWith('eyJ'))return alert('Use a Publishable Key do projeto.');localStorage.setItem('algarobaCloudConfig',JSON.stringify({url,key}));closeModal();initCloud()}
+function disableCloud(){localStorage.removeItem('algarobaCloudConfig');cloudReady=false;clearInterval(cloudPoll);setSyncStatus('offline','LOCAL');closeModal()}
+function renderOperator(){if(authProfile){state.activeOperator=authProfile.nome;let u=document.getElementById('loggedUser');if(u)u.textContent=authProfile.nome}}
+function setOperator(v){return}
+function view(id,b){if(authProfile&&!canView(id))return alert('Seu perfil não possui acesso a esta área.');['mesas','comanda','cozinha','caixa','estoque','relatorios','usuarios'].forEach(x=>{let el=document.getElementById(x);if(el)el.classList.add('hide')});document.getElementById(id).classList.remove('hide');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(id==='mesas')renderTables();if(id==='cozinha')renderKitchen();if(id==='caixa')renderCash();if(id==='estoque')renderInventory();if(id==='relatorios')renderReports();if(id==='usuarios')loadUsersAdmin()}
+function tableProductionState(t){let ready=false,pending=false;for(const o of (t.orders||[])){for(const st of [...new Set((o.items||[]).filter(i=>!i.cancelled).map(i=>stationOf(i.name)))]){let ss=stationStatus(o,st);if(ss==='PRONTO')ready=true;if(ss!=='ENTREGUE')pending=true}}return {ready,pending}}
+function transferTable(){if(current==='counter')return alert('Balcão / Retirada não pode ser transferido para mesa.');let from=getT();if(!from.items.length&&!from.orders.length)return alert('Esta mesa não possui comanda para transferir.');let free=state.tables.filter(t=>t.id!==current&&!t.items.length&&!(t.orders||[]).length);if(!free.length)return alert('Não há outra mesa livre disponível.');let dest=prompt('Transferir Mesa '+String(current).padStart(2,'0')+' para qual mesa livre?\n\n'+free.map(t=>'Mesa '+String(t.id).padStart(2,'0')).join(' • ')+'\n\nDigite apenas o número:');if(dest===null)return;let id=parseInt(dest,10),to=free.find(t=>t.id===id);if(!to)return alert('Escolha uma das mesas livres exibidas.');if(!confirm('Confirmar transferência da Mesa '+String(current).padStart(2,'0')+' para Mesa '+String(id).padStart(2,'0')+'?'))return;to.items=from.items;to.orders=from.orders;to.status=from.status==='livre'?'ocupada':from.status;from.items=[];from.orders=[];from.status='livre';state.transfers=state.transfers||[];state.transfers.push({at:new Date().toISOString(),from:current,to:id,operator:state.activeOperator});current=id;save();document.getElementById('tableTitle').textContent='Mesa '+String(id).padStart(2,'0');alert('Comanda transferida para a Mesa '+String(id).padStart(2,'0')+'.');renderCart()}
+
+function todayKey(){let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function nextCounterTicket(){
+ let d=todayKey();if(!state.counterTicket||state.counterTicket.date!==d)state.counterTicket={date:d,last:0};
+ state.counterTicket.last=Number(state.counterTicket.last||0)+1;return state.counterTicket.last
+}
+function ticketLabel(n){return '#'+String(Number(n||0)).padStart(3,'0')}
+function counterOrderById(id){return (state.counterQueue||[]).find(x=>Number(x.id)===Number(id))}
+function renderTables(){let h='';state.tables.forEach(t=>{let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0),ps=tableProductionState(t),cls=t.status==='livre'?'':(ps.ready?'awaiting':'busy'),label=t.status==='livre'?'LIVRE':(ps.ready?'AGUARDANDO ENTREGA':'OCUPADA');h+=`<div class="table ${cls}" onclick="openTable(${t.id})"><span class=status>${label}</span><h3>Mesa ${String(t.id).padStart(2,'0')}</h3><div class=money>${brl(sum)}</div><div class=muted>${t.items.length? t.items.reduce((a,x)=>a+x.qty,0)+' itens':'Toque para abrir'}</div>${ps.ready?'<div class=awaiting-note>✓ Há item pronto aguardando entrega</div>':''}</div>`});let c=state.counter,sum=c.items.reduce((a,x)=>a+x.price*x.qty,0),q=state.counterQueue||[],ready=q.filter(x=>tableProductionState(x).ready).length;h+=`<div class="table full ${q.length?'busy':''}" onclick="openTable('counter')"><span class=status>${q.length?q.length+' PEDIDO(S)':'LIVRE'}</span><h3>🛍 Balcão / Retirada</h3><div class=money>${q.length?ready+' pronto(s)':'Novo pedido'}</div><div class=muted>${q.length?'Senhas: '+q.map(x=>ticketLabel(x.ticket)).join(' • '):'Toque para abrir'}</div>${ready?'<div class=awaiting-note>✓ Há pedido pronto para retirada</div>':''}</div>`;document.getElementById('tables').innerHTML=h}
+
+function getT(){return current==='counter'?state.counter:state.tables.find(x=>x.id===current)}
+function openTable(id){current=id;cart=[];document.getElementById('mesas').classList.add('hide');document.getElementById('comanda').classList.remove('hide');document.getElementById('tableTitle').textContent=id==='counter'?'Balcão / Retirada':'Mesa '+String(id).padStart(2,'0');document.getElementById('transferBtn').style.display=id==='counter'?'none':'inline-block';const catsEl=document.getElementById('cats');catsEl.innerHTML='';Object.keys(catalog).forEach((c,i)=>{const btn=document.createElement('button');btn.type='button';btn.className='btn'+(i===0?' primary':'');btn.textContent=c;btn.addEventListener('click',()=>showCat(c,btn));catsEl.appendChild(btn)});showCat(Object.keys(catalog)[0]);renderCart()}
+function showCat(c,b){if(b){document.querySelectorAll('#cats button').forEach(x=>x.classList.remove('primary'));b.classList.add('primary')}const productsEl=document.getElementById('products');productsEl.innerHTML='';const visibleProducts=(c==='Bases'?catalog[c].slice(0,4):catalog[c]);visibleProducts.forEach((p,i)=>{const row=document.createElement('div');row.className='product';const info=document.createElement('div');const title=document.createElement('b');title.textContent=p[0];const val=document.createElement('div');val.className='muted';val.textContent=brl(p[1]);info.append(title,val);const btn=document.createElement('button');btn.type='button';btn.textContent='+ ADICIONAR';btn.addEventListener('click',()=>add(c,i));row.append(info,btn);productsEl.appendChild(row)})}
+function pushCart(name,price,components=null){let comps=components||[stockKey(name)];let cost=comps.reduce((a,k)=>a+Number((state.inventory.items[k]||{}).cost||0),0);let x=cart.find(x=>x.name===name&&x.price===price);x?x.qty++:cart.push({name,price,qty:1,cost,stockComponents:comps});renderCart()}
+function closeModal(){document.getElementById('modal').classList.add('hide');document.getElementById('modalContent').innerHTML=''}
+function add(c,i){let p=catalog[c][i],name=p[0],price=p[1];if(c==='Shakes')return chooseShake(name,price);if(c==='Bases'&&name.includes('(base)'))return chooseFillings(name,price);if(c==='Espetinhos')return choosePoint(name,price);if(c==='Bebidas'&&name==='KS 290 ml')return chooseKS(name,price);if(c==='Bebidas'&&name==='Refrigerante 1 L')return chooseRefri1L(name,price);if(c==='Bebidas'&&name==='Suco 400 ml')return chooseJuice(name,price);pushCart(name,price)}
+function openChoiceModal(title,subtitle,choices){const m=document.getElementById('modal'),mc=document.getElementById('modalContent');mc.innerHTML='';const h=document.createElement('h2');h.textContent=title;const p=document.createElement('p');p.className='muted';p.textContent=subtitle;const grid=document.createElement('div');grid.className='choice-grid';choices.forEach(ch=>{const btn=document.createElement('button');btn.type='button';btn.className='choice';btn.textContent=ch.label;btn.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();try{ch.action();closeModal()}catch(err){console.error(err);alert('Não foi possível adicionar o item. Erro: '+err.message)}});grid.appendChild(btn)});const actions=document.createElement('div');actions.className='sheet-actions';const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',closeModal);actions.appendChild(cancel);mc.append(h,p,grid,actions);m.classList.remove('hide')}
+function choosePoint(name,price){openChoiceModal('🔥 '+name,'Escolha o ponto do espetinho',[{label:'🔥 Ao ponto',action:()=>pushCart(name+' • Ao ponto',price)},{label:'🔥 Bem passado',action:()=>pushCart(name+' • Bem passado',price)}])}
+function chooseShake(name,price){openChoiceModal('🥤 '+name,'Toque no sabor desejado',shakeFlavors.map(flavor=>({label:flavor,action:()=>pushCart(name+' • '+flavor,price)})))}
+function chooseKS(name,price){let opts=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja','Guaraná Kuat','Sprite','Schweppes'];openChoiceModal('🥤 Refrigerante KS • 290 ml','Escolha o refrigerante',opts.map(v=>({label:v,action:()=>pushCart(name+' • '+v,price)})))}
+function chooseRefri1L(name,price){let opts=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja'];openChoiceModal('🥤 Refrigerante Retornável • 1 L','Escolha o refrigerante',opts.map(v=>({label:v,action:()=>pushCart(name+' • '+v,price)})))}
+function chooseJuice(name,price){let flavors=['Acerola','Cajá','Uva','Mangaba','Maracujá','Goiaba','Caju','Manga','Graviola','Tamarindo'],choices=[];flavors.forEach(v=>{let agua=v==='Maracujá'?7:price,leite=v==='Maracujá'?8:price+1;choices.push({label:v+' • Água — '+brl(agua),action:()=>pushCart(name+' • '+v+' • Água',agua)});choices.push({label:v+' • Leite — '+brl(leite),action:()=>pushCart(name+' • '+v+' • Leite',leite)})});openChoiceModal('🧃 Suco • 400 ml','Escolha o sabor e o preparo',choices)}
+
+let selectedFillings=[];let fillingContext=null;
+function chooseFillings(name,price){selectedFillings=[];fillingContext={name,price};const opts=catalog['Bases'].slice(4),m=document.getElementById('modal'),mc=document.getElementById('modalContent');mc.innerHTML='';const h=document.createElement('h2');h.textContent='🌽 '+name.replace(' (base)','');const p=document.createElement('p');p.className='muted';p.textContent='Escolha um ou mais recheios. Você também pode adicionar somente a base.';const grid=document.createElement('div');grid.className='choice-grid';opts.forEach((o,j)=>{const btn=document.createElement('button');btn.type='button';btn.className='choice';btn.innerHTML=`${o[0]}<br><small>+ ${brl(o[1])}</small>`;btn.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();toggleFilling(j,btn)});grid.appendChild(btn)});const totalBox=document.createElement('div');totalBox.className='panel';totalBox.style.marginTop='12px';totalBox.innerHTML=`<div class="muted">Total</div><div class="big" id="fillTotal">${brl(price)}</div>`;const actions=document.createElement('div');actions.className='sheet-actions';const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',closeModal);const confirm=document.createElement('button');confirm.type='button';confirm.className='btn primary';confirm.textContent='ADICIONAR À COMANDA';confirm.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();try{confirmFillings()}catch(err){console.error(err);alert('Não foi possível montar o item. Erro: '+err.message)}});actions.append(cancel,confirm);mc.append(h,p,grid,totalBox,actions);m.classList.remove('hide')}
+function toggleFilling(j,btn){const k=selectedFillings.indexOf(j);k>=0?selectedFillings.splice(k,1):selectedFillings.push(j);btn.classList.toggle('selected');const opts=catalog['Bases'].slice(4),total=fillingContext.price+selectedFillings.reduce((a,x)=>a+opts[x][1],0);document.getElementById('fillTotal').textContent=brl(total)}
+function confirmFillings(){if(!fillingContext)return;const opts=catalog['Bases'].slice(4);let finalName=fillingContext.name.replace(' (base)',''),price=fillingContext.price;let comps=[fillingContext.name];selectedFillings.forEach(j=>{finalName+=' + '+opts[j][0];price+=opts[j][1];comps.push(opts[j][0])});pushCart(finalName,price,comps);fillingContext=null;selectedFillings=[];closeModal()}
+function renderCart(){let t=getT();let sent=t.items.map((x,i)=>`<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Já enviado</small></span><span><b>${brl(x.qty*x.price)}</b> <button class='mini danger' onclick='cancelSent(${i})'>Cancelar</button></span></div>`).join('');let pending=cart.map((x,i)=>`<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Aguardando envio</small></span><span><b>${brl(x.qty*x.price)}</b><span class=qtyctl><button class=mini onclick='changeCart(${i},-1)'>−</button><button class=mini onclick='changeCart(${i},1)'>+</button><button class='mini danger' onclick='removeCart(${i})'>×</button></span></span></div>`).join('');document.getElementById('cart').innerHTML=(sent+pending)||'<div class=muted>Nenhum item lançado.</div>';document.getElementById('total').textContent=brl([...t.items,...cart].reduce((a,x)=>a+x.price*x.qty,0))}function changeCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);renderCart()}function removeCart(i){cart.splice(i,1);renderCart()}function cancelSent(i){let t=getT(),it=t.items[i];if(!it)return;let reason=prompt('Motivo do cancelamento de '+it.name+':');if(reason===null||!reason.trim())return alert('Informe o motivo do cancelamento.');reason=reason.trim();let cancelledAt=new Date().toISOString();state.cancellations=state.cancellations||[];state.cancellations.push({at:cancelledAt,table:current==='counter'?'Balcão':'Mesa '+String(current).padStart(2,'0'),item:{...it},reason,operator:state.activeOperator});let remaining=it.qty;t.orders.forEach(o=>{o.items.forEach(oi=>{if(remaining>0&&oi.name===it.name&&!oi.cancelled){let q=Math.min(oi.qty,remaining);if(q===oi.qty){oi.cancelled=true;oi.cancelReason=reason;oi.cancelledAt=cancelledAt;oi.cancelledBy=state.activeOperator;remaining-=q}else{oi.qty-=q;o.items.push({...oi,qty:q,cancelled:true,cancelReason:reason,cancelledAt,cancelledBy:state.activeOperator});remaining-=q}}})});inventoryReturn(it,'cancelamento');t.items.splice(i,1);if(!t.items.length&&!cart.length)t.status='livre';save();renderCart();alert('Item cancelado. Ele continuará visível na Produção em vermelho, com o motivo.')}function sendOrder(){
+ if(!cart.length)return alert('Adicione algum produto.');
+ for(const it of cart){for(const k of (it.stockComponents||[stockKey(it.name)])){let inv=state.inventory.items[k];if(inv&&inv.track!==false&&Number(inv.qty||0)<Number(it.qty||0))return alert('Estoque insuficiente: '+k+'\nDisponível: '+Number(inv.qty||0));}}
+ for(const it of cart)inventoryConsume(it);
+ let t=getT(),order={id:Date.now(),createdAt:Date.now(),time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),operator:state.activeOperator,items:cart.map(x=>({...x})),status:'NOVO'};
+ if(current==='counter'){
+   let ticket=nextCounterTicket(),items=cart.map(x=>({...x}));
+   state.counterQueue=state.counterQueue||[];
+   state.counterQueue.push({id:order.id,ticket,date:todayKey(),createdAt:order.createdAt,items,orders:[order],status:'ocupada'});
+   state.counter.items=[];state.counter.orders=[];state.counter.status='livre';cart=[];save();renderCart();renderTables();
+   alert('Pedido enviado para produção!\n\nSENHA DO CLIENTE: '+ticketLabel(ticket)+'\n\nInforme este número ao cliente.');
+   return
+ }
+ t.orders.push(order);cart.forEach(n=>{let x=t.items.find(i=>i.name===n.name);x?x.qty+=n.qty:t.items.push({...n})});t.status='ocupada';cart=[];save();renderCart();alert('Pedido enviado para produção!')
+}
+function stationOf(name){if(catalog['Espetinhos'].some(p=>name.startsWith(p[0])))return '🔥 Churrasqueira';if(name.startsWith('Shake')||catalog['Bebidas'].some(p=>name.startsWith(p[0])))return '🥤 Bebidas & Shakes';return '🍳 Cozinha'}
+function elapsed(o){let mins=Math.max(0,Math.floor((Date.now()-(o.createdAt||Date.now()))/60000));return mins<1?'agora':mins+' min'}
+function kitchenItem(i){if(i.cancelled)return `<div class="cancelled-item"><div class="cancel-title">🚫 CANCELADO • ${i.qty}× ${i.name}</div><div class="cancel-reason">Motivo: ${i.cancelReason||'Não informado'} • por ${i.cancelledBy||'Não identificado'}</div></div>`;return `<div class="active-item">${i.qty}× ${i.name}</div>`}
+function stationStatus(o,st){if(!o.stationStatus)o.stationStatus={};if(!o.stationStatus[st])o.stationStatus[st]=o.status||'NOVO';return o.stationStatus[st]}
+let activeProductionStation='Todos';function renderKitchen(){let groups={'🔥 Churrasqueira':[],'🍳 Cozinha':[],'🥤 Bebidas & Shakes':[]},counts={};[...state.tables.map(t=>['Mesa '+String(t.id).padStart(2,'0'),t]),...(state.counterQueue||[]).map(q=>['BALCÃO '+ticketLabel(q.ticket),q])].forEach(([name,t])=>t.orders.forEach(o=>{Object.keys(groups).forEach(st=>{let its=o.items.filter(i=>stationOf(i.name)===st);if(!its.length)return;let status=stationStatus(o,st);if(status==='ENTREGUE')return;counts[st]=(counts[st]||0)+1;let stArg=JSON.stringify(st).replace(/"/g,'&quot;'),ready=status==='PRONTO';groups[st].push(`<div class="panel kitchen-card ${ready?'ready-card':''}"><b>${name} • ${o.time}</b>${ready?'<span class=ready-badge>✓ PRONTO</span>':''}<div class="timer">👤 ${o.operator||'Não identificado'} • ⏱ ${elapsed(o)} • <b>${status}</b></div><div>${its.map(kitchenItem).join('')}</div><div style='margin-top:10px'><button class="btn ${ready?'primary':''}" onclick="advanceStation(${o.id},${stArg})">${status==='NOVO'?'INICIAR PREPARO':status==='PREPARANDO'?'MARCAR PRONTO':'CONFIRMAR ENTREGA'}</button></div></div>`)})}));const tabs=document.getElementById('prodTabs');let total=Object.values(counts).reduce((a,b)=>a+b,0);let opts=[['Todos',total],...Object.keys(groups).map(st=>[st,counts[st]||0])];tabs.innerHTML='';opts.forEach(([st,n])=>{let b=document.createElement('button');b.type='button';b.className='prod-tab'+(activeProductionStation===st?' active':'');b.textContent=st+' ('+n+')';b.addEventListener('click',()=>{activeProductionStation=st;renderKitchen()});tabs.appendChild(b)});let entries=Object.entries(groups).filter(([st])=>activeProductionStation==='Todos'||activeProductionStation===st);let html=entries.map(([st,cards])=>cards.length?`<div class=station-head>${st}</div>${cards.join('')}`:'').join('');document.getElementById('kitchen').innerHTML=html||'<div class=panel>Nenhum pedido pendente neste setor.</div>'}
+function advanceStation(id,st){for(let t of [...state.tables,state.counter,...(state.counterQueue||[])]){let o=t.orders.find(x=>x.id===id);if(o){if(!o.stationStatus)o.stationStatus={};let cur=stationStatus(o,st);o.stationStatus[st]=cur==='NOVO'?'PREPARANDO':cur==='PREPARANDO'?'PRONTO':'ENTREGUE';let used=[...new Set(o.items.map(i=>stationOf(i.name)))];o.status=used.every(s=>stationStatus(o,s)==='ENTREGUE')?'ENTREGUE':'EM PRODUÇÃO';break}}save();renderKitchen();renderTables()}
+function cashSales(){return (state.history||[]).filter(x=>!state.cash.openedAt||new Date(x.closedAt)>=new Date(state.cash.openedAt)).reduce((a,x)=>a+x.total,0)}function cashMoneySales(){return (state.history||[]).filter(x=>(!state.cash.openedAt||new Date(x.closedAt)>=new Date(state.cash.openedAt))).reduce((a,x)=>a+(x.payments||[{method:x.payment,value:x.total}]).filter(p=>p.method==='Dinheiro').reduce((q,p)=>q+p.value,0),0)}function expectedCash(){let c=state.cash,base=c.opening||0,money=cashMoneySales();return base+money+(c.movements||[]).reduce((a,m)=>a+(m.type==='entrada'?m.value:-m.value),0)}function currentCashSales(){return (state.history||[]).filter(x=>state.cash.openedAt&&new Date(x.closedAt)>=new Date(state.cash.openedAt))}
+function cashByPayment(){let out={Pix:0,Dinheiro:0,'Débito':0,'Crédito':0};currentCashSales().forEach(v=>(v.payments||[{method:v.payment,value:v.total}]).forEach(p=>out[p.method]=(out[p.method]||0)+Number(p.value||0)));((state.internalAccounts&&state.internalAccounts.settlements)||[]).filter(x=>state.cash.openedAt&&new Date(x.at)>=new Date(state.cash.openedAt)).forEach(x=>out[x.method]=(out[x.method]||0)+Number(x.value||0));return out}
+function cashMoveTotals(){
+ let moves=state.cash.movements||[];
+ return {
+  entries:moves.filter(m=>m.type==='entrada').reduce((a,m)=>a+Number(m.value||0),0),
+  outflows:moves.filter(m=>m.type!=='entrada').reduce((a,m)=>a+Number(m.value||0),0)
+ }
+}
+function renderCash(){
+ let payBox=document.getElementById('cashByPayment'),openingEl=document.getElementById('cashOpening'),entriesEl=document.getElementById('cashEntries'),outEl=document.getElementById('cashOutflows');
+ if(!state.cash.open){
+  document.getElementById('cashStatus').innerHTML=`<div class=panel style="text-align:center"><div style="font-size:42px">🔒</div><h3>Caixa fechado</h3><p class=muted>Para começar o turno, informe quanto há em dinheiro no caixa.</p><label style="text-align:left">Valor da abertura</label><input id=openingValue type=number inputmode=decimal step=.01 min=0 placeholder='R$ 0,00'><button class='btn primary' style="width:100%;margin-top:10px" onclick=openCash()>🔓 ABRIR CAIXA</button></div>`;
+  document.getElementById('revenue').textContent=brl(0);document.getElementById('cashExpected').textContent=brl(0);
+  if(openingEl)openingEl.textContent=brl(0);if(entriesEl)entriesEl.textContent=brl(0);if(outEl)outEl.textContent=brl(0);
+  if(payBox)payBox.innerHTML='<div class=muted>Abra o caixa para acompanhar as formas de pagamento.</div>';
+  document.getElementById('cashMovements').innerHTML='<div class=muted>Nenhuma movimentação neste turno.</div>';
+  document.getElementById('openAccounts').innerHTML='<div class=panel>Abra o caixa para realizar fechamentos.</div>';renderInternalSummary();return
+ }
+ let mt=cashMoveTotals();
+ document.getElementById('cashStatus').innerHTML=`<div class=panel><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class=status>● CAIXA ABERTO</span><b>${state.cash.openedBy||state.activeOperator}</b></div><div class=muted style="margin-top:8px">Aberto em ${new Date(state.cash.openedAt).toLocaleString('pt-BR')}</div></div>`;
+ if(openingEl)openingEl.textContent=brl(state.cash.opening||0);if(entriesEl)entriesEl.textContent=brl(mt.entries);if(outEl)outEl.textContent=brl(mt.outflows);
+ document.getElementById('revenue').textContent=brl(cashSales());document.getElementById('cashExpected').textContent=brl(expectedCash());
+ let bp=cashByPayment();if(payBox)payBox.innerHTML=['Dinheiro','Pix','Débito','Crédito'].map(k=>`<div class=cart-row><span>${k}</span><b>${brl(bp[k]||0)}</b></div>`).join('');
+ document.getElementById('cashMovements').innerHTML=(state.cash.movements||[]).slice().reverse().map(m=>`<div class=cart-row><span>${m.type==='entrada'?'➕':m.type==='sangria'?'💸':'🧾'} ${m.type.toUpperCase()} • ${m.note||'Sem descrição'}<div class=muted>${m.operator||'Não identificado'} • ${new Date(m.at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div></span><b>${m.type==='entrada'?'+':'−'} ${brl(m.value)}</b></div>`).join('')||'<div class=muted>Nenhuma movimentação neste turno.</div>';
+ renderInternalSummary();let arr=state.tables.map(t=>({name:'Mesa '+String(t.id).padStart(2,'0'),t,kind:'table'})).filter(x=>x.t.items.length);let cq=(state.counterQueue||[]).map(q=>({name:'Balcão '+ticketLabel(q.ticket),t:q,kind:'counter',id:q.id}));document.getElementById('openAccounts').innerHTML=[...arr,...cq].map(x=>{let sum=x.t.items.reduce((a,i)=>a+i.price*i.qty,0);return `<div class=panel><b>${x.name}</b><div class=big>${brl(sum)}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" onclick="${x.kind==='counter'?`paymentModalCounter(${x.id})`:`paymentModal('${x.name}')`}">RECEBER / FECHAR</button><button class="btn danger" onclick="${x.kind==='counter'?`cancelCashComanda('counter',${x.id})`:`cancelCashComanda('table',${x.t.id})`}">🚫 CANCELAR COMANDA</button></div></div>`}).join('')||'<div class=panel>Nenhuma comanda aberta.</div>'
+}
+
+function canCancelCashComanda(){
+ return !!authProfile && ['administrador','gerente'].includes(authProfile.perfil);
+}
+function cancelCashComanda(kind,id){
+ if(!canCancelCashComanda())return alert('Somente Administrador ou Gerente pode cancelar uma comanda pelo Caixa.');
+ let t=kind==='counter'?counterOrderById(id):state.tables.find(x=>x.id===Number(id));
+ if(!t||!(t.items&&t.items.length))return alert('Comanda não localizada ou vazia.');
+ let name=kind==='counter'?'Balcão '+ticketLabel(t.ticket):'Mesa '+String(t.id).padStart(2,'0');
+ let total=t.items.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||0),0);
+ window.cancelCashCtx={kind,id,name,total};
+ document.getElementById('modalContent').innerHTML=`<h2>🚫 Cancelar Comanda</h2><div class=panel><b>${esc(name)}</b><div class=big>${brl(total)}</div><div class=muted>${t.items.map(i=>`${i.qty}× ${esc(i.name)}`).join('<br>')}</div></div><label>Motivo do cancelamento</label><input id=cancelCashReason placeholder="Ex.: cliente desistiu, erro no pedido..."><label>Os produtos já foram produzidos?</label><select id=cancelCashProduced><option value="yes">SIM — registrar como perda e NÃO devolver ao estoque</option><option value="no">NÃO — devolver os itens ao estoque</option></select><div class=panel style="border:1px solid #b71c1c"><b>Atenção</b><div class=muted>O cancelamento ficará registrado com operador, data, motivo, itens e valor. A comanda não entrará no faturamento.</div></div><div class=sheet-actions><button class=btn onclick=closeModal()>Voltar</button><button class="btn danger" onclick=confirmCancelCashComanda()>CONFIRMAR CANCELAMENTO</button></div>`;
+ document.getElementById('modal').classList.remove('hide');
+ setTimeout(()=>(document.getElementById('cancelCashReason')&&document.getElementById('cancelCashReason').focus()),100);
+}
+async function confirmCancelCashComanda(){
+ let c=window.cancelCashCtx;if(!c)return;
+ if(!canCancelCashComanda())return alert('Seu perfil não possui permissão para esta operação.');
+ let reason=((document.getElementById('cancelCashReason')&&document.getElementById('cancelCashReason').value)||'').trim();
+ let produced=(document.getElementById('cancelCashProduced')&&document.getElementById('cancelCashProduced').value)==='yes';
+ if(!reason)return alert('Informe o motivo do cancelamento.');
+ let t=c.kind==='counter'?counterOrderById(c.id):state.tables.find(x=>x.id===Number(c.id));
+ if(!t||!(t.items&&t.items.length))return alert('Esta comanda já foi fechada ou cancelada.');
+ let at=new Date().toISOString(),items=t.items.map(x=>({...x})),total=items.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||0),0);
+ state.cancellations=state.cancellations||[];
+ state.cancellations.push({id:Date.now(),type:'comanda_total',at,table:c.name,total,reason,produced,operator:state.activeOperator,items});
+ if(produced){
+   ensureInventory();
+   for(const it of items){
+     for(const k of (it.stockComponents||[stockKey(it.name)])){
+       let inv=state.inventory.items[k];if(!inv||inv.track===false)continue;
+       let q=Number(it.qty||0),before=Number(inv.qty||0);
+       state.inventory.movements.push({at,type:'perda',key:k,qty:-q,before,after:before,unitCost:Number(inv.cost||0),value:q*Number(inv.cost||0),operator:state.activeOperator,reason:'Cancelamento de comanda já produzida • '+reason,reference:c.name});
+     }
+   }
+ }else{
+   items.forEach(it=>inventoryReturn(it,'Cancelamento de comanda não produzida • '+reason));
+ }
+ if(c.kind==='counter')state.counterQueue=(state.counterQueue||[]).filter(x=>Number(x.id)!==Number(c.id));
+ else{t.items=[];t.orders=[];t.status='livre';}
+ localStorage.setItem('algarobaState',JSON.stringify(state));
+ try{
+   if(cloudReady){
+     clearTimeout(cloudTimer);
+     let keys=c.kind==='counter'?['inventory','meta']:['table:'+c.id,'inventory','meta'];
+     let rows=stateRecords(state).filter(r=>keys.includes(r.record_key)).map(r=>({...r,updated_at:new Date().toISOString()}));
+     await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify(rows)});
+     for(let r of rows)cloudSnapshot[r.record_key]=JSON.stringify(r.data);
+     cloudLastError='';cloudFailures=0;setSyncStatus('online','ONLINE');
+   }
+ }catch(e){console.error(e);setSyncStatus('error','ERRO: TOQUE AQUI');alert('Cancelamento registrado neste aparelho, mas a sincronização online falhou.');}
+ window.cancelCashCtx=null;closeModal();renderCash();renderTables();if(!document.getElementById('cozinha').classList.contains('hide'))renderKitchen();
+ alert(produced?'Comanda cancelada. Valor retirado do Caixa e produtos registrados como PERDA.':'Comanda cancelada. Valor retirado do Caixa e itens devolvidos ao estoque.');
+}
+
+function openCash(){
+ let el=document.getElementById('openingValue'),v=parseFloat(String((el&&el.value)||0).replace(',','.'));
+ if(v<0||isNaN(v))return alert('Informe um valor válido.');
+ if(!confirm(`Confirmar abertura do caixa com ${brl(v)}?`))return;
+ state.cash.open=true;state.cash.openedAt=new Date().toISOString();state.cash.opening=v;state.cash.openedBy=state.activeOperator;state.cash.movements=[];save();renderCash()
+}
+function registerMovement(type){
+ if(!state.cash.open)return alert('Abra o caixa primeiro.');
+ let titles={entrada:'➕ Adicionar entrada',sangria:'💸 Registrar sangria',despesa:'🧾 Registrar despesa'};
+ let hints={entrada:'Dinheiro adicionado ao caixa',sangria:'Dinheiro retirado do caixa',despesa:'Pagamento ou gasto feito com dinheiro do caixa'};
+ document.getElementById('modalContent').innerHTML=`<h2>${titles[type]}</h2><p class=muted>${hints[type]}</p><label>Valor</label><input id=cashMoveValue type=number inputmode=decimal step=.01 min=.01 placeholder="R$ 0,00"><label>Motivo / descrição</label><input id=cashMoveNote placeholder="Ex.: troco, compra de gelo, retirada..."><div class=sheet-actions><button class=btn onclick=closeModal()>Cancelar</button><button class="btn primary" onclick="confirmCashMovement('${type}')">CONFIRMAR</button></div>`;
+ document.getElementById('modal').classList.remove('hide');setTimeout(()=>(document.getElementById('cashMoveValue')&&document.getElementById('cashMoveValue').focus()),100)
+}
+function confirmCashMovement(type){
+ let v=parseFloat(String((document.getElementById('cashMoveValue')&&document.getElementById('cashMoveValue').value)||'').replace(',','.')),note=((document.getElementById('cashMoveNote')&&document.getElementById('cashMoveNote').value)||'').trim();
+ if(!v||v<=0)return alert('Informe um valor válido.');
+ if(!note)return alert('Informe o motivo da movimentação.');
+ state.cash.movements.push({type,value:v,note,operator:state.activeOperator,at:new Date().toISOString()});save();closeModal();renderCash()
+}
+let payCtx=null,payments=[];function paymentModalCounter(id){let t=counterOrderById(id);if(!t||!(t.items&&t.items.length))return alert('Pedido de balcão não localizado.');let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0);payCtx={name:'Balcão '+ticketLabel(t.ticket),tableId:'counterQueue',counterId:t.id,ticket:t.ticket,sum};payments=[];renderPaymentModal()}function paymentModal(name){let tableId=name==='Balcão'?'counter':Number(name.replace(/\D/g,''));let t=tableId==='counter'?state.counter:state.tables.find(x=>x.id===tableId);if(!t||!t.items||!t.items.length)return alert('Comanda não localizada ou vazia.');let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0);payCtx={name,tableId,sum};payments=[];renderPaymentModal()}function renderPaymentModal(){let paid=payments.reduce((a,p)=>a+p.value,0),remaining=Math.max(0,payCtx.sum-paid);document.getElementById('modalContent').innerHTML=`<h2>💳 ${payCtx.name}</h2><div class=big>Total ${brl(payCtx.sum)}</div><div class=panel><div class=muted>Pago</div><b>${brl(paid)}</b><div class=muted>Falta</div><div class=big>${brl(remaining)}</div></div>${payments.map((p,i)=>`<div class=cart-row><span>${p.method}</span><b>${brl(p.value)} <button onclick="removePayment(${i})">×</button></b></div>`).join('')}<select id=payMethod><option>Pix</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option></select><input id=payValue type=number step=.01 min=.01 value='${remaining.toFixed(2)}'><button class=btn onclick=addPayment()>+ ADICIONAR PAGAMENTO</button><div class=sheet-actions><button class=btn onclick=closeModal()>Cancelar</button>${(payCtx.tableId==='counter'||payCtx.tableId==='counterQueue')?`<button class="btn" onclick=openInternalWithdrawal()>👤 CONSUMO / RETIRADA</button>`:''}<button class="btn primary" onclick=finishPayment()>FINALIZAR VENDA</button></div>`;document.getElementById('modal').classList.remove('hide')}function addPayment(){let v=parseFloat(document.getElementById('payValue').value),remaining=payCtx.sum-payments.reduce((a,p)=>a+p.value,0);if(!v||v<=0)return alert('Informe um valor válido.');if(v>remaining+.009)return alert('O valor ultrapassa o restante da conta.');payments.push({method:document.getElementById('payMethod').value,value:v});renderPaymentModal()}function removePayment(i){payments.splice(i,1);renderPaymentModal()}async function finishPayment(){
+if(!payCtx)return alert('Conta não localizada.');
+let paid=payments.reduce((a,p)=>a+p.value,0),remaining=payCtx.sum-paid;
+if(remaining>.01){let elV=document.getElementById('payValue'),elM=document.getElementById('payMethod'),v=elV?parseFloat(elV.value):0;if(v>0&&Math.abs(v-remaining)<=.01){payments.push({method:elM?elM.value:'Não informado',value:remaining});paid=payments.reduce((a,p)=>a+p.value,0);remaining=payCtx.sum-paid}}
+if(Math.abs(remaining)>.01)return alert('Ainda faltam '+brl(Math.max(0,remaining))+' para fechar a conta. Adicione o pagamento restante.');
+/* IMPORTANTE: resolve a mesa novamente no estado ATUAL. O polling online pode substituir o objeto state enquanto a tela de pagamento está aberta. */
+let t=payCtx.tableId==='counterQueue'?counterOrderById(payCtx.counterId):(payCtx.tableId==='counter'?state.counter:state.tables.find(x=>x.id===payCtx.tableId));
+if(!t||!t.items||!t.items.length)return alert('Esta comanda já foi fechada ou está vazia.');
+let liveTotal=t.items.reduce((a,x)=>a+x.price*x.qty,0);
+if(Math.abs(liveTotal-payCtx.sum)>.01)return alert('A comanda mudou enquanto o pagamento estava aberto. Feche esta tela e abra a conta novamente.');
+let closed={closedAt:new Date().toISOString(),name:payCtx.name,ticket:payCtx.ticket||null,payment:payments.length===1?payments[0].method:'Dividido',payments:payments.map(x=>({...x})),total:liveTotal,operator:state.activeOperator,items:t.items.map(x=>({...x}))};
+state.revenue=(state.revenue||0)+liveTotal;state.history=state.history||[];state.history.push(closed);
+if(payCtx.tableId==='counterQueue')state.counterQueue=state.counterQueue.filter(x=>x.id!==payCtx.counterId);else{t.items=[];t.orders=[];t.status='livre'};
+localStorage.setItem('algarobaState',JSON.stringify(state));
+/* Grava diretamente a mesa liberada + meta da venda antes de permitir novo pull do servidor. */
+try{
+ if(cloudReady){
+   clearTimeout(cloudTimer);
+   let keys=payCtx.tableId==='counterQueue'?['meta']:[payCtx.tableId==='counter'?'counter':'table:'+payCtx.tableId,'meta'];
+   let rows=stateRecords(state).filter(r=>keys.includes(r.record_key)).map(r=>({...r,updated_at:new Date().toISOString()}));
+   await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify(rows)});
+   for(let r of rows)cloudSnapshot[r.record_key]=JSON.stringify(r.data);
+   cloudLastError='';cloudFailures=0;setSyncStatus('online','ONLINE');
+ }
+}catch(e){cloudLastError=e.message||String(e);console.error(e);setSyncStatus('error','ERRO: TOQUE AQUI');alert('A venda foi finalizada neste aparelho, mas a sincronização online falhou. A mesa continuará livre localmente.');}
+let wasCounterQueue=payCtx.tableId==='counterQueue';payCtx=null;payments=[];closeModal();renderCash();renderTables();alert(wasCounterQueue?'Venda de balcão finalizada com sucesso!':'Venda finalizada com sucesso! Mesa liberada.');
+}
+
+function internalBalance(person){
+ let w=((state.internalAccounts&&state.internalAccounts.withdrawals)||[]).filter(x=>x.person===person).reduce((a,x)=>a+Number(x.total||0),0);
+ let p=((state.internalAccounts&&state.internalAccounts.settlements)||[]).filter(x=>x.person===person).reduce((a,x)=>a+Number(x.value||0),0);
+ return Math.max(0,w-p)
+}
+function internalPeople(){
+ let names=new Set();
+ ((state.internalAccounts&&state.internalAccounts.withdrawals)||[]).forEach(x=>names.add(x.person));
+ ((state.internalAccounts&&state.internalAccounts.settlements)||[]).forEach(x=>names.add(x.person));
+ return [...names].sort((a,b)=>a.localeCompare(b,'pt-BR'))
+}
+function renderInternalSummary(){
+ let box=document.getElementById('internalAccountsSummary');if(!box)return;
+ let people=internalPeople().filter(p=>internalBalance(p)>.009);
+ box.innerHTML=people.map(p=>`<div class=cart-row><span>${esc(p)}</span><b>${brl(internalBalance(p))}</b></div>`).join('')||'<div class=muted>✅ Nenhum saldo pendente.</div>'
+}
+function openInternalWithdrawal(){
+ if(!payCtx||!['counter','counterQueue'].includes(payCtx.tableId))return alert('A retirada interna deve ser lançada pelo Balcão / Retirada.');
+ let t=payCtx.tableId==='counterQueue'?counterOrderById(payCtx.counterId):state.counter;if(!(t.items&&t.items.length))return alert('O Balcão está vazio.');
+ document.getElementById('modalContent').innerHTML=`<h2>👤 Consumo / Retirada Interna</h2><div class=panel><div class=muted>Valor dos produtos</div><div class=big>${brl(payCtx.sum)}</div><div class=muted>Os itens já foram enviados e baixados do estoque. Este fechamento não entra como venda recebida.</div></div><label>Quem retirou / consumiu?</label><input id=internalPerson placeholder="Ex.: Pablo, Cláudia..." value="${esc(state.activeOperator||'')}"><label>Observação (opcional)</label><input id=internalNote placeholder="Ex.: consumo pessoal, almoço, filhos..."><div class=sheet-actions><button class=btn onclick=renderPaymentModal()>Voltar</button><button class="btn primary" onclick=confirmInternalWithdrawal()>CONFIRMAR RETIRADA</button></div>`;
+ document.getElementById('modal').classList.remove('hide')
+}
+async function confirmInternalWithdrawal(){
+ let person=((document.getElementById('internalPerson')&&document.getElementById('internalPerson').value)||'').trim(),note=((document.getElementById('internalNote')&&document.getElementById('internalNote').value)||'').trim();
+ if(!person)return alert('Informe quem fez a retirada.');
+ let t=state.counter;if(!(t.items&&t.items.length))return alert('O Balcão já está vazio.');
+ let liveTotal=t.items.reduce((a,x)=>a+x.price*x.qty,0);
+ if(Math.abs(liveTotal-payCtx.sum)>.01)return alert('A comanda mudou. Volte e abra novamente.');
+ state.internalAccounts=state.internalAccounts||{withdrawals:[],settlements:[]};
+ state.internalAccounts.withdrawals.push({id:Date.now(),at:new Date().toISOString(),person,note,ticket:payCtx.ticket||null,total:liveTotal,operator:state.activeOperator,items:t.items.map(x=>({...x}))});
+ if(payCtx.tableId==='counterQueue')state.counterQueue=state.counterQueue.filter(x=>x.id!==payCtx.counterId);else{t.items=[];t.orders=[];t.status='livre'};
+ localStorage.setItem('algarobaState',JSON.stringify(state));
+ try{
+  if(cloudReady){
+   clearTimeout(cloudTimer);
+   let wanted=payCtx.tableId==='counterQueue'?['meta']:['counter','meta'];let rows=stateRecords(state).filter(r=>wanted.includes(r.record_key)).map(r=>({...r,updated_at:new Date().toISOString()}));
+   await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify(rows)});
+   rows.forEach(r=>cloudSnapshot[r.record_key]=JSON.stringify(r.data));setSyncStatus('online','ONLINE')
+  }
+ }catch(e){cloudLastError=e.message||String(e);setSyncStatus('error','ERRO: TOQUE AQUI');alert('Retirada registrada neste aparelho, mas a sincronização online falhou.');}
+ payCtx=null;payments=[];closeModal();renderCash();renderTables();alert(`Retirada registrada para ${person}.\nSaldo pendente: ${brl(internalBalance(person))}`)
+}
+function openInternalAccounts(){
+ let people=internalPeople(),rows=people.map(p=>{let b=internalBalance(p);return `<div class=panel><div class=cart-row><span><b>${esc(p)}</b></span><b>${brl(b)}</b></div><button class="btn primary" ${b<=.009?'disabled':''} onclick="openInternalSettlement('${encodeURIComponent(p)}')">RECEBER / ACERTAR</button></div>`}).join('');
+ let hist=((state.internalAccounts&&state.internalAccounts.withdrawals)||[]).slice().reverse().slice(0,15).map(x=>`<div class=cart-row><span>${esc(x.person)}<div class=muted>${new Date(x.at).toLocaleString('pt-BR')} • ${esc(x.note||'Consumo/retirada')}</div></span><b>${brl(x.total)}</b></div>`).join('');
+ document.getElementById('modalContent').innerHTML=`<h2>👥 Contas Internas</h2>${rows||'<div class=panel>Não há contas internas.</div>'}<h3>Últimas retiradas</h3>${hist||'<div class=muted>Nenhuma retirada registrada.</div>'}<div class=sheet-actions><button class=btn onclick=closeModal()>Fechar</button></div>`;
+ document.getElementById('modal').classList.remove('hide')
+}
+function openInternalSettlement(encoded){
+ let person=decodeURIComponent(encoded),balance=internalBalance(person);
+ document.getElementById('modalContent').innerHTML=`<h2>💰 Acertar Conta Interna</h2><div class=panel><b>${esc(person)}</b><div class=muted>Saldo pendente</div><div class=big>${brl(balance)}</div></div><label>Valor recebido</label><input id=settleValue type=number inputmode=decimal step=.01 min=.01 max="${balance.toFixed(2)}" value="${balance.toFixed(2)}"><label>Forma de pagamento</label><select id=settleMethod><option>Pix</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option></select><div class=sheet-actions><button class=btn onclick=openInternalAccounts()>Voltar</button><button class="btn primary" onclick="confirmInternalSettlement('${encodeURIComponent(person)}')">CONFIRMAR RECEBIMENTO</button></div>`;
+}
+async function confirmInternalSettlement(encoded){
+ if(!state.cash.open)return alert('Abra o caixa antes de receber uma conta interna.');
+ let person=decodeURIComponent(encoded),balance=internalBalance(person),v=parseFloat((document.getElementById('settleValue')&&document.getElementById('settleValue').value)),method=(document.getElementById('settleMethod')&&document.getElementById('settleMethod').value);
+ if(!v||v<=0)return alert('Informe um valor válido.');if(v>balance+.009)return alert('O valor é maior que o saldo pendente.');
+ let rec={id:Date.now(),at:new Date().toISOString(),person,value:v,method,operator:state.activeOperator};
+ state.internalAccounts.settlements.push(rec);
+ if(method==='Dinheiro')state.cash.movements.push({type:'entrada',value:v,note:'Acerto conta interna • '+person,operator:state.activeOperator,at:rec.at,internalSettlement:true});
+ localStorage.setItem('algarobaState',JSON.stringify(state));
+ try{
+  if(cloudReady){
+   clearTimeout(cloudTimer);let row=stateRecords(state).find(r=>r.record_key==='meta');row={...row,updated_at:new Date().toISOString()};
+   await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify([row])});cloudSnapshot.meta=JSON.stringify(row.data);setSyncStatus('online','ONLINE')
+  }
+ }catch(e){cloudLastError=e.message||String(e);setSyncStatus('error','ERRO: TOQUE AQUI');alert('Recebimento salvo neste aparelho, mas a sincronização online falhou.');}
+ renderCash();openInternalAccounts();alert(`Recebimento registrado.\nSaldo de ${person}: ${brl(internalBalance(person))}`)
+}
+function closeCash(){
+ if(!state.cash.open)return alert('O caixa já está fechado.');
+ let expected=expectedCash(),bp=cashByPayment(),mt=cashMoveTotals();
+ document.getElementById('modalContent').innerHTML=`<h2>🔒 Fechar Caixa</h2>
+ <div class=panel><div class=cart-row><span>Abertura</span><b>${brl(state.cash.opening||0)}</b></div><div class=cart-row><span>Vendas do turno</span><b>${brl(cashSales())}</b></div><div class=cart-row><span>Entradas</span><b>${brl(mt.entries)}</b></div><div class=cart-row><span>Saídas / sangrias</span><b>${brl(mt.outflows)}</b></div><div class=cart-row><span>Esperado em dinheiro</span><b>${brl(expected)}</b></div></div>
+ <label>Quanto você contou fisicamente em dinheiro?</label><input id=cashCounted type=number inputmode=decimal step=.01 min=0 placeholder="R$ 0,00" oninput=previewCashDifference()>
+ <div id=cashDiffPreview class=panel><div class=muted>Informe o valor contado para conferir a diferença.</div></div>
+ <div class=sheet-actions><button class=btn onclick=closeModal()>Cancelar</button><button class="btn primary" onclick=confirmCloseCash()>CONFIRMAR FECHAMENTO</button></div>`;
+ document.getElementById('modal').classList.remove('hide')
+}
+function previewCashDifference(){
+ let raw=(document.getElementById('cashCounted')&&document.getElementById('cashCounted').value),counted=parseFloat(String(raw||'').replace(',','.')),box=document.getElementById('cashDiffPreview');
+ if(isNaN(counted)){box.innerHTML='<div class=muted>Informe o valor contado para conferir a diferença.</div>';return}
+ let diff=counted-expectedCash(),label=Math.abs(diff)<.005?'✅ CAIXA CERTO':diff>0?'⚠️ SOBRA':'⚠️ FALTA';
+ box.innerHTML=`<div class=muted>${label}</div><div class=big>${brl(diff)}</div>`
+}
+async function confirmCloseCash(){
+ if(!state.cash.open)return alert('O caixa já está fechado.');
+ let raw=(document.getElementById('cashCounted')&&document.getElementById('cashCounted').value),counted=parseFloat(String(raw||'').replace(',','.'));
+ if(isNaN(counted)||counted<0)return alert('Informe o valor contado.');
+ let expected=expectedCash(),diff=counted-expected,bp=cashByPayment();
+ if(!confirm(`Fechar o caixa?\n\nEsperado: ${brl(expected)}\nContado: ${brl(counted)}\nDiferença: ${brl(diff)}`))return;
+ let closure={closedAt:new Date().toISOString(),openedAt:state.cash.openedAt,openedBy:state.cash.openedBy||'Não identificado',closedBy:state.activeOperator,opening:state.cash.opening,sales:cashSales(),byPayment:bp,expected,counted,difference:diff,movements:(state.cash.movements||[]).map(x=>({...x}))};
+ state.cash.closures=state.cash.closures||[];state.cash.closures.push(closure);window.lastCashClosure=closure;
+ state.cash.open=false;state.cash.openedAt=null;state.cash.openedBy=null;state.cash.opening=0;state.cash.movements=[];
+ localStorage.setItem('algarobaState',JSON.stringify(state));
+ try{
+   if(cloudReady){
+     clearTimeout(cloudTimer);
+     let metaRow=stateRecords(state).find(r=>r.record_key==='meta');
+     let row={...metaRow,updated_at:new Date().toISOString()};
+     await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify([row])});
+     cloudSnapshot['meta']=JSON.stringify(metaRow.data);cloudLastError='';cloudFailures=0;setSyncStatus('online','ONLINE');
+   }else save();
+ }catch(e){
+   cloudLastError=e.message||String(e);console.error(e);setSyncStatus('error','ERRO: TOQUE AQUI');
+   alert('O caixa foi fechado neste aparelho, mas a sincronização online falhou. Não reabra até a conexão voltar ao ONLINE.');
+ }
+ closeModal();renderCash();renderReports();
+ showCashClosureShare(closure);
+}
+
+function closureReportText(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0);return `ALGAROBA SHAKES GRILLS
+FECHAMENTO DE CAIXA
+Data: ${d.toLocaleDateString('pt-BR')}
+Turno: ${new Date(c.openedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+Operador: ${c.closedBy||'-'}
+
+Abertura: ${brl(c.opening||0)}
+Vendas: ${brl(c.sales||0)}
+Dinheiro: ${brl(bp.Dinheiro||0)}
+Pix: ${brl(bp.Pix||0)}
+Débito: ${brl(bp['Débito']||0)}
+Crédito: ${brl(bp['Crédito']||0)}
+Entradas: ${brl(en)}
+Saídas/Sangrias: ${brl(sa)}
+
+Esperado em dinheiro: ${brl(c.expected||0)}
+Contado: ${brl(c.counted||0)}
+Diferença: ${brl(df)}
+Situação: ${Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA'}`}
+
+function closureReportHTML(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0),st=Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA';let rows=[['Abertura',brl(c.opening||0)],['Vendas',brl(c.sales||0)],['Dinheiro',brl(bp.Dinheiro||0)],['Pix',brl(bp.Pix||0)],['Débito',brl(bp['Débito']||0)],['Crédito',brl(bp['Crédito']||0)],['Entradas',brl(en)],['Saídas/Sangrias',brl(sa)]];return `<!doctype html><html><head><meta charset=utf-8><title>Fechamento Algaroba</title><style>body{font-family:Arial,sans-serif;color:#222;max-width:720px;margin:30px auto;padding:20px}h1{font-size:24px;margin-bottom:2px}.sub{color:#666}.r{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:9px 0}.box{border:2px solid #222;padding:14px;margin-top:20px}.big{font-size:20px;font-weight:bold}@media print{body{margin:0}}</style></head><body><h1>ALGAROBA SHAKES GRILLS</h1><div class=sub>Relatório de Fechamento de Caixa</div><p><b>Data:</b> ${d.toLocaleDateString('pt-BR')}<br><b>Turno:</b> ${new Date(c.openedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}<br><b>Operador:</b> ${esc(c.closedBy||'-')}</p>${rows.map(x=>`<div class=r><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}<div class=box><div class=r><span>Esperado em dinheiro</span><b>${brl(c.expected||0)}</b></div><div class=r><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class="r big"><span>Diferença</span><b>${brl(df)}</b></div><p><b>${st}</b></p></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`}
+
+function showCashClosureShare(c){window.lastCashClosure=c;let df=Number(c.difference||0),st=Math.abs(df)<.005?'✅ CAIXA CERTO':df>0?'⚠️ SOBRA':'⚠️ FALTA';document.getElementById('modalContent').innerHTML=`<h2>✅ Caixa fechado com sucesso</h2><div class=panel><div class=cart-row><span>Operador</span><b>${esc(c.closedBy||'-')}</b></div><div class=cart-row><span>Vendas</span><b>${brl(c.sales||0)}</b></div><div class=cart-row><span>Esperado</span><b>${brl(c.expected||0)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class=cart-row><span>${st}</span><b>${brl(df)}</b></div></div><p class=muted>Envie o fechamento ao administrativo sem acessar a Central de Relatórios.</p><button class="btn primary" style="width:100%;margin:6px 0" onclick=generateClosurePDF()>📄 GERAR PDF</button><button class="btn primary" style="width:100%;margin:6px 0" onclick=shareClosureWhatsApp()>📲 ENVIAR PELO WHATSAPP</button><button class=btn style="width:100%;margin-top:6px" onclick=closeModal()>CONCLUIR</button>`;document.getElementById('modal').classList.remove('hide')}
+
+function generateClosurePDF(){let c=window.lastCashClosure;if(!c)return alert('Fechamento não localizado.');let w=window.open('','_blank');if(!w)return alert('Permita pop-ups no navegador e tente novamente.');w.document.write(closureReportHTML(c));w.document.close()}
+
+async function shareClosureWhatsApp(){let c=window.lastCashClosure;if(!c)return alert('Fechamento não localizado.');let t=closureReportText(c);if(navigator.share){try{await navigator.share({title:'Fechamento de Caixa - Algaroba',text:t});return}catch(e){if(e.name==='AbortError')return}}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
+function stockKey(name){
+ let full=String(name||'').trim();
+ if(full.startsWith('KS 290 ml • '))return full;
+ if(full.startsWith('Refrigerante 1 L • '))return full;
+ if(full.startsWith('Suco 400 ml • ')){
+   let parts=full.split(' • ');
+   return parts.slice(0,2).join(' • ');
+ }
+ let n=full.split(' • ')[0].trim();
+ if(n.startsWith('Shake 300 ml'))return 'Shake 300 ml';
+ if(n.startsWith('Shake 500 ml'))return 'Shake 500 ml';
+ return n
+}
+function inventoryCatalog(){
+ let out=[];
+ const add=(key,cat,price)=>{if(!out.some(x=>x.key===key))out.push({key,cat,price})};
+ const ks=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja','Guaraná Kuat','Sprite','Schweppes'];
+ const litro=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja'];
+ const sucos=['Acerola','Cajá','Uva','Mangaba','Maracujá','Goiaba','Caju','Manga','Graviola','Tamarindo'];
+ for(const [cat,arr] of Object.entries(catalog)){
+   for(const p of arr){
+     let k=p[0],price=p[1];
+     if(cat==='Bebidas'&&k==='KS 290 ml'){ks.forEach(v=>add('KS 290 ml • '+v,cat,price));continue}
+     if(cat==='Bebidas'&&k==='Refrigerante 1 L'){litro.forEach(v=>add('Refrigerante 1 L • '+v,cat,price));continue}
+     if(cat==='Bebidas'&&k==='Suco 400 ml'){sucos.forEach(v=>add('Suco 400 ml • '+v,cat,v==='Maracujá'?7:price));continue}
+     add(k,cat,price)
+   }
+ }
+ return out
+}
+function ensureInventory(){state.inventory=state.inventory||{items:{},movements:[]};state.inventory.items=state.inventory.items||{};state.inventory.movements=state.inventory.movements||[];for(const p of inventoryCatalog()){if(!state.inventory.items[p.key])state.inventory.items[p.key]={qty:0,cost:0,min:0,track:true,category:p.cat};else state.inventory.items[p.key].category=state.inventory.items[p.key].category||p.cat}}
+function addInvMovement(type,key,delta,reason,before,after,cost){state.inventory.movements.push({at:new Date().toISOString(),type,key,qty:Number(delta||0),before:Number(before||0),after:Number(after||0),unitCost:Number(cost||0),value:Math.abs(Number(delta||0))*Number(cost||0),operator:state.activeOperator,reason:reason||''})}
+function inventoryConsume(it){ensureInventory();for(const k of (it.stockComponents||[stockKey(it.name)])){let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=-Number(it.qty||0);x.qty=before+delta;addInvMovement('saida',k,delta,'Venda / pedido enviado',before,x.qty,x.cost)}}
+function inventoryReturn(it,reason){ensureInventory();for(const k of (it.stockComponents||[stockKey(it.name)])){let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=Number(it.qty||0);x.qty=before+delta;addInvMovement('retorno',k,delta,reason||'Retorno',before,x.qty,x.cost)}}
+async function saveInventoryNow(){localStorage.setItem('algarobaState',JSON.stringify(state));if(!cloudReady)return;cloudPausePullUntil=Date.now()+5000;let row={record_key:'inventory',data:state.inventory||{items:{},movements:[]},updated_at:new Date().toISOString()};try{setSyncStatus('offline','SALVANDO ESTOQUE…');await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify([row])});cloudSnapshot['inventory']=JSON.stringify(row.data);setSyncStatus('online','ONLINE')}catch(e){cloudLastError=e.message||String(e);setSyncStatus('error','ERRO: TOQUE AQUI');throw e}finally{cloudPausePullUntil=Date.now()+2000}}
+async function editInventory(key){ensureInventory();let x=state.inventory.items[key];let q=prompt('Estoque atual de '+key+':',x.qty);if(q===null)return;let c=prompt('Custo unitário de '+key+' (R$):',x.cost);if(c===null)return;let m=prompt('Estoque mínimo para alerta:',x.min);if(m===null)return;q=parseFloat(String(q).replace(',','.'));c=parseFloat(String(c).replace(',','.'));m=parseFloat(String(m).replace(',','.'));if([q,c,m].some(Number.isNaN))return alert('Informe apenas valores numéricos.');let before=Number(x.qty||0),oldCost=Number(x.cost||0);x.qty=q;x.cost=c;x.min=m;x.track=true;addInvMovement('ajuste',key,q-before,'Cadastro/ajuste manual'+(oldCost!==c?' • custo '+brl(oldCost)+' → '+brl(c):''),before,q,c);localStorage.setItem('algarobaState',JSON.stringify(state));renderInventory();try{await saveInventoryNow();renderInventory();alert('Estoque atualizado e sincronizado: '+key)}catch(e){alert('O estoque foi salvo neste aparelho, mas houve erro ao sincronizar.')}}
+async function inventoryEntryFor(key){ensureInventory();let x=state.inventory.items[key];let q=parseFloat(String(prompt('➕ ENTRADA • '+key+'\nQuantidade recebida:')||'').replace(',','.'));if(!q||q<=0)return;let c=prompt('Custo unitário desta entrada (R$):',x.cost);if(c!==null&&c!==''){let nv=parseFloat(String(c).replace(',','.'));if(!Number.isNaN(nv))x.cost=nv}let before=Number(x.qty||0);x.qty=before+q;addInvMovement('entrada',key,q,'Entrada de estoque',before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Entrada registrada: +'+q+' • '+key)}catch(e){alert('Entrada salva neste aparelho, mas houve erro ao sincronizar.')}}
+async function inventoryLossFor(key){ensureInventory();let x=state.inventory.items[key],q=parseFloat(String(prompt('➖ PERDA • '+key+'\nQuantidade perdida/descartada:')||'').replace(',','.'));if(!q||q<=0)return;if(q>Number(x.qty||0)&&!confirm('A quantidade informada é maior que o saldo atual. Continuar?'))return;let reason=prompt('Motivo da perda (opcional):')||'Perda/descarte';let before=Number(x.qty||0);x.qty=Math.max(0,before-q);let realDelta=x.qty-before;addInvMovement('perda',key,realDelta,reason,before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Perda registrada: '+Math.abs(realDelta)+' • '+key)}catch(e){alert('Perda salva neste aparelho, mas houve erro ao sincronizar.')}}
+async function inventoryCountFor(key){ensureInventory();let x=state.inventory.items[key],q=prompt('⚖️ INVENTÁRIO • '+key+'\nQuantidade física contada:',x.qty);if(q===null)return;q=parseFloat(String(q).replace(',','.'));if(Number.isNaN(q)||q<0)return alert('Informe uma quantidade válida.');let before=Number(x.qty||0),delta=q-before;if(delta===0)return alert('O saldo já está correto.');x.qty=q;addInvMovement('ajuste',key,delta,'Contagem física de inventário',before,q,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Inventário atualizado: '+key+' • saldo '+q)}catch(e){alert('Ajuste salvo neste aparelho, mas houve erro ao sincronizar.')}}
+async function inventoryEntry(){ensureInventory();let keys=inventoryCatalog().map(x=>x.key);let key=prompt('Digite o nome exato do produto para entrada:\n\n'+keys.slice(0,25).join(' • ')+'\n...');if(!key)return;key=keys.find(k=>k.toLowerCase()===key.trim().toLowerCase());if(!key)return alert('Produto não encontrado. Use o nome exibido na aba Estoque.');let q=parseFloat(String(prompt('Quantidade recebida:')||'').replace(',','.'));if(!q||q<=0)return;let x=state.inventory.items[key],before=Number(x.qty||0);let c=prompt('Custo unitário desta entrada (R$):',x.cost);if(c!==null&&c!==''){let nv=parseFloat(String(c).replace(',','.'));if(!Number.isNaN(nv))x.cost=nv}x.qty=before+q;addInvMovement('entrada',key,q,'Entrada de estoque',before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Entrada registrada e sincronizada: +'+q+' '+key)}catch(e){alert('Entrada salva neste aparelho, mas houve erro ao sincronizar.')}}
+async function inventoryAdjustment(){ensureInventory();let key=prompt('Produto a ajustar/perda:');if(!key)return;let real=Object.keys(state.inventory.items).find(k=>k.toLowerCase()===key.trim().toLowerCase());if(!real)return alert('Produto não encontrado.');let d=parseFloat(String(prompt('Quantidade do ajuste. Use negativo para perda (ex.: -3) ou positivo para acréscimo:')||'').replace(',','.'));if(!d||Number.isNaN(d))return;let reason=prompt('Motivo do ajuste/perda:')||'Ajuste manual',x=state.inventory.items[real],before=Number(x.qty||0);x.qty=before+d;addInvMovement(d<0?'perda':'ajuste',real,d,reason,before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert((d<0?'Perda':'Ajuste')+' registrado e sincronizado.')}catch(e){alert('Ajuste salvo neste aparelho, mas houve erro ao sincronizar.')}}
+function renderInventoryHistory(){let el=document.getElementById('inventoryHistory');if(!el)return;let type=(document.getElementById('invMoveType')&&document.getElementById('invMoveType').value)||'',search=((document.getElementById('invMoveSearch')&&document.getElementById('invMoveSearch').value)||'').trim().toLowerCase();let ms=((state.inventory&&state.inventory.movements)||[]).slice().reverse().filter(m=>(!type||m.type===type)&&(!search||String(m.key||'').toLowerCase().includes(search))).slice(0,100);let labels={entrada:'📥 Entrada',saida:'🛒 Venda',perda:'🗑️ Perda',ajuste:'⚖️ Ajuste',retorno:'↩️ Retorno'};el.innerHTML=ms.map(m=>`<div class=cart-row><span><b>${labels[m.type]||m.type} • ${m.key}</b><div class=muted>${new Date(m.at).toLocaleString('pt-BR')} • 👤 ${m.operator||'Não identificado'}<br>${m.reason||''}${m.before!==undefined?` • saldo ${Number(m.before)} → ${Number(m.after)}`:''}</div></span><span style='text-align:right'><b>${Number(m.qty)>0?'+':''}${Number(m.qty||0)}</b>${m.unitCost?`<div class=muted>${brl(m.value||0)}</div>`:''}</span></div>`).join('')||'<div class=muted>Nenhuma movimentação encontrada.</div>'}
+function renderInventory(){ensureInventory();let rows=inventoryCatalog(),low=rows.filter(p=>{let x=state.inventory.items[p.key];return x.track!==false&&Number(x.qty||0)<=Number(x.min||0)}),value=rows.reduce((a,p)=>{let x=state.inventory.items[p.key];return a+Number(x.qty||0)*Number(x.cost||0)},0),loss=(state.inventory.movements||[]).filter(m=>m.type==='perda').reduce((a,m)=>a+Number(m.value||Math.abs(Number(m.qty||0))*Number(m.unitCost||0)),0);let sum=document.getElementById('inventorySummary');if(!sum)return;sum.innerHTML=`<div class=grid><div class=panel><div class=muted>Itens cadastrados</div><div class=big>${rows.length}</div></div><div class=panel><div class=muted>Alertas de estoque</div><div class=big>${low.length}</div></div><div class=panel><div class=muted>Valor estimado em estoque</div><div class=big>${brl(value)}</div></div><div class=panel><div class=muted>Perdas registradas</div><div class=big>${brl(loss)}</div></div></div>`;let groups={};rows.forEach(p=>(groups[p.cat]=groups[p.cat]||[]).push(p));document.getElementById('inventoryList').innerHTML=Object.entries(groups).map(([cat,ps])=>`<h3>${cat}</h3><div class=panel>${ps.map(p=>{let x=state.inventory.items[p.key],alerta=Number(x.qty||0)<=Number(x.min||0);let margin=p.price?((p.price-Number(x.cost||0))/p.price*100):0;return `<div class=cart-row><span><b>${p.key}</b><div class=muted>${alerta?'⚠️ ESTOQUE BAIXO • ':''}Saldo ${Number(x.qty||0)} • mínimo ${Number(x.min||0)}<br>Custo ${brl(Number(x.cost||0))} • Venda ${brl(p.price)} • Margem bruta ${margin.toFixed(1).replace('.',',')}%</div></span><span style='display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end'><button class=mini title='Entrada' aria-label='Entrada' onclick='inventoryEntryFor(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>➕</button><button class=mini title='Perda' aria-label='Perda' onclick='inventoryLossFor(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>➖</button><button class=mini title='Inventário' aria-label='Inventário' onclick='inventoryCountFor(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>⚖️</button><button class=mini title='Cadastro' aria-label='Cadastro' onclick='editInventory(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>⚙️</button></span></div>`}).join('')}</div>`).join('');renderInventoryHistory()}
+
+function hourBand(value){
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime())) return 'Outros horários';
+  const mins=d.getHours()*60+d.getMinutes();
+  if(mins>=420 && mins<=720) return '07:00–12:00';
+  if(mins>=721 && mins<=1020) return '12:01–17:00';
+  if(mins>=1021 && mins<=1439) return '17:01–23:59';
+  return 'Outros horários';
+}
+
+function renderReports(){reportPeriodChange();generateFilteredReport()}
+
+function reportItemBaseName(name){return String(name||'').split(' • Obs:')[0].trim()}
+function reportCategory(name){let base=reportItemBaseName(name);for(const [cat,arr] of Object.entries(catalog||{})){if((arr||[]).some(p=>p[0]===base))return cat}if(base.startsWith('Shake '))return 'Shakes';return 'Outros'}
+function reportUnitCost(item){if(item&&Number.isFinite(Number(item.unitCostAtSale)))return Number(item.unitCostAtSale);if(item&&Number.isFinite(Number(item.costAtSale)))return Number(item.costAtSale);let key=stockKey((item&&item.name)||'');return Number((state.inventory&&state.inventory.items&&state.inventory.items[key]&&state.inventory.items[key].cost)||0)}
+function performanceData(history){let items={},cats={},flavors={};for(const sale of (history||[])){for(const it of (sale.items||[])){let name=reportItemBaseName(it.name),qty=Number(it.qty||0),rev=Number(it.price||0)*qty,cat=reportCategory(name);if(!items[name])items[name]={name,qty:0,revenue:0};items[name].qty+=qty;items[name].revenue+=rev;if(!cats[cat])cats[cat]={name:cat,qty:0,revenue:0};cats[cat].qty+=qty;cats[cat].revenue+=rev;if(name.startsWith('Shake ')){let flavor=String(it.flavor||'').trim();if(!flavor){let m=String(it.name||'').match(/(?:•|-)\s*([^•]+?)(?:\s*•\s*Obs:|$)/);flavor=m?m[1].trim():''}if(flavor){if(!flavors[flavor])flavors[flavor]={name:flavor,qty:0,revenue:0};flavors[flavor].qty+=qty;flavors[flavor].revenue+=rev}}}}return{items:Object.values(items).sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue),cats:Object.values(cats).sort((a,b)=>b.revenue-a.revenue),flavors:Object.values(flavors).sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue)}}
+function perfRows(rows,limit){let a=(rows||[]).slice(0,limit||999);return a.map((x,i)=>`<div class=cart-row><span><b>${i+1}. ${x.name}</b><div class=muted>${Number(x.qty||0)} un.</div></span><b>${brl(Number(x.revenue||0))}</b></div>`).join('')||'<div class=muted>Sem vendas no período.</div>'}
+function categoryRows(rows){let total=(rows||[]).reduce((a,x)=>a+Number(x.revenue||0),0);return (rows||[]).map(x=>`<div class=panel><div class=cart-row><b>${x.name}</b><b>${brl(Number(x.revenue||0))}</b></div><div class=muted>${Number(x.qty||0)} item(ns) • ${total?(Number(x.revenue||0)/total*100).toFixed(1).replace('.',','):'0,0'}% do faturamento</div></div>`).join('')||'<div class=muted>Sem vendas no período.</div>'}
+function dailyComparison(history){let days={};for(const v of (history||[])){let d=new Date(v.closedAt);if(isNaN(d))continue;let k=d.toLocaleDateString('pt-BR');if(!days[k])days[k]={date:d,total:0,count:0};days[k].total+=Number(v.total||0);days[k].count++}return Object.values(days).sort((a,b)=>b.date-a.date).slice(0,7).map(x=>`<div class=cart-row><span><b>${x.date.toLocaleDateString('pt-BR')}</b><div class=muted>${x.count} venda(s) • Ticket ${brl(x.count?x.total/x.count:0)}</div></span><b>${brl(x.total)}</b></div>`).join('')||'<div class=muted>Sem vendas registradas.</div>'}
+function marginReport(history){let revenue=0,cmv=0,byCat={};for(const sale of (history||[])){for(const it of (sale.items||[])){let q=Number(it.qty||0),r=Number(it.price||0)*q,c=reportUnitCost(it)*q,cat=reportCategory(it.name);revenue+=r;cmv+=c;if(!byCat[cat])byCat[cat]={revenue:0,cmv:0};byCat[cat].revenue+=r;byCat[cat].cmv+=c}}let profit=revenue-cmv,margin=revenue?profit/revenue*100:0;let cats=Object.entries(byCat).sort((a,b)=>b[1].revenue-a[1].revenue).map(([k,x])=>{let p=x.revenue-x.cmv,m=x.revenue?p/x.revenue*100:0;return `<div class=cart-row><span>${k}</span><span>${brl(x.cmv)} CMV • <b>${m.toFixed(1).replace('.',',')}%</b></span></div>`}).join('');return `<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(revenue)}</div></div><div class=panel><div class=muted>CMV</div><div class=big>${brl(cmv)}</div></div><div class=panel><div class=muted>Lucro bruto</div><div class=big>${brl(profit)}</div></div><div class=panel><div class=muted>Margem bruta</div><div class=big>${margin.toFixed(1).replace('.',',')}%</div></div></div>${cats?`<div class=panel><b>Margem por categoria</b>${cats}</div>`:''}`}
+
+function renderReportsLegacy(){let h=state.history||[];let total=h.reduce((a,x)=>a+x.total,0),count=h.length,ticket=count?total/count:0;let perf=performanceData(h);let byPay={},byItem={},byHour={},byOperator={};h.forEach(v=>{(v.payments||[{method:v.payment,value:v.total}]).forEach(p=>byPay[p.method]=(byPay[p.method]||0)+p.value);v.items.forEach(i=>{let k=i.name.split(' • Obs:')[0];byItem[k]=(byItem[k]||0)+i.qty});let band=hourBand(v.closedAt);if(!byHour[band])byHour[band]={total:0,count:0};byHour[band].total+=v.total;byHour[band].count+=1;let op=v.operator||'Não identificado';byOperator[op]=(byOperator[op]||0)+v.total});let top=Object.entries(byItem).sort((a,b)=>b[1]-a[1]).slice(0,10);let today=new Date().toLocaleDateString('pt-BR');let daySales=h.filter(v=>new Date(v.closedAt).toLocaleDateString('pt-BR')===today);let dayTotal=daySales.reduce((a,x)=>a+x.total,0);let canc=(state.cancellations||[]).slice().reverse();let closures=(state.cash.closures||[]).slice().reverse();let bands=['07:00–12:00','12:01–17:00','17:01–23:59','Outros horários'];let hourHtml=bands.map(k=>{let x=byHour[k]||{total:0,count:0},avg=x.count?x.total/x.count:0,pct=total?x.total/total*100:0;return `<div class=panel><div class=cart-row><span><b>${k}</b></span><b>${brl(x.total)}</b></div><div class=muted>${x.count} venda${x.count===1?'':'s'} • Ticket médio ${brl(avg)} • ${pct.toFixed(1).replace('.',',')}% do faturamento</div></div>`}).join('');document.getElementById('report').innerHTML=`<h3>Hoje • ${today}</h3><div class=grid><div class=panel><div class=muted>Vendas de hoje</div><div class=big>${brl(dayTotal)}</div></div><div class=panel><div class=muted>Comandas hoje</div><div class=big>${daySales.length}</div></div><div class=panel><div class=muted>Ticket médio hoje</div><div class=big>${brl(daySales.length?dayTotal/daySales.length:0)}</div></div></div><h3>💹 CMV & Margem de hoje</h3>${marginReport(daySales)}<div class=muted style='margin-bottom:12px'>Lucro bruto = faturamento − CMV. Despesas operacionais não estão descontadas aqui.</div><h3>Acumulado</h3><div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Comandas fechadas</div><div class=big>${count}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(ticket)}</div></div></div><h3>Vendas por faixa de horário</h3>${hourHtml}<h3>Formas de pagamento</h3>${Object.entries(byPay).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join('')||'<div class=muted>Sem vendas ainda.</div>'}<h3>Vendas por operador</h3>${Object.entries(byOperator).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join('')||'<div class=muted>Sem vendas ainda.</div>'}<h3>🏆 Desempenho dos produtos</h3><div class=panel><div class=muted>Ranking por quantidade vendida • faturamento calculado pelos itens registrados nas comandas</div>${perfRows(perf.items,15)}</div><h3>📦 Faturamento por categoria</h3>${categoryRows(perf.cats)}<h3>🥤 Sabores de shake mais vendidos</h3><div class=panel>${perfRows(perf.flavors,15)}</div><h3>📅 Comparativo dos últimos dias</h3><div class=panel>${dailyComparison(h)}</div><h3>Cancelamentos (${canc.length})</h3>${canc.slice(0,20).map(c=>`<div class=panel><b>${c.type==='comanda_total'?'🚫 COMANDA CANCELADA • '+brl(c.total||0):((c.item&&c.item.qty)||0)+'× '+esc((c.item&&c.item.name)||'Item')}</b><div class=muted>${new Date(c.at).toLocaleString('pt-BR')} • ${esc(c.table||'')} • 👤 ${esc(c.operator||'Não identificado')}</div><div>Motivo: ${esc(c.reason||'')}</div>${c.type==='comanda_total'?`<div>${c.produced?'🔥 Produzida — registrada como perda':'↩️ Não produzida — estoque devolvido'}</div>`:''}</div>`).join('')||'<div class=muted>Nenhum cancelamento registrado.</div>'}<h3>Últimos fechamentos de caixa</h3>${closures.slice(0,10).map(c=>`<div class=panel><b>${new Date(c.closedAt).toLocaleString('pt-BR')}</b><div class=muted>Abriu: ${c.openedBy||'Não identificado'} • Fechou: ${c.closedBy||'Não identificado'}</div><div class=cart-row><span>Vendas</span><b>${brl(c.sales)}</b></div>${c.byPayment?Object.entries(c.byPayment).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join(''):''}<div class=cart-row><span>Esperado em dinheiro</span><b>${brl(c.expected)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted)}</b></div><div class=cart-row><span>Diferença</span><b>${brl(c.difference)}</b></div></div>`).join('')||'<div class=muted>Nenhum fechamento registrado.</div>'}`;}
+function setDeviceMode(mode){localStorage.setItem('algarobaDeviceMode',mode);applyDeviceMode()}
+function applyDeviceMode(){let mode=localStorage.getItem('algarobaDeviceMode')||'Completo',sel=document.getElementById('deviceMode');if(sel)sel.value=mode;let bs=[...document.querySelectorAll('.tabs button')];bs.forEach(b=>b.style.display='');if(mode==='Atendimento'){bs.forEach((b,i)=>b.style.display=i===0?'':'none');view('mesas',bs[0])}else if(['Churrasqueira','Cozinha','Bebidas & Shakes'].includes(mode)){bs.forEach((b,i)=>b.style.display=i===1?'':'none');activeProductionStation=mode==='Churrasqueira'?'🔥 Churrasqueira':mode==='Cozinha'?'🍳 Cozinha':'🥤 Bebidas & Shakes';view('cozinha',bs[1])}else if(mode==='Caixa'){bs.forEach((b,i)=>b.style.display=i===2?'':'none');view('caixa',bs[2])}}
+function reportDates(){let p=(document.getElementById('repPeriod')&&document.getElementById('repPeriod').value)||'today',now=new Date(),a=new Date(now),b=new Date(now);a.setHours(0,0,0,0);b.setHours(23,59,59,999);if(p==='yesterday'){a.setDate(a.getDate()-1);b=new Date(a);b.setHours(23,59,59,999)}else if(p==='week'){a.setDate(a.getDate()-6)}else if(p==='month'){a=new Date(now.getFullYear(),now.getMonth(),1)}else if(p==='custom'){let x=document.getElementById('repStart').value,y=document.getElementById('repEnd').value;if(x)a=new Date(x+'T00:00:00');if(y)b=new Date(y+'T23:59:59')}else if(p==='all'){a=new Date(0);b=new Date(8640000000000000)}return[a,b]}
+function reportPeriodChange(){let custom=document.getElementById('repPeriod').value==='custom';document.getElementById('repStart').disabled=!custom;document.getElementById('repEnd').disabled=!custom}
+function reportPreset(k){document.querySelectorAll('.repOpt').forEach(x=>x.checked=false);let m={daily:['summary','payments','hours','products','margin','cash'],stock:['stock','moves'],margin:['summary','margin','categories','products'],full:['summary','payments','hours','products','categories','margin','stock','moves','cash','operators']};(m[k]||[]).forEach(v=>{let x=document.querySelector('.repOpt[value="'+v+'"]');if(x)x.checked=true});generateFilteredReport()}
+function repOn(v){let x=document.querySelector('.repOpt[value="'+v+'"]');return !!(x&&x.checked)}
+function generateFilteredReport(){let [a,b]=reportDates(),h=(state.history||[]).filter(v=>{let d=new Date(v.closedAt);return d>=a&&d<=b}),total=h.reduce((s,x)=>s+Number(x.total||0),0),count=h.length,ticket=count?total/count:0,byPay={},byHour={},byOp={};h.forEach(v=>{(v.payments||[{method:v.payment,value:v.total}]).forEach(p=>byPay[p.method]=(byPay[p.method]||0)+Number(p.value||0));let band=hourBand(v.closedAt);if(!byHour[band])byHour[band]={total:0,count:0};byHour[band].total+=Number(v.total||0);byHour[band].count++;let op=v.operator||'Não identificado';byOp[op]=(byOp[op]||0)+Number(v.total||0)});let perf=performanceData(h),parts=[];let period=document.getElementById('repPeriod').selectedOptions[0].text;parts.push(`<div class=panel><h2>Algaroba Shakes Grills</h2><b>Relatório Gerencial • ${period}</b><div class=muted>Emitido em ${new Date().toLocaleString('pt-BR')}</div></div>`);let rc=(state.cancellations||[]).filter(c=>{let d=new Date(c.at||0);return d>=a&&d<=b}),rct=rc.filter(c=>c.type==='comanda_total'),rcv=rct.reduce((q,c)=>q+Number(c.total||0),0),rcl=rct.filter(c=>c.produced).reduce((q,c)=>q+(c.items||[]).reduce((z,i)=>z+Number(i.cost||reportUnitCost(i)||0)*Number(i.qty||0),0),0);if(repOn('summary'))parts.push(`<h3>🚫 Cancelamentos e Perdas</h3><div class=grid><div class=panel><div class=muted>Comandas canceladas</div><div class=big>${rct.length}</div></div><div class=panel><div class=muted>Valor não faturado</div><div class=big>${brl(rcv)}</div></div><div class=panel><div class=muted>Custo estimado das perdas produzidas</div><div class=big>${brl(rcl)}</div></div></div>${rct.slice().reverse().slice(0,50).map(c=>`<div class=panel><b>${esc(c.table||'Comanda')} • ${brl(c.total||0)}</b><div class=muted>${new Date(c.at).toLocaleString('pt-BR')} • ${esc(c.operator||'')}</div><div>${c.produced?'🔥 Produzida / perda':'↩️ Não produzida / estoque devolvido'} • ${esc(c.reason||'')}</div></div>`).join('')}`);if(repOn('summary')){let iw=((state.internalAccounts&&state.internalAccounts.withdrawals)||[]).filter(x=>{let d=new Date(x.at);return d>=a&&d<=b}),iv=iw.reduce((q,x)=>q+Number(x.total||0),0),ip=internalPeople().reduce((q,p)=>q+internalBalance(p),0);parts.push(`<h3>Contas Internas</h3><div class=grid><div class=panel><div class=muted>Retiradas no período</div><div class=big>${brl(iv)}</div></div><div class=panel><div class=muted>Saldo interno pendente atual</div><div class=big>${brl(ip)}</div></div></div>`)}if(repOn('summary'))parts.push(`<h3>Resumo</h3><div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Vendas</div><div class=big>${count}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(ticket)}</div></div></div>`);if(repOn('margin'))parts.push(`<h3>💹 CMV & Margem</h3>${marginReport(h)}<div class=muted>Lucro bruto = faturamento − CMV. Despesas operacionais não descontadas.</div>`);if(repOn('payments'))parts.push(`<h3>Formas de pagamento</h3><div class=panel>${Object.entries(byPay).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join('')||'<div class=muted>Sem vendas no período.</div>'}</div>`);if(repOn('hours')){let bands=['07:00–12:00','12:01–17:00','17:01–23:59','Outros horários'];parts.push(`<h3>Vendas por faixa de horário</h3>${bands.map(k=>{let x=byHour[k]||{total:0,count:0};return `<div class=panel><div class=cart-row><b>${k}</b><b>${brl(x.total)}</b></div><div class=muted>${x.count} venda(s) • Ticket ${brl(x.count?x.total/x.count:0)}</div></div>`}).join('')}`)}if(repOn('products'))parts.push(`<h3>🏆 Produtos</h3><div class=panel>${perfRows(perf.items,50)}</div>`);if(repOn('categories'))parts.push(`<h3>📦 Categorias</h3>${categoryRows(perf.cats)}`);if(repOn('operators'))parts.push(`<h3>Operadores</h3><div class=panel>${Object.entries(byOp).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join('')||'<div class=muted>Sem vendas.</div>'}</div>`);if(repOn('stock')){let inv=(state.inventory&&state.inventory.items)||{};let rows=Object.entries(inv).filter(([k,x])=>x&&typeof x==='object').map(([k,x])=>`<div class=cart-row><span>${x.name||k}</span><span><b>${Number(x.qty||0)}</b> un • ${brl(Number(x.cost||0))}</span></div>`).join('');parts.push(`<h3>📦 Estoque atual</h3><div class=panel>${rows||'<div class=muted>Sem estoque cadastrado.</div>'}</div>`)}if(repOn('moves')){let moves=((state.inventory&&state.inventory.movements)||[]).filter(m=>{let d=new Date(m.at||m.date||0);return d>=a&&d<=b}).slice().reverse();parts.push(`<h3>Movimentações de estoque</h3>${moves.slice(0,200).map(m=>`<div class=panel><b>${m.type||'movimentação'} • ${m.key||m.product||m.name||''}</b><div class=muted>${m.at?new Date(m.at).toLocaleString('pt-BR'):''} • ${m.operator||''}</div><div>Quantidade: ${(m.qty!=null?m.qty:(m.quantity!=null?m.quantity:''))} ${m.reason?'• '+m.reason:''}</div></div>`).join('')||'<div class=muted>Sem movimentações no período.</div>'}`)}if(repOn('cash')){let cs=((state.cash&&state.cash.closures)||[]).filter(c=>{let d=new Date(c.closedAt||0);return d>=a&&d<=b});parts.push(`<h3>💰 Fechamentos de caixa</h3>${cs.slice().reverse().map(c=>`<div class=panel><b>${new Date(c.closedAt).toLocaleString('pt-BR')}</b><div>Vendas: ${brl(c.sales||0)} • Esperado: ${brl(c.expected||0)} • Contado: ${brl(c.counted||0)} • Diferença: ${brl(c.difference||0)}</div></div>`).join('')||'<div class=muted>Sem fechamentos no período.</div>'}`)}document.getElementById('report').innerHTML="<div class='panel' style='border:2px solid #2e7d32'><div class='muted'>Pré-visualização gerada</div><b>Confira abaixo o relatório antes de gerar o PDF.</b></div>"+parts.join('');setTimeout(()=>{let el=document.getElementById('printReport');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'});},50);}
+function printFilteredReport(){generateFilteredReport();setTimeout(()=>window.print(),120)}
+window.addEventListener('storage',e=>{if(e.key==='algarobaState'&&e.newValue){if(userIsEditing())return;try{state=JSON.parse(e.newValue);renderOperator();renderTables();if(!document.getElementById('cozinha').classList.contains('hide'))renderKitchen();if(!document.getElementById('caixa').classList.contains('hide'))renderCash();/* Relatórios preservam posição durante sincronização */}catch(err){console.error(err)}}});
+function back(){let target=canView('mesas')?'mesas':((roleViews[(authProfile&&authProfile.perfil)]||[])[0]||'mesas');view(target,document.querySelector('.tabs button[data-view="'+target+'"]'))}
+ensureInventory();renderOperator();renderTables();applyDeviceMode();initAuth();
+
+</script><script>
+function t110Diag(msg){
+  var e=document.getElementById('tabletDiag');
+  if(e)e.textContent=msg;
+  try{localStorage.setItem('t110LastDiag',msg);}catch(ex){}
+}
+function tabletLoginUser(){
+  if(window.T110_PARSE_ERROR){t110Diag(window.T110_PARSE_ERROR);return false;}
+  try{var pe=localStorage.getItem('t110ParseError');if(pe){t110Diag(pe);localStorage.removeItem('t110ParseError');return false;}}catch(ex){}
+  var emailEl=document.getElementById('loginEmail');
+  var passEl=document.getElementById('loginPassword');
+  var btn=document.getElementById('loginBtn');
+  var email=emailEl?String(emailEl.value||'').replace(/^\s+|\s+$/g,''):'';
+  var password=passEl?String(passEl.value||''):'';
+  if(!email||!password){t110Diag('Preencha e-mail e senha.');return false;}
+  var cfg;
+  try{cfg=cloudConfig();}catch(e){t110Diag('ERRO LOCAL: '+e.message);return false;}
+  if(!cfg||!cfg.url||!cfg.key){t110Diag('Servidor não configurado.');return false;}
+  if(btn){btn.disabled=true;btn.textContent='ENTRANDO...';}
+  t110Diag('ETAPA 1/3 - Conectando ao servidor...');
+  try{
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST',String(cfg.url).replace(/\/$/,'')+'/auth/v1/token?grant_type=password',true);
+    xhr.setRequestHeader('apikey',cfg.key);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.timeout=20000;
+    xhr.onreadystatechange=function(){
+      if(xhr.readyState!==4)return;
+      if(xhr.status<200||xhr.status>=300){
+        var m='HTTP '+xhr.status;
+        try{var d=JSON.parse(xhr.responseText||'{}');m=d.error_description||d.msg||d.message||d.error||m;}catch(ex){}
+        t110Diag('FALHA ETAPA 1 - '+m);
+        if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+        return;
+      }
+      var sess;
+      try{sess=JSON.parse(xhr.responseText);}catch(ex){
+        t110Diag('FALHA ETAPA 1 - resposta inválida.');
+        if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+        return;
+      }
+      authSession=sess;
+      try{localStorage.setItem('algarobaAuthSession',JSON.stringify(sess));}catch(ex){}
+      t110Diag('ETAPA 2/3 - Login aceito. Buscando perfil...');
+      var uid=sess&&sess.user?sess.user.id:null;
+      if(!uid){t110Diag('FALHA ETAPA 2 - sessão sem usuário.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
+      var x2=new XMLHttpRequest();
+      x2.open('GET',String(cfg.url).replace(/\/$/,'')+'/rest/v1/algaroba_users?select=id,nome,perfil,ativo&id=eq.'+encodeURIComponent(uid),true);
+      x2.setRequestHeader('apikey',cfg.key);
+      x2.setRequestHeader('Authorization','Bearer '+sess.access_token);
+      x2.setRequestHeader('Content-Type','application/json');
+      x2.timeout=20000;
+      x2.onreadystatechange=function(){
+        if(x2.readyState!==4)return;
+        if(x2.status<200||x2.status>=300){
+          t110Diag('FALHA ETAPA 2 - HTTP '+x2.status);
+          if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+          return;
+        }
+        var rows;try{rows=JSON.parse(x2.responseText||'[]');}catch(ex){rows=[];}
+        var p=rows&&rows.length?rows[0]:null;
+        if(!p||!p.ativo){t110Diag('FALHA ETAPA 2 - usuário sem perfil ativo.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}return;}
+        authProfile=p;state.activeOperator=p.nome;
+        try{localStorage.setItem('algarobaActiveOperator',p.nome);}catch(ex){}
+        var lu=document.getElementById('loggedUser');if(lu)lu.textContent=p.nome;
+        var lr=document.getElementById('loggedRole');if(lr)lr.textContent=String(p.perfil||'').toUpperCase();
+        var gate=document.getElementById('authGate');if(gate)gate.classList.add('hide');
+        try{applyPermissions();}catch(ex){}
+        if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+        t110Diag('ETAPA 3/3 - ACESSO LIBERADO: '+p.nome+' / '+p.perfil);
+        try{initCloud();}catch(ex){}
+      };
+      x2.onerror=function(){t110Diag('FALHA ETAPA 2 - erro de rede/TLS.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}};
+      x2.ontimeout=function(){t110Diag('FALHA ETAPA 2 - tempo esgotado.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}};
+      x2.send(null);
+    };
+    xhr.onerror=function(){t110Diag('FALHA ETAPA 1 - erro de rede/TLS.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}};
+    xhr.ontimeout=function(){t110Diag('FALHA ETAPA 1 - tempo esgotado.');if(btn){btn.disabled=false;btn.textContent='ENTRAR';}};
+    xhr.send(JSON.stringify({email:email,password:password}));
+  }catch(e){
+    t110Diag('ERRO LOCAL: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent='ENTRAR';}
+  }
+  return false;
+}
+(function(){
+  var d=document.getElementById('tabletDiag');
+  if(d){var pe='';try{pe=localStorage.getItem('t110ParseError')||'';}catch(ex){} d.textContent=window.T110_PARSE_ERROR||pe||'Diagnóstico T110 pronto. Toque em ENTRAR.';}
+})();
 </script></body></html>
