@@ -14,13 +14,13 @@
 </style></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
- <div class='muted'>Acesso restrito • versão 2.9 • Tablet T110</div>
+ <div class='muted'>Acesso restrito • versão 2.9 • Tablet T110 • diagnóstico</div>
  <div id='authMsg' class='authmsg'>Entre com seu e-mail e senha.</div>
  <label>E-mail</label><input id='loginEmail' type='email' autocomplete='username' placeholder='seuemail@exemplo.com'>
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.8 • TABLET T110</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.8 • TABLET T110 • TESTE 2</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -583,7 +583,52 @@ Contado: ${brl(c.counted||0)}
 Diferença: ${brl(df)}
 Situação: ${Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA'}`}
 
-function closureReportHTML(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0),st=Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA';let rows=[['Abertura',brl(c.opening||0)],['Vendas',brl(c.sales||0)],['Dinheiro',brl(bp.Dinheiro||0)],['Pix',brl(bp.Pix||0)],['Débito',brl(bp['Débito']||0)],['Crédito',brl(bp['Crédito']||0)],['Entradas',brl(en)],['Saídas/Sangrias',brl(sa)]];return `<!doctype html><html><head><meta charset=utf-8><title>Fechamento Algaroba</title><style>body{font-family:Arial,sans-serif;color:#222;max-width:720px;margin:30px auto;padding:20px}h1{font-size:24px;margin-bottom:2px}.sub{color:#666}.r{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:9px 0}.box{border:2px solid #222;padding:14px;margin-top:20px}.big{font-size:20px;font-weight:bold}@media print{body{margin:0}}</style></head><body><h1>ALGAROBA SHAKES GRILLS</h1><div class=sub>Relatório de Fechamento de Caixa</div><p><b>Data:</b> ${d.toLocaleDateString('pt-BR')}<br><b>Turno:</b> ${new Date(c.openedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}<br><b>Operador:</b> ${esc(c.closedBy||'-')}</p>${rows.map(x=>`<div class=r><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}<div class=box><div class=r><span>Esperado em dinheiro</span><b>${brl(c.expected||0)}</b></div><div class=r><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class="r big"><span>Diferença</span><b>${brl(df)}</b></div><p><b>${st}</b></p></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`}
+function closureReportHTML(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0),st=Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA';let rows=[['Abertura',brl(c.opening||0)],['Vendas',brl(c.sales||0)],['Dinheiro',brl(bp.Dinheiro||0)],['Pix',brl(bp.Pix||0)],['Débito',brl(bp['Débito']||0)],['Crédito',brl(bp['Crédito']||0)],['Entradas',brl(en)],['Saídas/Sangrias',brl(sa)]];return `<!doctype html><html><head><meta charset=utf-8><title>Fechamento Algaroba</title><style>body{font-family:Arial,sans-serif;color:#222;max-width:720px;margin:30px auto;padding:20px}h1{font-size:24px;margin-bottom:2px}.sub{color:#666}.r{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:9px 0}.box{border:2px solid #222;padding:14px;margin-top:20px}.big{font-size:20px;font-weight:bold}@media print{body{margin:0}}</style></head><body><h1>ALGAROBA SHAKES GRILLS</h1><div class=sub>Relatório de Fechamento de Caixa</div><p><b>Data:</b> ${d.toLocaleDateString('pt-BR')}<br><b>Turno:</b> ${new Date(c.openedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}<br><b>Operador:</b> ${esc(c.closedBy||'-')}</p>${rows.map(x=>`<div class=r><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}<div class=box><div class=r><span>Esperado em dinheiro</span><b>${brl(c.expected||0)}</b></div><div class=r><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class="r big"><span>Diferença</span><b>${brl(df)}</b></div><p><b>${st}</b></p></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+<script>
+(function(){
+  var msg=document.getElementById('authMsg');
+  var btn=document.getElementById('loginBtn');
+  if(!msg||!btn)return;
+
+  function show(text,isErr){
+    msg.textContent=text;
+    msg.className='authmsg '+(isErr?'autherr':'authok');
+  }
+
+  if(typeof window.loginUser!=='function'){
+    show('⚠️ Diagnóstico T110: o motor principal do sistema não carregou neste navegador.',true);
+    btn.onclick=function(){
+      show('⚠️ O botão responde, mas o JavaScript principal não foi carregado. Precisamos de mais compatibilidade.',true);
+      return false;
+    };
+    return;
+  }
+
+  show('✅ Diagnóstico T110: motor do sistema carregado. Informe e-mail e senha.',false);
+
+  btn.onclick=function(){
+    show('⏳ Conectando ao servidor Algaroba…',false);
+    var gate=document.getElementById('authGate');
+    try{
+      var p=window.loginUser();
+      window.setTimeout(function(){
+        var stillOpen=gate && !gate.classList.contains('hide');
+        if(stillOpen && msg.textContent.indexOf('Conectando ao servidor')>=0){
+          show('⚠️ O navegador carregou o sistema, mas a conexão com o servidor não respondeu em 15 segundos.',true);
+        }
+      },15000);
+      if(p && typeof p.catch==='function'){
+        p.catch(function(e){
+          show('❌ Erro de login no tablet: '+(e&&e.message?e.message:String(e)),true);
+        });
+      }
+    }catch(e){
+      show('❌ Erro JavaScript no tablet: '+(e&&e.message?e.message:String(e)),true);
+    }
+    return false;
+  };
+})();
+</script></body></html>`}
 
 function showCashClosureShare(c){window.lastCashClosure=c;let df=Number(c.difference||0),st=Math.abs(df)<.005?'✅ CAIXA CERTO':df>0?'⚠️ SOBRA':'⚠️ FALTA';document.getElementById('modalContent').innerHTML=`<h2>✅ Caixa fechado com sucesso</h2><div class=panel><div class=cart-row><span>Operador</span><b>${esc(c.closedBy||'-')}</b></div><div class=cart-row><span>Vendas</span><b>${brl(c.sales||0)}</b></div><div class=cart-row><span>Esperado</span><b>${brl(c.expected||0)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class=cart-row><span>${st}</span><b>${brl(df)}</b></div></div><p class=muted>Envie o fechamento ao administrativo sem acessar a Central de Relatórios.</p><button class="btn primary" style="width:100%;margin:6px 0" onclick=generateClosurePDF()>📄 GERAR PDF</button><button class="btn primary" style="width:100%;margin:6px 0" onclick=shareClosureWhatsApp()>📲 ENVIAR PELO WHATSAPP</button><button class=btn style="width:100%;margin-top:6px" onclick=closeModal()>CONCLUIR</button>`;document.getElementById('modal').classList.remove('hide')}
 
