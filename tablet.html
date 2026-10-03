@@ -68,7 +68,21 @@
  </div>
 </section>
 <section id='relatorios' class='hide'><h2>📊 Central de Relatórios</h2><div class='panel report-controls'><h3>🔎 Filtros do relatório</h3><div class='grid'><label>Período<select id='repPeriod' onchange='reportPeriodChange()'><option value='today'>Hoje</option><option value='yesterday'>Ontem</option><option value='week'>Últimos 7 dias</option><option value='month'>Este mês</option><option value='custom'>Personalizado</option><option value='all'>Todo o histórico</option></select></label><label>Data inicial<input type='date' id='repStart'></label><label>Data final<input type='date' id='repEnd'></label></div><div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'><button class='btn' onclick=reportPreset('daily')>📅 Fechamento do Dia</button><button class='btn' onclick=reportPreset('stock')>📦 Estoque</button><button class='btn' onclick=reportPreset('margin')>💹 CMV e Margem</button><button class='btn' onclick=reportPreset('full')>📊 Completo</button></div><h4>Incluir no relatório</h4><div class='report-checks'><label><input type='checkbox' class='repOpt' value='summary' checked> Resumo</label><label><input type='checkbox' class='repOpt' value='payments' checked> Pagamentos</label><label><input type='checkbox' class='repOpt' value='hours' checked> Horários</label><label><input type='checkbox' class='repOpt' value='products' checked> Produtos</label><label><input type='checkbox' class='repOpt' value='categories' checked> Categorias</label><label><input type='checkbox' class='repOpt' value='margin' checked> CMV e margem</label><label><input type='checkbox' class='repOpt' value='stock'> Estoque atual</label><label><input type='checkbox' class='repOpt' value='moves'> Movimentações de estoque</label><label><input type='checkbox' class='repOpt' value='cash'> Caixa</label><label><input type='checkbox' class='repOpt' value='operators'> Operadores</label></div><div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'><button class='btn primary' onclick=generateFilteredReport()>🔍 VISUALIZAR</button><button class='btn primary' onclick=printFilteredReport()>📄 GERAR PDF</button></div><div class='muted' style='margin-top:8px'>No celular, “Gerar PDF” abre a impressão. Escolha “Salvar como PDF”.</div></div><div id='printReport'><div id='report'></div></div></section>
-</main><div id='modal' class='modal hide'><div class='sheet'><div id='modalContent'></div></div></div><script>
+</main><div id='modal' class='modal hide'><div class='sheet'><div id='modalContent'></div></div></div>
+<script>
+window.T110_PARSE_ERROR='';
+window.onerror=function(message,source,lineno,colno,error){
+  var txt='ERRO DO MOTOR: '+String(message)+' | linha '+String(lineno||'?')+' coluna '+String(colno||'?');
+  window.T110_PARSE_ERROR=txt;
+  try{localStorage.setItem('t110ParseError',txt);}catch(e){}
+  setTimeout(function(){
+    var d=document.getElementById('tabletDiag');
+    if(d)d.textContent=txt;
+  },0);
+  return true;
+};
+</script>
+<script>
 const catalog={
 'Espetinhos':[['Frango',6],['Tulipa de Frango',6],['Coxinha de Frango',6],['Moela',6],['Linguiça Toscana de Frango',6],['Pão de Carne de Sol',6],['Queijo Coalho',6],['Linguiça Toscana',6],['Linguiça Calabresa',6],['Pão de Alho',6],['Pão com Creme de Queijo',6],['Carne',7],['Kafta',7],['Coração',7],['Carneiro',7],['Picanha Suína',7],['Língua',7],['Cupim',8],['Medalhão de Frango com Bacon',8],['Medalhão de Carne com Bacon',8],['Queijo Coalho com Bacon',8],['Camarão',8]],
 'Porções':[['Filé com Fritas',30],['Frango com Fritas',25],['Calabresa com Fritas',25],['Língua com Macaxeira',30],['Batata Frita P',12],['Batata Frita G',20],['Macaxeira Frita',15]],
@@ -675,6 +689,8 @@ function t110Diag(msg){
   try{localStorage.setItem('t110LastDiag',msg);}catch(ex){}
 }
 function tabletLoginUser(){
+  if(window.T110_PARSE_ERROR){t110Diag(window.T110_PARSE_ERROR);return false;}
+  try{var pe=localStorage.getItem('t110ParseError');if(pe){t110Diag(pe);localStorage.removeItem('t110ParseError');return false;}}catch(ex){}
   var emailEl=document.getElementById('loginEmail');
   var passEl=document.getElementById('loginPassword');
   var btn=document.getElementById('loginBtn');
@@ -753,6 +769,6 @@ function tabletLoginUser(){
 }
 (function(){
   var d=document.getElementById('tabletDiag');
-  if(d)d.textContent='Diagnóstico T110 pronto. Toque em ENTRAR.';
+  if(d){var pe='';try{pe=localStorage.getItem('t110ParseError')||'';}catch(ex){} d.textContent=window.T110_PARSE_ERROR||pe||'Diagnóstico T110 pronto. Toque em ENTRAR.';}
 })();
 </script></body></html>
