@@ -162,7 +162,7 @@ function renderHome(){
     <div class="eyebrow">Pedido direto da fábrica</div>
     <h1>Direto da nossa fábrica para você.</h1>
     <p>Escolha primeiro a linha ou categoria. Dentro dela você encontra os sabores e produtos disponíveis, sem misturar tudo em uma única lista.</p>
-    <button class="button" onclick="window.openGroups()">Ver linhas e produtos →</button>
+    <button class="button" onclick="window.openGroups()">Fazer meu pedido →</button>
   </section>
   <div class="section-head"><div><h2>Escolha uma linha</h2><p>Entre na categoria para ver os sabores.</p></div></div>
   <div class="catalog-groups">
@@ -187,13 +187,16 @@ window.toggleGroupInfo=()=>{state.groupInfoOpen=!state.groupInfoOpen;renderCatal
 
 function renderGroupChooser(){
   main.innerHTML=`
-    <div class="section-head"><div><h2>Produtos Algaroba</h2><p>Escolha uma linha ou categoria para continuar.</p></div></div>
+    <div class="section-head"><div><h2>Fazer meu pedido</h2><p>Escolha uma linha ou categoria. Você pode voltar e misturar produtos no mesmo pedido.</p></div></div>
     <div class="catalog-groups">
       ${state.groups.map(g=>`<button class="group-card" type="button" onclick="window.chooseGroup('${g.chave}')">
         <div class="group-card-icon">${groupIcon(g.chave)}</div>
         <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small></div>
       </button>`).join("")}
-    </div>`;
+    </div>
+    ${cartItems().length?`<div class="catalog-bottom-actions"><button class="button orange" type="button" data-go="cart">Finalizar meu pedido →</button></div>`:""}
+    ${miniCheckout()}
+  `;
 }
 
 function miniCheckout(){
