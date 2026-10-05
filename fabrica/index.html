@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#123f2c">
+  <meta name="description" content="Portal de pedidos e gestão da fábrica Algaroba">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="../algaroba-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./app.css">
+  <title>Algaroba — Natural como nossa terra</title>
+</head>
+<body>
+<div id="app" class="app">
+  <header class="topbar">
+    <button class="brand" type="button" data-go="home" aria-label="Ir para o início">
+      <img src="../algaroba-icon.svg" alt="" class="brand-logo">
+      <span class="brand-copy"><strong>Algaroba</strong><small>NATURAL COMO NOSSA TERRA</small></span>
+    </button>
+    <div class="top-actions">
+      <button class="top-button" id="accountButton" type="button"><span>👤</span><span id="accountLabel">Entrar</span></button>
+      <button class="top-button cart-button" id="cartButton" type="button"><span>🛒</span><span class="cart-count" id="cartCount">0</span></button>
+    </div>
+  </header>
+
+  <div class="offline-banner hidden" id="offlineBanner">Você está sem internet. O carrinho continua salvo neste aparelho.</div>
+
+  <main id="main" class="main"></main>
+
+  <nav id="clientNav" class="bottom-nav">
+    <button type="button" data-go="home" data-nav="home"><span>⌂</span><small>Início</small></button>
+    <button type="button" data-go="catalog" data-nav="catalog"><span>▦</span><small>Produtos</small></button>
+    <button type="button" data-go="cart" data-nav="cart"><span>🛒</span><small>Carrinho</small></button>
+    <button type="button" data-go="orders" data-nav="orders"><span>▤</span><small>Pedidos</small></button>
+    <button type="button" data-go="account" data-nav="account"><span>👤</span><small>Conta</small></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
