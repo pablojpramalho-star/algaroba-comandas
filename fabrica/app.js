@@ -218,7 +218,7 @@ window.finishFromGroup=()=>{
   if(cartUnits())go("cart");else showToast("Seu carrinho ainda está vazio.");
 };
 
-window.backToGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;renderCatalog()};
+window.backToGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")};
 window.toggleGroupInfo=()=>{state.groupInfoOpen=!state.groupInfoOpen;renderCatalog()};
 
 function renderGroupChooser(){
