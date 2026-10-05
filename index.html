@@ -20,7 +20,7 @@
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.8 • RELATÓRIOS ESTÁVEIS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.9 • ABERTURA DE CAIXA ESTÁVEL</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -406,11 +406,48 @@ async function confirmCancelCashComanda(){
  alert(produced?'Comanda cancelada. Valor retirado do Caixa e produtos registrados como PERDA.':'Comanda cancelada. Valor retirado do Caixa e itens devolvidos ao estoque.');
 }
 
-function openCash(){
+async function openCash(){
  let el=document.getElementById('openingValue'),v=parseFloat(String(el?.value||0).replace(',','.'));
  if(v<0||isNaN(v))return alert('Informe um valor válido.');
  if(!confirm(`Confirmar abertura do caixa com ${brl(v)}?`))return;
- state.cash.open=true;state.cash.openedAt=new Date().toISOString();state.cash.opening=v;state.cash.openedBy=state.activeOperator;state.cash.movements=[];save();renderCash()
+ if(state.cash.open)return renderCash();
+
+ // Evita que o polling de 2 s recupere o meta antigo antes da gravação da abertura.
+ cloudPausePullUntil=Date.now()+7000;
+ clearTimeout(cloudTimer);
+
+ state.cash.open=true;
+ state.cash.openedAt=new Date().toISOString();
+ state.cash.opening=v;
+ state.cash.openedBy=state.activeOperator;
+ state.cash.movements=[];
+ localStorage.setItem('algarobaState',JSON.stringify(state));
+ renderCash();
+
+ if(!cloudReady)return;
+
+ let metaRow=stateRecords(state).find(r=>r.record_key==='meta');
+ if(!metaRow)return;
+ let row={...metaRow,updated_at:new Date().toISOString()};
+ try{
+   setSyncStatus('offline','ABRINDO CAIXA…');
+   await cloudRequest('algaroba_records?on_conflict=record_key',{
+     method:'POST',
+     prefer:'resolution=merge-duplicates,return=minimal',
+     body:JSON.stringify([row])
+   });
+   cloudSnapshot['meta']=JSON.stringify(row.data);
+   cloudFailures=0;cloudLastError='';
+   setSyncStatus('online','ONLINE');
+ }catch(e){
+   cloudLastError=e.message||String(e);
+   cloudFailures++;
+   console.error(e);
+   setSyncStatus('error','ERRO: TOQUE AQUI');
+   alert('O caixa foi aberto neste aparelho, mas houve falha ao sincronizar online. Não abra outro caixa; verifique a conexão.');
+ }finally{
+   cloudPausePullUntil=Date.now()+2500;
+ }
 }
 function registerMovement(type){
  if(!state.cash.open)return alert('Abra o caixa primeiro.');
