@@ -429,10 +429,39 @@ window.finishRoute=async(execId)=>{
 async function renderFinance(){
   loading("Carregando Financeiro...");
   try{
-    const rows=await table("comprovantes_pagamento?select=id,pedido_id,status,mime_type,created_at,observacao_cliente&order=created_at.desc&limit=50");
-    main.innerHTML=`<div class="rolebar"><b>💳 Financeiro</b><span>comprovantes e liberação</span></div><div class="section-head"><div><h2>Comprovantes Pix</h2><p>${rows.length} registros recentes</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div><div class="panel">${rows.length?rows.map(x=>`<div class="row"><div><div class="row-title">Pedido ${esc(String(x.pedido_id).slice(0,8))}</div><div class="row-sub">${fmtDateTime(x.created_at)} • ${esc(x.mime_type||"arquivo")}</div><span class="status ${statusClass(x.status)}">${esc(x.status)}</span></div><div class="inline-actions">${x.status!=="aprovado"?`<button class="button" onclick="window.approveProof('${x.id}')">Aprovar</button><button class="button danger" onclick="window.rejectProof('${x.id}')">Rejeitar</button>`:""}</div></div>`).join(""):'<div class="empty">Sem comprovantes.</div>'}</div>`;
+    const rows=await rpc("financeiro_comprovantes_fila",{},true)||[];
+    const pending=rows.filter(x=>["enviado","em_analise"].includes(x.comprovante_status));
+    main.innerHTML=`
+      <div class="rolebar"><b>💳 Financeiro</b><span>comprovantes e liberação</span></div>
+      <div class="section-head"><div><h2>Comprovantes Pix</h2><p>${pending.length} pendentes de conferência</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
+      <div class="kpis" style="margin-bottom:12px">
+        <div class="kpi"><b>${pending.length}</b><small>Aguardando análise</small></div>
+        <div class="kpi"><b>${rows.filter(x=>x.comprovante_status==="aprovado").length}</b><small>Aprovados na lista</small></div>
+        <div class="kpi"><b>${brl(pending.reduce((a,x)=>a+Number(x.valor_pendente||0),0))}</b><small>Valor pendente</small></div>
+      </div>
+      <div class="panel">${rows.length?rows.map(x=>`
+        <div class="row">
+          <div>
+            <div class="row-title">${esc(x.numero)} • ${esc(x.cliente_nome)}</div>
+            <div class="row-sub">${fmtDateTime(x.created_at)} • ${esc(x.mime_type||"arquivo")}</div>
+            <div class="row-sub">Total ${brl(x.total)} • pendente ${brl(x.valor_pendente)}</div>
+            ${x.observacao_cliente?`<div class="row-sub">Cliente: ${esc(x.observacao_cliente)}</div>`:""}
+            <div style="margin-top:6px"><span class="status ${statusClass(x.comprovante_status)}">${esc(x.comprovante_status)}</span></div>
+          </div>
+          <div class="inline-actions">
+            <button class="button soft" onclick="window.openProof('${x.comprovante_id}')">Ver comprovante</button>
+            ${!["aprovado"].includes(x.comprovante_status)?`<button class="button" onclick="window.approveProof('${x.comprovante_id}')">Aprovar</button><button class="button danger" onclick="window.rejectProof('${x.comprovante_id}')">Rejeitar</button>`:""}
+          </div>
+        </div>`).join(""):'<div class="empty">Sem comprovantes.</div>'}</div>`;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+window.openProof=async id=>{
+  try{
+    const data=await request("/functions/v1/comprovante-url",{method:"POST",body:{comprovante_id:id}});
+    if(!data?.signed_url)throw new Error("Link do comprovante indisponível.");
+    window.open(data.signed_url,"_blank","noopener,noreferrer");
+  }catch(e){showToast(e.message)}
+};
 window.approveProof=async id=>{try{await rpc("financeiro_aprovar_comprovante",{p_comprovante_id:id,p_observacao:"Aprovado pelo painel"},true);showToast("Pagamento aprovado.");await renderFinance()}catch(e){showToast(e.message)}};
 window.rejectProof=async id=>{const motivo=prompt("Motivo da rejeição:");if(!motivo)return;try{await rpc("financeiro_rejeitar_comprovante",{p_comprovante_id:id,p_motivo:motivo},true);showToast("Comprovante rejeitado.");await renderFinance()}catch(e){showToast(e.message)}};
 
