@@ -51,11 +51,15 @@ async function table(path){return request("/rest/v1/"+path)}
 
 function categoryKey(p){return p.linha||p.categoria||"Outros"}
 function groupIcon(key){
-  return ({tradicional:"🥤",zero:"🌿",classic:"🍓",intense:"🍫",xaropes:"🍯",coberturas:"🍓","graos-farinaceos":"🥜"})[key]||"▦";
+  return ({tradicional:"🥤",classic:"🍓",intense:"🍫","graos-farinaceos":"🥜","xaropes-coberturas":"🍯"})[key]||"▦";
 }
 function groupProducts(group){
   if(!group)return[];
-  return state.catalog.filter(p=>group.tipo_filtro==="linha"?p.linha===group.filtro_valor:p.categoria===group.filtro_valor);
+  const values=String(group.filtro_valor||"").split("|");
+  if(group.tipo_filtro==="linha")return state.catalog.filter(p=>p.linha===group.filtro_valor);
+  if(group.tipo_filtro==="linhas")return state.catalog.filter(p=>values.includes(p.linha));
+  if(group.tipo_filtro==="categorias")return state.catalog.filter(p=>values.includes(p.categoria));
+  return state.catalog.filter(p=>p.categoria===group.filtro_valor);
 }
 function displayProductName(p,group){
   if(group?.tipo_filtro==="linha"){
@@ -192,6 +196,25 @@ function renderGroupChooser(){
     </div>`;
 }
 
+function miniCheckout(){
+  const items=cartItems(),units=cartUnits();
+  if(!items.length)return"";
+  const total=items.reduce((s,x)=>s+x.q*effectivePrice(x.p),0);
+  return `<div class="mini-checkout"><div><b>${units} ${units===1?"item":"itens"} no pedido</b><small>Total estimado ${brl(total)}</small></div><button class="button orange" type="button" data-go="cart">Ver pedido e finalizar →</button></div>`;
+}
+
+function renderProductCards(list,group){
+  return list.map(p=>`<article class="product-card ${p.destaque?"featured":""}">
+    <div class="product-visual">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.parentElement.innerHTML='${productIcon(p)}'">`:productIcon(p)}</div>
+    <div class="product-meta">${group.tipo_filtro==="linha"?"Sabor":esc(p.categoria||group.titulo)}${measure(p)?" • "+measure(p):""}</div>
+    <h3>${esc(displayProductName(p,group))}</h3>
+    ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
+    <div class="stock-line"><span class="supply-badge ${p.modelo_fornecimento==="estoque"?"stock":"made"}">${p.modelo_fornecimento==="estoque"?"Estoque":"Produção sob encomenda"}</span>${p.destaque?'<span class="featured-badge">Destaque</span>':""}</div>
+    <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
+    ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
+  </article>`).join("");
+}
+
 function renderCatalog(){
   const group=state.groups.find(g=>g.chave===state.selectedGroup);
   if(!group){renderGroupChooser();return}
@@ -199,9 +222,18 @@ function renderCatalog(){
   const term=state.search.trim().toLocaleLowerCase("pt-BR");
   const groupList=groupProducts(group);
   const list=groupList.filter(p=>{
-    const hay=[p.produto,p.sabor,p.codigo].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+    const hay=[p.produto,p.sabor,p.codigo,p.categoria].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
     return !term||hay.includes(term);
   });
+
+  const combined=group.chave==="xaropes-coberturas";
+  const content=combined
+    ? ["Xaropes","Coberturas"].map(cat=>{
+        const subset=list.filter(p=>p.categoria===cat);
+        if(!subset.length)return"";
+        return `<section class="catalog-subsection"><div class="catalog-result-head"><b>${esc(cat)}</b><span>${subset.length} opções</span></div><div class="products">${renderProductCards(subset,group)}</div></section>`;
+      }).join("")
+    : `<div class="catalog-result-head"><b>${group.chave==="tradicional"?"Opções":group.tipo_filtro==="linha"?"Sabores":"Produtos"}</b><span>${list.length} de ${groupList.length}</span></div><div class="products">${renderProductCards(list,group)}</div>`;
 
   main.innerHTML=`
     <div class="catalog-group-head">
@@ -212,34 +244,30 @@ function renderCatalog(){
         <h2>${esc(group.titulo)}</h2>
         <p>${esc(group.subtitulo||"")}</p>
       </div>
-      <button class="help-circle" type="button" onclick="window.toggleGroupInfo()" aria-label="Saiba mais sobre esta linha">?</button>
+      <button class="help-circle" type="button" onclick="window.toggleGroupInfo()" aria-label="Saiba mais">?</button>
     </div>
 
     <div class="group-intro">
-      <span>${group.tipo_filtro==="linha"?"Sobre esta linha":"Sobre esta categoria"}</span>
+      <span>${group.tipo_filtro==="linha"?"Sobre esta linha":"Sobre este grupo"}</span>
       <p>${esc(group.descricao||"")}</p>
       <button type="button" onclick="window.toggleGroupInfo()">${state.groupInfoOpen?"Ocultar detalhes":"Saiba mais"} <b>?</b></button>
     </div>
 
     ${state.groupInfoOpen?`<div class="line-explainer">
       <div class="line-explainer-icon">${groupIcon(group.chave)}</div>
-      <div><strong>${esc(group.titulo)}</strong><p>${esc(group.descricao||"")}</p>${["tradicional","zero","classic","intense"].includes(group.chave)?'<small>As linhas Algaroba têm propostas diferentes de sabor e experiência. Escolha a que combina melhor com o seu público ou cardápio.</small>':""}</div>
+      <div><strong>${esc(group.titulo)}</strong><p>${esc(group.descricao||"")}</p>${["tradicional","classic","intense"].includes(group.chave)?'<small>Cada linha tem uma proposta diferente. Você pode voltar a qualquer momento e adicionar produtos de outra linha ao mesmo pedido.</small>':""}</div>
     </div>`:""}
 
-    <div class="catalog-search"><span>🔎</span><input id="catalogSearch" type="search" placeholder="${group.tipo_filtro==="linha"?"Buscar sabor nesta linha...":"Buscar produto nesta categoria..."}" value="${esc(state.search)}" oninput="window.setSearch(this.value)"></div>
+    <div class="catalog-search"><span>🔎</span><input id="catalogSearch" type="search" placeholder="${group.tipo_filtro==="linha"?"Buscar sabor nesta linha...":"Buscar nesta categoria..."}" value="${esc(state.search)}" oninput="window.setSearch(this.value)"></div>
 
-    <div class="catalog-result-head"><b>${group.tipo_filtro==="linha"?"Sabores":"Produtos"}</b><span>${list.length} de ${groupList.length}</span></div>
-    <div class="products">
-      ${list.map(p=>`<article class="product-card ${p.destaque?"featured":""}">
-        <div class="product-visual">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.parentElement.innerHTML='${productIcon(p)}'">`:productIcon(p)}</div>
-        <div class="product-meta">${group.tipo_filtro==="linha"?"Sabor":esc(group.titulo)}${measure(p)?" • "+measure(p):""}</div>
-        <h3>${esc(displayProductName(p,group))}</h3>
-        ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
-        <div class="stock-line"><span class="supply-badge ${p.modelo_fornecimento==="estoque"?"stock":"made"}">${p.modelo_fornecimento==="estoque"?"Estoque":"Produção sob encomenda"}</span>${p.destaque?'<span class="featured-badge">Destaque</span>':""}</div>
-        <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
-        ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
-      </article>`).join("")||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado nesta linha.</div>'}
-    </div>`;
+    ${content||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado neste grupo.</div>'}
+
+    <div class="catalog-bottom-actions">
+      <button class="button ghost" type="button" onclick="window.backToGroups()">← Voltar às linhas</button>
+      ${cartItems().length?'<button class="button orange" type="button" data-go="cart">Finalizar meu pedido →</button>':""}
+    </div>
+    ${miniCheckout()}
+  `;
 }
 window.setSearch=v=>{state.search=v;renderCatalog();requestAnimationFrame(()=>{const e=$("#catalogSearch");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}})};
 window.changeQty=(id,delta)=>{
