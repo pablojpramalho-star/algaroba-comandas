@@ -424,7 +424,7 @@ window.logout=async()=>{
 };
 window.afterLogin=()=>go(state.role==="cliente"?"home":"internal");
 
-async async function renderInfo(){
+async function renderInfo(){
   loading("Carregando informações...");
   try{
     const info=await rpc("informacoes_portal_cliente",{},false);
