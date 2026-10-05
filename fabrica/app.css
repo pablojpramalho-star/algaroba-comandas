@@ -39,3 +39,9 @@
 .stock-line{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:2px 0 5px}
 .supply-badge,.featured-badge{display:inline-flex;padding:4px 7px;border-radius:9px;font-size:9px;font-weight:850}
 .supply-badge.stock{background:#eef0f5;color:#485469}.supply-badge.made{background:#e5f0e4;color:#26663f}.featured-badge{background:#fff0c8;color:#875912}
+
+.payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+.payment-card{display:grid;gap:5px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px;color:var(--ink);cursor:pointer;box-shadow:0 6px 16px rgba(30,48,37,.05)}
+.payment-card:hover{border-color:#9fb6a5}.payment-card:active{transform:scale(.99)}
+.payment-card span{font-size:25px}.payment-card b{color:var(--green)}.payment-card small{color:var(--muted);line-height:1.35}
+.row-sub.bad{color:var(--danger);font-weight:800}
