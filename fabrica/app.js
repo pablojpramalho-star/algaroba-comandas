@@ -11,7 +11,7 @@ const fmtTime=v=>v?String(v).slice(0,5):"";
 
 const state={
   session:JSON.parse(localStorage.getItem("algaroba_session")||"null"),
-  role:null,profile:null,catalog:[],filter:"Todos",
+  role:null,profile:null,catalog:[],filter:"Todos",search:"",
   cart:JSON.parse(localStorage.getItem("algaroba_cart")||"{}"),
   deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null
 };
@@ -151,21 +151,30 @@ window.chooseCategory=c=>{state.filter=c;go("catalog")};
 
 function renderCatalog(){
   const filters=["Todos",...categoryOrder()];
-  const list=state.catalog.filter(p=>state.filter==="Todos"||categoryKey(p)===state.filter);
+  const term=state.search.trim().toLocaleLowerCase("pt-BR");
+  const list=state.catalog.filter(p=>{
+    const inCategory=state.filter==="Todos"||categoryKey(p)===state.filter;
+    const hay=[p.produto,p.sabor,p.linha,p.categoria,p.codigo].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+    return inCategory&&(!term||hay.includes(term));
+  });
   main.innerHTML=`
     <div class="section-head"><div><h2>Produtos</h2><p>${list.length} itens exibidos</p></div></div>
+    <div class="catalog-search"><span>🔎</span><input id="catalogSearch" type="search" placeholder="Buscar sabor ou produto..." value="${esc(state.search)}" oninput="window.setSearch(this.value)"></div>
     <div class="filterbar">${filters.map(f=>`<button class="chip ${f===state.filter?"active":""}" type="button" onclick="window.setFilter(${JSON.stringify(f)})">${esc(f)}</button>`).join("")}</div>
     <div class="products">
-      ${list.map(p=>`<article class="product-card">
-        <div class="product-visual">${productIcon(p)}</div>
+      ${list.map(p=>`<article class="product-card ${p.destaque?"featured":""}">
+        <div class="product-visual">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(p.produto)}" loading="lazy" onerror="this.parentElement.innerHTML='${productIcon(p)}'">`:productIcon(p)}</div>
         <div class="product-meta">${esc(categoryKey(p))}${measure(p)?" • "+measure(p):""}</div>
         <h3>${esc(p.produto)}</h3>
+        ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
+        <div class="stock-line"><span class="supply-badge ${p.modelo_fornecimento==="estoque"?"stock":"made"}">${p.modelo_fornecimento==="estoque"?"Estoque":"Produção sob encomenda"}</span>${p.destaque?'<span class="featured-badge">Destaque</span>':""}</div>
         <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
-        ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
+        ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
       </article>`).join("")||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado.</div>'}
     </div>`;
 }
 window.setFilter=f=>{state.filter=f;renderCatalog()};
+window.setSearch=v=>{state.search=v;renderCatalog();requestAnimationFrame(()=>{const e=$("#catalogSearch");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}})};
 window.changeQty=(id,delta)=>{
   const n=Math.max(0,Number(state.cart[id]||0)+delta);if(n)state.cart[id]=n;else delete state.cart[id];saveCart();
   const e=$("#qty-"+id);if(e)e.textContent=state.cart[id]||0;
