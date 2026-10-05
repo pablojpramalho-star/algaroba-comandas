@@ -1,0 +1,21 @@
+{
+  "name": "Algaroba — Natural como nossa terra",
+  "short_name": "Algaroba",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f0e2",
+  "theme_color": "#123f2c",
+  "icons": [
+    {
+      "src": "../algaroba-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../algaroba-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
