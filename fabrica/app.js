@@ -13,6 +13,7 @@ const localDateISO=()=>{const d=new Date(),y=d.getFullYear(),m=String(d.getMonth
 const state={
   session:JSON.parse(localStorage.getItem("algaroba_session")||"null"),
   role:null,profile:null,catalog:[],groups:[],selectedGroup:null,search:"",groupInfoOpen:false,
+  drafts:{},
   cart:JSON.parse(localStorage.getItem("algaroba_cart")||"{}"),
   deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null
 };
@@ -175,6 +176,48 @@ function renderHome(){
 }
 window.openGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")};
 window.chooseGroup=key=>{state.selectedGroup=key;state.search="";state.groupInfoOpen=false;go("catalog")};
+
+function draftForGroup(key){
+  if(!state.drafts[key])state.drafts[key]={};
+  return state.drafts[key];
+}
+function draftUnits(key){
+  return Object.values(draftForGroup(key)).reduce((sum,qty)=>sum+Number(qty||0),0);
+}
+window.changeDraftQty=(id,delta)=>{
+  const group=state.groups.find(g=>g.chave===state.selectedGroup);
+  if(!group||!groupProducts(group).some(p=>p.produto_id===id&&p.disponibilidade_catalogo==="disponivel"))return;
+  const draft=draftForGroup(group.chave);
+  const next=Math.max(0,Math.min(9999,Number(draft[id]||0)+delta));
+  if(next)draft[id]=next;else delete draft[id];
+  const out=document.getElementById("draft-"+id);if(out)out.textContent=next;
+  const minus=document.getElementById("remove-"+id);if(minus)minus.disabled=next===0;
+  const total=draftUnits(group.chave);
+  const button=document.getElementById("confirmGroupItems");if(button)button.disabled=total===0;
+  const counter=document.getElementById("pendingCount");if(counter)counter.textContent=total?" • "+total+" un.":"";
+};
+window.addDraftToCart=()=>{
+  const group=state.groups.find(g=>g.chave===state.selectedGroup);if(!group)return;
+  const draft=draftForGroup(group.chave);
+  const availableIds=new Set(groupProducts(group).filter(p=>p.disponibilidade_catalogo==="disponivel").map(p=>p.produto_id));
+  const entries=Object.entries(draft).filter(([id,quantity])=>availableIds.has(id)&&Number.isSafeInteger(quantity)&&quantity>0);
+  const total=entries.reduce((sum,[,q])=>sum+q,0);
+  if(total===0){showToast("Escolha a quantidade de pelo menos um produto.");return}
+  if(entries.some(([id,q])=>Number(state.cart[id]||0)+q>9999)){showToast("Quantidade máxima por produto excedida.");return}
+  for(const [id,q] of entries)state.cart[id]=Number(state.cart[id]||0)+q;
+  state.drafts[group.chave]={};
+  saveCart();
+  state.selectedGroup=null;state.search="";state.groupInfoOpen=false;
+  go("catalog");
+  showToast(total+" "+(total===1?"unidade adicionada":"unidades adicionadas")+" ao carrinho.");
+};
+window.finishFromGroup=()=>{
+  if(state.selectedGroup&&draftUnits(state.selectedGroup)>0){
+    showToast("Primeiro toque em Adicionar estes itens ao carrinho.");return;
+  }
+  if(cartUnits())go("cart");else showToast("Seu carrinho ainda está vazio.");
+};
+
 window.backToGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;renderCatalog()};
 window.toggleGroupInfo=()=>{state.groupInfoOpen=!state.groupInfoOpen;renderCatalog()};
 
