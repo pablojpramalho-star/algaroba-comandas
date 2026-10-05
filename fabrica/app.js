@@ -227,7 +227,7 @@ function renderGroupChooser(){
     <div class="catalog-groups">
       ${state.groups.map(g=>`<button class="group-card" type="button" onclick="window.chooseGroup('${g.chave}')">
         <div class="group-card-icon">${groupIcon(g.chave)}</div>
-        <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small></div>
+        <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small>${draftUnits(g.chave)>0?`<small class="group-pending">${draftUnits(g.chave)} para adicionar</small>`:""}</div>
       </button>`).join("")}
     </div>
     ${cartItems().length?`<div class="catalog-bottom-actions"><button class="button orange" type="button" data-go="cart">Finalizar meu pedido →</button></div>`:""}
@@ -250,7 +250,11 @@ function renderProductCards(list,group){
     ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
     <div class="stock-line"><span class="supply-badge ${p.modelo_fornecimento==="estoque"?"stock":"made"}">${p.modelo_fornecimento==="estoque"?"Estoque":"Produção sob encomenda"}</span>${p.destaque?'<span class="featured-badge">Destaque</span>':""}</div>
     <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
-    ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
+    ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="draft-quantity">
+      <button class="draft-remove" type="button" id="remove-${p.produto_id}" onclick="window.changeDraftQty('${p.produto_id}',-1)" ${!draftForGroup(group.chave)[p.produto_id]?"disabled":""}>Retirar</button>
+      <output class="draft-number" id="draft-${p.produto_id}" aria-live="polite">${draftForGroup(group.chave)[p.produto_id]||0}</output>
+      <button class="draft-add" type="button" onclick="window.changeDraftQty('${p.produto_id}',1)">Adicionar</button>
+    </div>`}
   </article>`).join("");
 }
 
@@ -301,11 +305,17 @@ function renderCatalog(){
 
     ${content||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado neste grupo.</div>'}
 
+    <div class="group-draft-action">
+      <small>Selecione as quantidades acima e confirme tudo de uma vez.</small>
+      <button id="confirmGroupItems" class="button orange group-draft-button" type="button" onclick="window.addDraftToCart()" ${!draftUnits(group.chave)?"disabled":""}>
+        🛒 Adicionar estes itens ao carrinho <span id="pendingCount">${draftUnits(group.chave)?" • "+draftUnits(group.chave)+" un.":""}</span>
+      </button>
+    </div>
     <div class="catalog-bottom-actions">
       <button class="button ghost" type="button" onclick="window.backToGroups()">← Voltar às linhas</button>
-      ${cartItems().length?'<button class="button orange" type="button" data-go="cart">Finalizar meu pedido →</button>':""}
+      ${cartItems().length?'<button class="button orange" type="button" onclick="window.finishFromGroup()">Finalizar meu pedido →</button>':""}
     </div>
-    ${miniCheckout()}
+
   `;
 }
 window.setSearch=v=>{state.search=v;renderCatalog();requestAnimationFrame(()=>{const e=$("#catalogSearch");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}})};
