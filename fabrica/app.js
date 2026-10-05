@@ -55,6 +55,11 @@ function groupIcon(key){
 }
 function groupProducts(group){
   if(!group)return[];
+  if(group.chave==="tradicional")return state.catalog.filter(p=>["Tradicional","Zero","Raiz"].includes(p.linha));
+  if(group.chave==="classic")return state.catalog.filter(p=>p.linha==="Classic");
+  if(group.chave==="intense")return state.catalog.filter(p=>p.linha==="Intense");
+  if(group.chave==="graos-farinaceos")return state.catalog.filter(p=>p.categoria==="Grãos e Farináceos");
+  if(group.chave==="xaropes-coberturas")return state.catalog.filter(p=>["Xaropes","Coberturas"].includes(p.categoria));
   const values=String(group.filtro_valor||"").split("|");
   if(group.tipo_filtro==="linha")return state.catalog.filter(p=>p.linha===group.filtro_valor);
   if(group.tipo_filtro==="linhas")return state.catalog.filter(p=>values.includes(p.linha));
