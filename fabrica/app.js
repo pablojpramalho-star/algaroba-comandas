@@ -472,7 +472,7 @@ async function renderInfo(){
   }
 }
 
-function renderAccount(){
+async function renderAccount(){
   if(!state.session){renderLogin();return}
   if(state.role!=="cliente"){go("internal");return}
   loading("Carregando cadastro...");
