@@ -145,6 +145,7 @@ async function go(view){
   else if(view==="review")renderReview();
   else if(view==="success")renderSuccess();
   else if(view==="orders")await renderOrders();
+  else if(view==="info")await renderInfo();
   else if(view==="account")await renderAccount();
   else if(view==="login")renderLogin();
   else if(view==="internal")await renderInternal();
@@ -161,29 +162,16 @@ $("#cartButton").addEventListener("click",()=>go("cart"));
 $("#accountButton").addEventListener("click",()=>go(state.session&&state.role!=="cliente"?"internal":"account"));
 
 function renderHome(){
-  const groups=state.groups;
   main.innerHTML=`
-  <section class="hero">
-    <div class="eyebrow">Pedido direto da fábrica</div>
-    <h1>Direto da nossa fábrica para você.</h1>
-    <p>Escolha primeiro a linha ou categoria. Dentro dela você encontra os sabores e produtos disponíveis, sem misturar tudo em uma única lista.</p>
-    <button class="button" onclick="window.openGroups()">Fazer meu pedido →</button>
-  </section>
-  <div class="section-head"><div><h2>Escolha uma linha</h2><p>Entre na categoria para ver os sabores.</p></div></div>
-  <div class="catalog-groups">
-    ${groups.map(g=>`<button class="group-card" type="button" onclick="window.chooseGroup('${g.chave}')">
-      <div class="group-card-icon">${groupIcon(g.chave)}</div>
-      <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small></div>
-    </button>`).join("")}
-  </div>
-  <div class="section-head"><h2>Como funciona</h2></div>
-  <div class="grid">
-    <div class="info-card"><div class="big-icon">🧾</div><strong>Pedido até 11h</strong><div class="small">A manhã fica reservada para controle, produção, conferência e montagem da carga.</div></div>
-    <div class="info-card"><div class="big-icon">🏭</div><strong>Produção sob encomenda</strong><div class="small">Os shakes são produzidos após o pedido.</div></div>
-    <div class="info-card"><div class="big-icon">🚚</div><strong>Rotas à tarde</strong><div class="small">Saída padrão às 14h, podendo ser antecipada para 13h em rotas maiores. Sem horário exato de chegada.</div></div>
-    <div class="info-card"><div class="big-icon">📦</div><strong>Retirada na fábrica</strong><div class="small">Preço de atacado em qualquer quantidade. Logística por conta do comprador.</div></div>
-  </div>
-  <div class="notice green" style="margin-top:14px"><b>Regra comercial:</b> nas entregas, pedidos com 6 ou mais unidades utilizam preço de atacado. Na retirada na fábrica, o atacado vale desde a primeira unidade.</div>`;
+    <section class="home-focus">
+      <div class="home-brand-orbit">
+        <img src="../algaroba-icon.svg" alt="Algaroba" class="home-logo">
+        <div class="home-shake" aria-hidden="true">🥤</div>
+      </div>
+      <div class="home-title">Faça seu pedido</div>
+      <button class="button home-order-button" onclick="window.openGroups()">FAZER MEU PEDIDO →</button>
+    </section>
+  `;
 }
 window.openGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")};
 window.chooseGroup=key=>{state.selectedGroup=key;state.search="";state.groupInfoOpen=false;go("catalog")};
@@ -436,7 +424,55 @@ window.logout=async()=>{
 };
 window.afterLogin=()=>go(state.role==="cliente"?"home":"internal");
 
-async function renderAccount(){
+async async function renderInfo(){
+  loading("Carregando informações...");
+  try{
+    const info=await rpc("informacoes_portal_cliente",{},false);
+    const lines=info?.linhas||state.groups||[];
+    main.innerHTML=`
+      <div class="section-head"><div><h2>Informações</h2><p>Tudo o que você precisa saber para fazer seu pedido.</p></div></div>
+
+      <div class="info-highlight">
+        <div class="info-highlight-icon">🧾</div>
+        <div><strong>Pedidos até ${esc(info?.pedido_limite||"11:00")}</strong><p>Os pedidos da rota do dia entram até esse horário para controle e produção pela manhã.</p></div>
+      </div>
+
+      <div class="info-highlight">
+        <div class="info-highlight-icon">🚚</div>
+        <div><strong>Rotas à tarde</strong><p>${esc(info?.mensagem_rota||"As rotas saem normalmente às 14h e não têm horário exato de chegada.")}</p></div>
+      </div>
+
+      <div class="info-highlight">
+        <div class="info-highlight-icon">🏭</div>
+        <div><strong>Produção sob encomenda</strong><p>${esc(info?.producao||"Os shakes são produzidos após o pedido.")}</p></div>
+      </div>
+
+      <div class="info-highlight">
+        <div class="info-highlight-icon">📦</div>
+        <div><strong>Retirada na fábrica</strong><p>${esc(info?.retirada||"Na retirada na fábrica, o preço de atacado vale em qualquer quantidade.")}</p></div>
+      </div>
+
+      <div class="info-highlight">
+        <div class="info-highlight-icon">💰</div>
+        <div><strong>Preço de atacado nas entregas</strong><p>${esc(info?.entrega||"Pedidos com 6 ou mais unidades utilizam preço de atacado.")}</p></div>
+      </div>
+
+      <div class="section-head"><div><h2>Conheça nossas linhas</h2><p>Toque em “Fazer pedido” para ver os produtos de cada uma.</p></div></div>
+      <div class="info-lines">
+        ${lines.map(g=>`<div class="info-line-card">
+          <div class="info-line-icon">${groupIcon(g.chave)}</div>
+          <div><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><p>${esc(g.descricao||"")}</p></div>
+        </div>`).join("")}
+      </div>
+
+      <button class="button orange" style="width:100%;margin-top:14px" type="button" onclick="window.openGroups()">Fazer meu pedido →</button>
+    `;
+  }catch(e){
+    main.innerHTML='<div class="empty"><div class="empty-icon">ⓘ</div>Não foi possível carregar as informações agora.</div>';
+  }
+}
+
+function renderAccount(){
   if(!state.session){renderLogin();return}
   if(state.role!=="cliente"){go("internal");return}
   loading("Carregando cadastro...");
