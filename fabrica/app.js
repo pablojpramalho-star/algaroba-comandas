@@ -12,7 +12,7 @@ const localDateISO=()=>{const d=new Date(),y=d.getFullYear(),m=String(d.getMonth
 
 const state={
   session:JSON.parse(localStorage.getItem("algaroba_session")||"null"),
-  role:null,profile:null,catalog:[],filter:"Todos",search:"",
+  role:null,profile:null,catalog:[],groups:[],selectedGroup:null,search:"",groupInfoOpen:false,
   cart:JSON.parse(localStorage.getItem("algaroba_cart")||"{}"),
   deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null
 };
@@ -50,10 +50,22 @@ const rpc=(name,params={},auth=true)=>request("/rest/v1/rpc/"+name,{method:"POST
 async function table(path){return request("/rest/v1/"+path)}
 
 function categoryKey(p){return p.linha||p.categoria||"Outros"}
-function categoryOrder(){
-  const preferred=["Tradicional","Zero","Classic","Intense","Raiz","Xaropes","Coberturas","Grãos e Complementos"];
-  const found=[...new Set(state.catalog.map(categoryKey))];
-  return [...preferred.filter(x=>found.includes(x)),...found.filter(x=>!preferred.includes(x)).sort()];
+function groupIcon(key){
+  return ({tradicional:"🥤",zero:"🌿",classic:"🍓",intense:"🍫",xaropes:"🍯",coberturas:"🍓","graos-farinaceos":"🥜"})[key]||"▦";
+}
+function groupProducts(group){
+  if(!group)return[];
+  return state.catalog.filter(p=>group.tipo_filtro==="linha"?p.linha===group.filtro_valor:p.categoria===group.filtro_valor);
+}
+function displayProductName(p,group){
+  if(group?.tipo_filtro==="linha"){
+    if(p.sabor)return p.sabor;
+    return String(p.produto||"")
+      .replace(/^Classic\s+/i,"")
+      .replace(/^Intense\s+/i,"")
+      .replace(/^Tradicional\s+/i,"");
+  }
+  return p.produto;
 }
 function productIcon(p){
   const c=(p.categoria||"").toLowerCase(),n=(p.produto||"").toLowerCase(),l=(p.linha||"").toLowerCase();
@@ -85,8 +97,16 @@ function setClientNavigation(){
   accountLabel.textContent=state.session?(state.role==="cliente"?(state.profile?.nome?.split(" ")[0]||"Conta"):"Painel"):"Entrar";
 }
 async function loadCatalog(){
-  try{state.catalog=await rpc(state.session&&state.role==="cliente"?"catalogo_cliente":"catalogo_publico",{},!!state.session&&state.role==="cliente")||[]}
-  catch(e){console.error(e);state.catalog=[];showToast("Não foi possível carregar o catálogo.")}
+  try{
+    const [catalog,groups]=await Promise.all([
+      rpc(state.session&&state.role==="cliente"?"catalogo_cliente":"catalogo_publico",{},!!state.session&&state.role==="cliente"),
+      rpc("catalogo_grupos",{},false)
+    ]);
+    state.catalog=catalog||[];
+    state.groups=groups||[];
+  }catch(e){
+    console.error(e);state.catalog=[];state.groups=[];showToast("Não foi possível carregar o catálogo.");
+  }
 }
 async function loadIdentity(){
   if(!state.session){state.role=null;state.profile=null;return}
@@ -121,60 +141,106 @@ async function go(view){
   else if(view==="internal")await renderInternal();
 }
 document.addEventListener("click",e=>{
-  const b=e.target.closest("[data-go]");if(b){e.preventDefault();go(b.dataset.go)}
+  const b=e.target.closest("[data-go]");
+  if(b){
+    e.preventDefault();
+    if(b.dataset.go==="catalog"){state.selectedGroup=null;state.search="";state.groupInfoOpen=false}
+    go(b.dataset.go);
+  }
 });
 $("#cartButton").addEventListener("click",()=>go("cart"));
 $("#accountButton").addEventListener("click",()=>go(state.session&&state.role!=="cliente"?"internal":"account"));
 
 function renderHome(){
-  const cats=categoryOrder();
+  const groups=state.groups;
   main.innerHTML=`
   <section class="hero">
     <div class="eyebrow">Pedido direto da fábrica</div>
     <h1>Direto da nossa fábrica para você.</h1>
-    <p>Os produtos de fabricação são preparados após o pedido para garantir qualidade e frescor. Xaropes, coberturas e grãos dependem da disponibilidade em estoque.</p>
-    <button class="button" data-go="catalog">Começar meu pedido →</button>
+    <p>Escolha primeiro a linha ou categoria. Dentro dela você encontra os sabores e produtos disponíveis, sem misturar tudo em uma única lista.</p>
+    <button class="button" onclick="window.openGroups()">Ver linhas e produtos →</button>
   </section>
-  <div class="section-head"><div><h2>Linhas e produtos</h2><p>Catálogo conectado à base da Algaroba.</p></div></div>
-  <div class="grid">
-    ${cats.map((c,i)=>`<button class="category-card" type="button" onclick="window.chooseCategory(${JSON.stringify(c)})"><div class="category-icon">${["🥤","🌿","🥛","🍫","🌾","🍯","🍓","🥜"][i%8]}</div><strong>${esc(c)}</strong><div class="small">${state.catalog.filter(p=>categoryKey(p)===c).length} opções no catálogo →</div></button>`).join("")}
+  <div class="section-head"><div><h2>Escolha uma linha</h2><p>Entre na categoria para ver os sabores.</p></div></div>
+  <div class="catalog-groups">
+    ${groups.map(g=>`<button class="group-card" type="button" onclick="window.chooseGroup('${g.chave}')">
+      <div class="group-card-icon">${groupIcon(g.chave)}</div>
+      <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small></div>
+    </button>`).join("")}
   </div>
   <div class="section-head"><h2>Como funciona</h2></div>
   <div class="grid">
     <div class="info-card"><div class="big-icon">🧾</div><strong>Pedido até 11h</strong><div class="small">A manhã fica reservada para controle, produção, conferência e montagem da carga.</div></div>
     <div class="info-card"><div class="big-icon">🏭</div><strong>Produção sob encomenda</strong><div class="small">Os shakes são produzidos após o pedido.</div></div>
-    <div class="info-card"><div class="big-icon">🚚</div><strong>Rotas à tarde</strong><div class="small">Saída padrão às 14h, com possibilidade de 13h nas rotas maiores. Sem horário exato de chegada.</div></div>
+    <div class="info-card"><div class="big-icon">🚚</div><strong>Rotas à tarde</strong><div class="small">Saída padrão às 14h, podendo ser antecipada para 13h em rotas maiores. Sem horário exato de chegada.</div></div>
     <div class="info-card"><div class="big-icon">📦</div><strong>Retirada na fábrica</strong><div class="small">Preço de atacado em qualquer quantidade. Logística por conta do comprador.</div></div>
   </div>
   <div class="notice green" style="margin-top:14px"><b>Regra comercial:</b> nas entregas, pedidos com 6 ou mais unidades utilizam preço de atacado. Na retirada na fábrica, o atacado vale desde a primeira unidade.</div>`;
 }
-window.chooseCategory=c=>{state.filter=c;go("catalog")};
+window.openGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")};
+window.chooseGroup=key=>{state.selectedGroup=key;state.search="";state.groupInfoOpen=false;go("catalog")};
+window.backToGroups=()=>{state.selectedGroup=null;state.search="";state.groupInfoOpen=false;renderCatalog()};
+window.toggleGroupInfo=()=>{state.groupInfoOpen=!state.groupInfoOpen;renderCatalog()};
+
+function renderGroupChooser(){
+  main.innerHTML=`
+    <div class="section-head"><div><h2>Produtos Algaroba</h2><p>Escolha uma linha ou categoria para continuar.</p></div></div>
+    <div class="catalog-groups">
+      ${state.groups.map(g=>`<button class="group-card" type="button" onclick="window.chooseGroup('${g.chave}')">
+        <div class="group-card-icon">${groupIcon(g.chave)}</div>
+        <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small></div>
+      </button>`).join("")}
+    </div>`;
+}
 
 function renderCatalog(){
-  const filters=["Todos",...categoryOrder()];
+  const group=state.groups.find(g=>g.chave===state.selectedGroup);
+  if(!group){renderGroupChooser();return}
+
   const term=state.search.trim().toLocaleLowerCase("pt-BR");
-  const list=state.catalog.filter(p=>{
-    const inCategory=state.filter==="Todos"||categoryKey(p)===state.filter;
-    const hay=[p.produto,p.sabor,p.linha,p.categoria,p.codigo].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
-    return inCategory&&(!term||hay.includes(term));
+  const groupList=groupProducts(group);
+  const list=groupList.filter(p=>{
+    const hay=[p.produto,p.sabor,p.codigo].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+    return !term||hay.includes(term);
   });
+
   main.innerHTML=`
-    <div class="section-head"><div><h2>Produtos</h2><p>${list.length} itens exibidos</p></div></div>
-    <div class="catalog-search"><span>🔎</span><input id="catalogSearch" type="search" placeholder="Buscar sabor ou produto..." value="${esc(state.search)}" oninput="window.setSearch(this.value)"></div>
-    <div class="filterbar">${filters.map(f=>`<button class="chip ${f===state.filter?"active":""}" type="button" onclick="window.setFilter(${JSON.stringify(f)})">${esc(f)}</button>`).join("")}</div>
+    <div class="catalog-group-head">
+      <button class="back-circle" type="button" onclick="window.backToGroups()" aria-label="Voltar às linhas">‹</button>
+      <div class="group-head-icon">${groupIcon(group.chave)}</div>
+      <div class="group-head-copy">
+        <div class="eyebrow dark">Catálogo Algaroba</div>
+        <h2>${esc(group.titulo)}</h2>
+        <p>${esc(group.subtitulo||"")}</p>
+      </div>
+      <button class="help-circle" type="button" onclick="window.toggleGroupInfo()" aria-label="Saiba mais sobre esta linha">?</button>
+    </div>
+
+    <div class="group-intro">
+      <span>${group.tipo_filtro==="linha"?"Sobre esta linha":"Sobre esta categoria"}</span>
+      <p>${esc(group.descricao||"")}</p>
+      <button type="button" onclick="window.toggleGroupInfo()">${state.groupInfoOpen?"Ocultar detalhes":"Saiba mais"} <b>?</b></button>
+    </div>
+
+    ${state.groupInfoOpen?`<div class="line-explainer">
+      <div class="line-explainer-icon">${groupIcon(group.chave)}</div>
+      <div><strong>${esc(group.titulo)}</strong><p>${esc(group.descricao||"")}</p>${["tradicional","zero","classic","intense"].includes(group.chave)?'<small>As linhas Algaroba têm propostas diferentes de sabor e experiência. Escolha a que combina melhor com o seu público ou cardápio.</small>':""}</div>
+    </div>`:""}
+
+    <div class="catalog-search"><span>🔎</span><input id="catalogSearch" type="search" placeholder="${group.tipo_filtro==="linha"?"Buscar sabor nesta linha...":"Buscar produto nesta categoria..."}" value="${esc(state.search)}" oninput="window.setSearch(this.value)"></div>
+
+    <div class="catalog-result-head"><b>${group.tipo_filtro==="linha"?"Sabores":"Produtos"}</b><span>${list.length} de ${groupList.length}</span></div>
     <div class="products">
       ${list.map(p=>`<article class="product-card ${p.destaque?"featured":""}">
-        <div class="product-visual">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(p.produto)}" loading="lazy" onerror="this.parentElement.innerHTML='${productIcon(p)}'">`:productIcon(p)}</div>
-        <div class="product-meta">${esc(categoryKey(p))}${measure(p)?" • "+measure(p):""}</div>
-        <h3>${esc(p.produto)}</h3>
+        <div class="product-visual">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.parentElement.innerHTML='${productIcon(p)}'">`:productIcon(p)}</div>
+        <div class="product-meta">${group.tipo_filtro==="linha"?"Sabor":esc(group.titulo)}${measure(p)?" • "+measure(p):""}</div>
+        <h3>${esc(displayProductName(p,group))}</h3>
         ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
         <div class="stock-line"><span class="supply-badge ${p.modelo_fornecimento==="estoque"?"stock":"made"}">${p.modelo_fornecimento==="estoque"?"Estoque":"Produção sob encomenda"}</span>${p.destaque?'<span class="featured-badge">Destaque</span>':""}</div>
         <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
         ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
-      </article>`).join("")||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado.</div>'}
+      </article>`).join("")||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado nesta linha.</div>'}
     </div>`;
 }
-window.setFilter=f=>{state.filter=f;renderCatalog()};
 window.setSearch=v=>{state.search=v;renderCatalog();requestAnimationFrame(()=>{const e=$("#catalogSearch");if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length)}})};
 window.changeQty=(id,delta)=>{
   const n=Math.max(0,Number(state.cart[id]||0)+delta);if(n)state.cart[id]=n;else delete state.cart[id];saveCart();
