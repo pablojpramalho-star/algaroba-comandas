@@ -243,9 +243,58 @@ async function renderOrders(){
   loading("Carregando seus pedidos...");
   try{
     const rows=await rpc("meus_pedidos",{},true)||[];
-    main.innerHTML=`<div class="section-head"><div><h2>Meus pedidos</h2><p>Acompanhamento individual</p></div></div><div class="panel">${rows.length?rows.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}${o.data_entrega_prevista?" • "+fmtDate(o.data_entrega_prevista):""}</div><div style="margin-top:7px"><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div></div><div style="text-align:right"><b>${brl(o.total)}</b><div class="inline-actions" style="margin-top:7px"><button class="button soft" onclick="window.downloadPdf('${o.pedido_id}')">PDF</button>${o.status==="pronto"?`<button class="button" onclick="window.choosePix('${o.pedido_id}')">Pix</button><button class="button ghost" onclick="window.choosePrazo('${o.pedido_id}')">Prazo</button>`:""}</div></div></div>`).join(""):'<div class="empty"><div class="empty-icon">▤</div>Nenhum pedido ainda.</div>'}</div>`;
+    main.innerHTML=`<div class="section-head"><div><h2>Meus pedidos</h2><p>Acompanhamento individual</p></div></div><div class="panel">${rows.length?rows.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}${o.data_entrega_prevista?" • "+fmtDate(o.data_entrega_prevista):""}</div><div style="margin-top:7px"><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div></div><div style="text-align:right"><b>${brl(o.total)}</b><div class="inline-actions" style="margin-top:7px"><button class="button soft" onclick="window.viewOrder('${o.pedido_id}')">Ver pedido</button><button class="button ghost" onclick="window.downloadPdf('${o.pedido_id}')">PDF</button></div></div></div>`).join(""):'<div class="empty"><div class="empty-icon">▤</div>Nenhum pedido ainda.</div>'}</div>`;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+
+window.viewOrder=async id=>{
+  loading("Carregando pedido...");
+  try{
+    const o=await rpc("pedido_detalhe_cliente",{p_pedido_id:id},true);
+    const choice=o.pagamento_escolha||null,proof=o.comprovante||null;
+    const canPay=o.status==="pronto"&&o.status_financeiro!=="pago";
+    main.innerHTML=`
+      <div class="section-head"><div><h2>${esc(o.numero)}</h2><p>${fmtDateTime(o.data_pedido)}</p></div><button class="button ghost" data-go="orders">Voltar</button></div>
+      <div class="panel">
+        ${(o.itens||[]).map(i=>`<div class="row"><div><div class="row-title">${esc(i.produto)}</div><div class="row-sub">Solicitado: ${i.quantidade_solicitada} • Confirmado: ${i.quantidade_confirmada}</div>${Number(i.quantidade_confirmada)<Number(i.quantidade_solicitada)?`<div class="row-sub bad">Ajustado: ${esc(i.motivo_indisponibilidade||"item indisponível")}</div>`:""}<span class="status ${statusClass(i.status_producao)}">${esc(i.status_producao)}</span></div><div style="text-align:right"><b>${brl(i.total_item)}</b><div class="row-sub">${brl(i.preco_unitario)} / un.</div></div></div>`).join("")}
+        <div class="summary">
+          <div class="summary-line"><span>Status</span><b>${esc(o.status)}</b></div>
+          <div class="summary-line"><span>Financeiro</span><b>${esc(o.status_financeiro)}</b></div>
+          <div class="summary-line"><span>Pago</span><b>${brl(o.valor_pago)}</b></div>
+          <div class="summary-line total"><span>Total final</span><span>${brl(o.total)}</span></div>
+        </div>
+      </div>
+      ${choice?`<div class="notice green" style="margin-top:12px"><b>Forma escolhida: ${esc(choice.metodo)}</b><br>Status: ${esc(choice.status)}${proof?" • comprovante: "+esc(proof.status):""}</div>`:""}
+      ${canPay?`<div class="section-head"><div><h2>Forma de pagamento</h2><p>Escolha após a confirmação da Produção.</p></div></div>
+        <div class="payment-grid">
+          <button class="payment-card" onclick="window.chooseMethod('${id}','pix')"><span>💠</span><b>Pix</b><small>Envie o comprovante pelo sistema.</small></button>
+          <button class="payment-card" onclick="window.chooseMethod('${id}','dinheiro')"><span>💵</span><b>Dinheiro</b><small>Pagamento combinado na entrega/retirada.</small></button>
+          <button class="payment-card" onclick="window.chooseMethod('${id}','debito')"><span>💳</span><b>Débito</b><small>Pagamento por cartão.</small></button>
+          <button class="payment-card" onclick="window.chooseMethod('${id}','credito')"><span>💳</span><b>Crédito</b><small>Pagamento por cartão.</small></button>
+          <button class="payment-card" onclick="window.chooseMethod('${id}','prazo')"><span>🧾</span><b>A prazo</b><small>Somente se autorizado no cadastro.</small></button>
+        </div>`:""}
+      ${choice?.metodo==="pix"&&choice.status!=="aprovado"?`<button class="button orange" style="width:100%;margin-top:12px" onclick="window.pickProof('${id}')">Enviar / reenviar comprovante Pix</button>`:""}
+      ${o.status==="recebido"?`<button class="button danger" style="width:100%;margin-top:12px" onclick="window.cancelOrder('${id}')">Cancelar pedido</button>`:""}
+      <div class="actions" style="margin-top:12px"><button class="button soft" onclick="window.downloadPdf('${id}')">Baixar PDF</button><button class="button ghost" data-go="orders">Voltar aos pedidos</button></div>
+    `;
+  }catch(e){showToast(e.message);await renderOrders()}
+};
+window.chooseMethod=async(id,method)=>{
+  try{
+    await rpc("escolher_forma_pagamento_cliente",{p_pedido_id:id,p_metodo:method},true);
+    if(method==="pix"){showToast("Pix selecionado. Agora envie o comprovante.");await window.viewOrder(id)}
+    else if(method==="prazo"){showToast("Condição de prazo processada.");await window.viewOrder(id)}
+    else{showToast("Forma de pagamento registrada.");await window.viewOrder(id)}
+  }catch(e){showToast(e.message)}
+};
+window.pickProof=id=>{
+  const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp,application/pdf";
+  input.onchange=async()=>{if(input.files?.[0])await window.uploadProof(id,input.files[0])};input.click();
+};
+window.cancelOrder=async id=>{
+  if(!confirm("Cancelar este pedido?"))return;
+  try{await rpc("cancelar_pedido_cliente",{p_pedido_id:id},true);showToast("Pedido cancelado.");await renderOrders()}catch(e){showToast(e.message)}
+};
 window.downloadPdf=async id=>{
   try{
     const r=await fetch(SUPABASE_URL+"/functions/v1/pedido-pdf",{method:"POST",headers:{...authHeaders(),"Content-Type":"application/json"},body:JSON.stringify({pedido_id:id})});
@@ -253,12 +302,7 @@ window.downloadPdf=async id=>{
     const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="pedido-algaroba.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
   }catch(e){showToast(e.message)}
 };
-window.choosePix=async id=>{
-  try{
-    await rpc("escolher_forma_pagamento_cliente",{p_pedido_id:id,p_metodo:"pix"},true);
-    const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp,application/pdf";input.onchange=async()=>{if(!input.files?.[0])return;await window.uploadProof(id,input.files[0])};input.click();
-  }catch(e){showToast(e.message)}
-};
+window.choosePix=async id=>window.chooseMethod(id,"pix");
 window.uploadProof=async(id,file)=>{
   try{
     showToast("Enviando comprovante...");
@@ -267,10 +311,7 @@ window.uploadProof=async(id,file)=>{
     showToast("Comprovante enviado para conferência.");await renderOrders();
   }catch(e){showToast(e.message)}
 };
-window.choosePrazo=async id=>{
-  try{await rpc("escolher_forma_pagamento_cliente",{p_pedido_id:id,p_metodo:"prazo"},true);showToast("Pedido liberado conforme sua condição de prazo.");await renderOrders()}
-  catch(e){showToast(e.message)}
-};
+window.choosePrazo=async id=>window.chooseMethod(id,"prazo");
 
 function renderLogin(){
   if(state.session){
@@ -323,7 +364,7 @@ async function renderProduction(){
   loading("Carregando Produção...");
   try{
     const rows=await rpc("producao_fila",{},true)||[],groups={};rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
-    main.innerHTML=`<div class="rolebar"><b>🏭 Produção</b><span>sem preços e sem financeiro</span></div><div class="section-head"><div><h2>Fila de Produção</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">Solicitado: ${x.quantidade_solicitada} • ${esc(x.modelo_fornecimento)}</div><span class="status ${statusClass(x.status_item)}">${esc(x.status_item)}</span></div><div class="inline-actions"><button class="button soft" onclick="window.prodUpdate('${x.item_id}','pronto',${Number(x.quantidade_solicitada)})">Pronto</button>${x.modelo_fornecimento==="estoque"?`<button class="button danger" onclick="window.prodUpdate('${x.item_id}','indisponivel',0)">Em falta</button>`:""}</div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.prodFinish('${pid}')">Finalizar pedido</button></div></div>`).join("")||'<div class="empty">Nenhum pedido aguardando produção.</div>'}`;
+    main.innerHTML=`<div class="rolebar"><b>🏭 Produção</b><span>sem preços e sem financeiro</span></div><div class="section-head"><div><h2>Fila de Produção</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">Solicitado: ${x.quantidade_solicitada} • ${esc(x.modelo_fornecimento)}</div><span class="status ${statusClass(x.status_item)}">${esc(x.status_item)}</span></div><div class="inline-actions">${x.modelo_fornecimento==="estoque"?`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','separado',${Number(x.quantidade_solicitada)})">Separado</button><button class="button danger" onclick="window.prodUpdate('${x.item_id}','indisponivel',0)">Em falta</button>`:`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','pronto',${Number(x.quantidade_solicitada)})">Pronto</button>`}</div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.prodFinish('${pid}')">Finalizar pedido</button></div></div>`).join("")||'<div class="empty">Nenhum pedido aguardando produção.</div>'}`;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 window.prodUpdate=async(id,status,q)=>{
@@ -398,12 +439,12 @@ window.rejectProof=async id=>{const motivo=prompt("Motivo da rejeição:");if(!m
 async function renderAdmin(){
   loading("Carregando Administração...");
   try{
-    const [orders,routes]=await Promise.all([
+    const [orders,routes,stock]=await Promise.all([
       table("pedidos?select=id,numero,status,status_financeiro,total,data_pedido,modalidade_entrega&order=data_pedido.desc&limit=30"),
-      table("rotas?select=id,nome,dia_semana,hora_limite_pedido,hora_inicio_padrao,hora_inicio_antecipada,ativo&ativo=eq.true&order=nome.asc")
+      table("rotas?select=id,nome,dia_semana,hora_limite_pedido,hora_inicio_padrao,hora_inicio_antecipada,ativo&ativo=eq.true&order=nome.asc"),
+      rpc("estoque_painel",{},true)
     ]);
     const total=orders.reduce((a,x)=>a+Number(x.total||0),0),pending=orders.filter(x=>x.status_financeiro!=="pago").length;
-    const stock=state.catalog.filter(p=>p.modelo_fornecimento==="estoque");
     const featured=state.catalog.filter(p=>p.destaque);
     main.innerHTML=`
       <div class="rolebar"><b>📊 Administração</b><span>${esc(state.role)}</span></div>
@@ -419,7 +460,7 @@ async function renderAdmin(){
 
       <div class="section-head"><div><h2>Catálogo e estoque</h2><p>Controle rápido do que o cliente enxerga.</p></div></div>
       <div class="panel">
-        ${stock.length?stock.map(p=>`<div class="row"><div><div class="row-title">${esc(p.produto)}</div><div class="row-sub">${esc(categoryKey(p))} • ${measure(p)} • atacado ${brl(p.preco_atacado)} • varejo ${brl(p.preco_varejo)}</div><div style="margin-top:6px"><span class="status ${p.disponibilidade_catalogo==="disponivel"?"ok":p.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(p.disponibilidade_catalogo)}</span>${p.destaque?' <span class="status warn">destaque</span>':""}</div></div><div class="inline-actions"><button class="button ${p.disponibilidade_catalogo==="em_falta"?"soft":"danger"}" onclick="window.adminToggleAvailability('${p.produto_id}','${p.disponibilidade_catalogo}')">${p.disponibilidade_catalogo==="em_falta"?"Disponibilizar":"Marcar falta"}</button><button class="button ghost" onclick="window.adminToggleFeatured('${p.produto_id}',${p.destaque})">${p.destaque?"Remover destaque":"Destacar"}</button><button class="button ghost" onclick="window.adminEditPresentation('${p.produto_id}')">Editar</button></div></div>`).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
+        ${stock.length?stock.map(s=>{const p=state.catalog.find(x=>x.produto_id===s.produto_id)||s;return `<div class="row"><div><div class="row-title">${esc(s.produto)}</div><div class="row-sub">${esc(s.categoria||categoryKey(p))} • Saldo: <b>${s.quantidade_atual}</b> • Mínimo: ${s.estoque_minimo}</div><div style="margin-top:6px"><span class="status ${s.disponibilidade_catalogo==="disponivel"?"ok":s.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(s.disponibilidade_catalogo)}</span> ${s.abaixo_minimo?'<span class="status warn">abaixo do mínimo</span>':""}${p.destaque?' <span class="status warn">destaque</span>':""}</div></div><div class="inline-actions"><button class="button soft" onclick="window.adminStockEntry('${s.produto_id}',${Number(s.quantidade_atual)})">Entrada</button><button class="button ghost" onclick="window.adminSetStock('${s.produto_id}',${Number(s.quantidade_atual)},${Number(s.estoque_minimo)})">Ajustar</button><button class="button ghost" onclick="window.adminToggleFeatured('${s.produto_id}',${!!p.destaque})">${p.destaque?"Remover destaque":"Destacar"}</button><button class="button ghost" onclick="window.adminEditPresentation('${s.produto_id}')">Editar</button></div></div>`}).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
       </div>
 
       <div class="section-head"><h2>Rotas</h2></div>
@@ -430,13 +471,19 @@ async function renderAdmin(){
     `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
-window.adminToggleAvailability=async(id,current)=>{
-  const next=current==="em_falta"?"disponivel":"em_falta";
-  try{
-    await rpc("admin_atualizar_produto_catalogo",{p_produto_id:id,p_descricao_cliente:null,p_imagem_url:null,p_ordem_exibicao:null,p_destaque:null,p_disponibilidade_catalogo:next,p_ativo:null},true);
-    showToast(next==="em_falta"?"Produto marcado em falta.":"Produto disponibilizado.");
-    await loadCatalog();await renderAdmin();
-  }catch(e){showToast(e.message)}
+window.adminStockEntry=async(id,current)=>{
+  const raw=prompt("Quantidade que está entrando no estoque:","1");if(raw===null)return;
+  const qtd=Number(raw.replace(",","."));if(!Number.isFinite(qtd)||qtd<=0){showToast("Quantidade inválida.");return}
+  const obs=prompt("Observação da entrada (opcional):")||null;
+  try{await rpc("admin_movimentar_estoque",{p_produto_id:id,p_quantidade:qtd,p_tipo:"entrada",p_observacao:obs},true);showToast("Entrada registrada.");await loadCatalog();await renderAdmin()}catch(e){showToast(e.message)}
+};
+window.adminSetStock=async(id,current,minCurrent)=>{
+  const raw=prompt("Saldo físico atual:",String(current).replace(".",","));if(raw===null)return;
+  const qtd=Number(raw.replace(",","."));if(!Number.isFinite(qtd)||qtd<0){showToast("Quantidade inválida.");return}
+  const rawMin=prompt("Estoque mínimo:",String(minCurrent).replace(".",","));if(rawMin===null)return;
+  const minimo=Number(rawMin.replace(",","."));if(!Number.isFinite(minimo)||minimo<0){showToast("Estoque mínimo inválido.");return}
+  const obs=prompt("Motivo do ajuste (opcional):")||null;
+  try{await rpc("admin_ajustar_estoque",{p_produto_id:id,p_nova_quantidade:qtd,p_estoque_minimo:minimo,p_observacao:obs},true);showToast("Estoque ajustado.");await loadCatalog();await renderAdmin()}catch(e){showToast(e.message)}
 };
 window.adminToggleFeatured=async(id,current)=>{
   try{
