@@ -437,17 +437,22 @@ window.finishRoute=async(execId)=>{
 async function renderFinance(){
   loading("Carregando Financeiro...");
   try{
-    const rows=await rpc("financeiro_comprovantes_fila",{},true)||[];
-    const pending=rows.filter(x=>["enviado","em_analise"].includes(x.comprovante_status));
+    const [rows,manual]=await Promise.all([
+      rpc("financeiro_comprovantes_fila",{},true),
+      rpc("financeiro_pagamentos_pendentes",{},true)
+    ]);
+    const proofs=rows||[],pendingProofs=proofs.filter(x=>["enviado","em_analise"].includes(x.comprovante_status)),manualRows=manual||[];
     main.innerHTML=`
-      <div class="rolebar"><b>💳 Financeiro</b><span>comprovantes e liberação</span></div>
-      <div class="section-head"><div><h2>Comprovantes Pix</h2><p>${pending.length} pendentes de conferência</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
+      <div class="rolebar"><b>💳 Financeiro</b><span>pagamentos e liberação</span></div>
+      <div class="section-head"><div><h2>Painel financeiro</h2><p>Conferência antes da liberação do pedido</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
       <div class="kpis" style="margin-bottom:12px">
-        <div class="kpi"><b>${pending.length}</b><small>Aguardando análise</small></div>
-        <div class="kpi"><b>${rows.filter(x=>x.comprovante_status==="aprovado").length}</b><small>Aprovados na lista</small></div>
-        <div class="kpi"><b>${brl(pending.reduce((a,x)=>a+Number(x.valor_pendente||0),0))}</b><small>Valor pendente</small></div>
+        <div class="kpi"><b>${pendingProofs.length}</b><small>Pix aguardando análise</small></div>
+        <div class="kpi"><b>${manualRows.length}</b><small>Pagamentos manuais</small></div>
+        <div class="kpi"><b>${brl(pendingProofs.reduce((a,x)=>a+Number(x.valor_pendente||0),0)+manualRows.reduce((a,x)=>a+Number(x.valor_pendente||0),0))}</b><small>Saldo aguardando confirmação</small></div>
       </div>
-      <div class="panel">${rows.length?rows.map(x=>`
+
+      <div class="section-head"><div><h2>Pix / comprovantes</h2><p>${pendingProofs.length} aguardando conferência</p></div></div>
+      <div class="panel">${proofs.length?proofs.map(x=>`
         <div class="row">
           <div>
             <div class="row-title">${esc(x.numero)} • ${esc(x.cliente_nome)}</div>
@@ -460,9 +465,35 @@ async function renderFinance(){
             <button class="button soft" onclick="window.openProof('${x.comprovante_id}')">Ver comprovante</button>
             ${!["aprovado"].includes(x.comprovante_status)?`<button class="button" onclick="window.approveProof('${x.comprovante_id}')">Aprovar</button><button class="button danger" onclick="window.rejectProof('${x.comprovante_id}')">Rejeitar</button>`:""}
           </div>
-        </div>`).join(""):'<div class="empty">Sem comprovantes.</div>'}</div>`;
+        </div>`).join(""):'<div class="empty">Sem comprovantes.</div>'}</div>
+
+      <div class="section-head"><div><h2>Dinheiro e cartões</h2><p>Pedidos prontos aguardando confirmação de pagamento</p></div></div>
+      <div class="panel">${manualRows.length?manualRows.map(x=>`
+        <div class="row">
+          <div>
+            <div class="row-title">${esc(x.numero)} • ${esc(x.cliente_nome)}</div>
+            <div class="row-sub">${fmtDateTime(x.data_pedido)} • ${esc(x.modalidade_entrega||"")}</div>
+            <div class="row-sub">Forma: <b>${esc(x.metodo)}</b> • Total ${brl(x.total)} • pendente ${brl(x.valor_pendente)}</div>
+            <span class="status warn">${esc(x.escolha_status)}</span>
+          </div>
+          <div class="inline-actions">
+            <button class="button" onclick="window.confirmManualPayment('${x.pedido_id}',${Number(x.valor_pendente)})">Confirmar pagamento</button>
+          </div>
+        </div>`).join(""):'<div class="empty">Nenhum pagamento manual aguardando confirmação.</div>'}</div>
+    `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+window.confirmManualPayment=async(id,pending)=>{
+  const raw=prompt("Valor recebido:",String(pending).replace(".",","));
+  if(raw===null)return;
+  const value=Number(raw.replace(",","."));if(!Number.isFinite(value)||value<=0||value>pending){showToast("Valor inválido.");return}
+  const obs=prompt("Observação do pagamento (opcional):")||null;
+  try{
+    await rpc("financeiro_registrar_pagamento_manual",{p_pedido_id:id,p_valor:value,p_observacao:obs},true);
+    showToast("Pagamento registrado.");
+    await renderFinance();
+  }catch(e){showToast(e.message)}
+};
 window.openProof=async id=>{
   try{
     const data=await request("/functions/v1/comprovante-url",{method:"POST",body:{comprovante_id:id}});
