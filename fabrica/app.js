@@ -8,6 +8,7 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const fmtDate=v=>v?new Date(v+"T12:00:00").toLocaleDateString("pt-BR"):"";
 const fmtDateTime=v=>v?new Date(v).toLocaleString("pt-BR"):"";
 const fmtTime=v=>v?String(v).slice(0,5):"";
+const localDateISO=()=>{const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return `${y}-${m}-${day}`};
 
 const state={
   session:JSON.parse(localStorage.getItem("algaroba_session")||"null"),
@@ -334,11 +335,55 @@ window.prodFinish=async id=>{try{await rpc("producao_finalizar_pedido",{p_pedido
 async function renderExpedition(){
   loading("Carregando Expedição...");
   try{
-    const rows=await rpc("expedicao_fila",{},true)||[],groups={};rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
-    main.innerHTML=`<div class="rolebar"><b>🚚 Expedição</b><span>pedidos financeiramente liberados</span></div><div class="section-head"><div><h2>Fila de Expedição</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div><div class="notice green" style="margin-bottom:11px">Saída padrão das rotas às 14h, podendo antecipar para 13h em rotas maiores. Não há promessa de horário ao cliente.</div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b><div class="small">${esc(it[0].modalidade_entrega||"")} • ${esc(it[0].endereco||"")}</div></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">${x.quantidade} un.</div></div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.expUpdate('${pid}','${it[0].modalidade_entrega==="retirada_fabrica"?"entregue":"saiu_entrega"}')">${it[0].modalidade_entrega==="retirada_fabrica"?"Marcar como retirado":"Saiu para entrega"}</button></div></div>`).join("")||'<div class="empty">Nenhum pedido liberado para Expedição.</div>'}`;
+    const today=localDateISO();
+    const [rows,planning,executions]=await Promise.all([
+      rpc("expedicao_fila",{},true),
+      rpc("expedicao_planejamento_rota",{p_data:today},true),
+      table("rota_execucoes?select=id,rota_id,data_rota,status,hora_saida_prevista,saiu_em,finalizada_em,motorista,veiculo,odometro_inicio,odometro_fim,entregas_planejadas,entregas_concluidas,entregas_pendentes&data_rota=eq."+today)
+    ]);
+    const queue=rows||[],groups={};queue.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
+    const routeGroups={};(planning||[]).forEach(x=>(routeGroups[x.rota_id]??={meta:x,items:[]}).items.push(x));
+    main.innerHTML=`
+      <div class="rolebar"><b>🚚 Expedição</b><span>rotas e janelas de recebimento</span></div>
+      <div class="section-head"><div><h2>Planejamento de hoje</h2><p>${fmtDate(today)} • saída padrão às 14h</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
+      <div class="notice green" style="margin-bottom:11px">As prioridades abaixo servem apenas para organizar a logística. O cliente continua sem receber previsão de horário de chegada.</div>
+
+      ${Object.values(routeGroups).length?Object.values(routeGroups).map(g=>{
+        const x=executions.find(e=>e.rota_id===g.meta.rota_id);
+        return `<div class="panel" style="margin-bottom:13px">
+          <div class="summary">
+            <div><b>${esc(g.meta.rota_nome)}</b><span class="status ${x?.status==="em_rota"?"warn":x?.status==="finalizada"?"ok":""}">${esc(x?.status||"planejada")}</span></div>
+            <div class="small">Saída padrão ${fmtTime(g.meta.hora_saida_padrao)} • antecipada ${fmtTime(g.meta.hora_saida_antecipada)} • ${g.items.length} entregas</div>
+            <div class="inline-actions" style="margin-top:8px">
+              ${!x||x.status==="planejada"?`<button class="button" onclick="window.startRoute('${g.meta.rota_id}','${today}')">Iniciar rota</button>`:""}
+              ${x?.status==="em_rota"?`<button class="button orange" onclick="window.finishRoute('${x.id}')">Finalizar rota</button>`:""}
+            </div>
+          </div>
+          ${g.items.map((p,i)=>`<div class="row"><div><div class="row-title">${p.ordem_planejada||i+1}. ${esc(p.cliente_nome)} • ${esc(p.bairro||p.cidade||"")}</div><div class="row-sub">${esc(p.endereco||"")}</div><div class="row-sub">${p.recebimento_inicio||p.recebimento_fim?`Recebe ${fmtTime(p.recebimento_inicio)||"—"}–${fmtTime(p.recebimento_fim)||"—"}`:"Horário de recebimento não informado"}${p.intervalo_inicio?" • intervalo "+fmtTime(p.intervalo_inicio)+"–"+fmtTime(p.intervalo_fim):""}</div>${p.alerta_operacional?`<span class="status warn" style="margin-top:6px">${esc(p.alerta_operacional)}</span>`:""}</div><b>${esc(p.numero)}</b></div>`).join("")}
+        </div>`
+      }).join(""):'<div class="empty"><div class="empty-icon">🛣️</div>Nenhuma entrega programada para hoje.</div>'}
+
+      <div class="section-head"><div><h2>Pedidos liberados</h2><p>${Object.keys(groups).length} pedidos disponíveis para expedição</p></div></div>
+      ${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b><div class="small">${esc(it[0].modalidade_entrega||"")} • ${esc(it[0].endereco||"")}</div></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">${x.quantidade} un.</div></div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.expUpdate('${pid}','${it[0].modalidade_entrega==="retirada_fabrica"?"entregue":"saiu_entrega"}')">${it[0].modalidade_entrega==="retirada_fabrica"?"Marcar como retirado":"Saiu para entrega"}</button></div></div>`).join("")||'<div class="empty">Nenhum pedido liberado para Expedição.</div>'}
+    `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 window.expUpdate=async(id,status)=>{try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");await renderExpedition()}catch(e){showToast(e.message)}};
+window.startRoute=async(rotaId,data)=>{
+  const motorista=prompt("Nome do motorista (opcional):")||null;
+  const veiculo=prompt("Veículo/placa (opcional):")||null;
+  const kmTxt=prompt("Odômetro inicial (opcional):")||"";
+  const km=kmTxt?Number(kmTxt.replace(",",".")):null;
+  if(kmTxt&&Number.isNaN(km)){showToast("Odômetro inválido.");return}
+  try{await rpc("expedicao_iniciar_rota",{p_rota_id:rotaId,p_data:data,p_motorista:motorista,p_veiculo:veiculo,p_odometro_inicio:km},true);showToast("Rota iniciada.");await renderExpedition()}catch(e){showToast(e.message)}
+};
+window.finishRoute=async(execId)=>{
+  const kmTxt=prompt("Odômetro final (opcional):")||"";
+  const km=kmTxt?Number(kmTxt.replace(",",".")):null;
+  if(kmTxt&&Number.isNaN(km)){showToast("Odômetro inválido.");return}
+  const obs=prompt("Observação de encerramento (opcional):")||null;
+  try{await rpc("expedicao_finalizar_rota",{p_execucao_id:execId,p_odometro_fim:km,p_observacao:obs},true);showToast("Rota finalizada.");await renderExpedition()}catch(e){showToast(e.message)}
+};
 
 async function renderFinance(){
   loading("Carregando Financeiro...");
