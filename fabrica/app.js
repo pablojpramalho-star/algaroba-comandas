@@ -358,8 +358,58 @@ async function renderAdmin(){
       table("rotas?select=id,nome,dia_semana,hora_limite_pedido,hora_inicio_padrao,hora_inicio_antecipada,ativo&ativo=eq.true&order=nome.asc")
     ]);
     const total=orders.reduce((a,x)=>a+Number(x.total||0),0),pending=orders.filter(x=>x.status_financeiro!=="pago").length;
-    main.innerHTML=`<div class="rolebar"><b>📊 Administração</b><span>${esc(state.role)}</span></div><div class="section-head"><div><h2>Painel da fábrica</h2><p>Visão operacional dos dados atuais</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div><div class="kpis"><div class="kpi"><b>${orders.length}</b><small>Pedidos recentes</small></div><div class="kpi"><b>${brl(total)}</b><small>Total dos 30 recentes</small></div><div class="kpi"><b>${pending}</b><small>Financeiro pendente</small></div><div class="kpi"><b>${routes.length}</b><small>Rotas ativas</small></div></div><div class="section-head"><h2>Rotas</h2></div><div class="panel">${routes.map(r=>`<div class="row"><div><div class="row-title">${esc(r.nome)}</div><div class="row-sub">${esc(r.dia_semana||"")} • pedidos até ${fmtTime(r.hora_limite_pedido)} • saída ${fmtTime(r.hora_inicio_padrao)}</div></div><span class="status ok">ativa</span></div>`).join("")}</div><div class="section-head"><h2>Pedidos recentes</h2></div><div class="panel">${orders.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}</div><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div><b>${brl(o.total)}</b></div>`).join("")||'<div class="empty">Sem pedidos.</div>'}</div>`;
+    const stock=state.catalog.filter(p=>p.modelo_fornecimento==="estoque");
+    const featured=state.catalog.filter(p=>p.destaque);
+    main.innerHTML=`
+      <div class="rolebar"><b>📊 Administração</b><span>${esc(state.role)}</span></div>
+      <div class="section-head"><div><h2>Painel da fábrica</h2><p>Visão operacional dos dados atuais</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
+      <div class="kpis">
+        <div class="kpi"><b>${orders.length}</b><small>Pedidos recentes</small></div>
+        <div class="kpi"><b>${brl(total)}</b><small>Total dos 30 recentes</small></div>
+        <div class="kpi"><b>${pending}</b><small>Financeiro pendente</small></div>
+        <div class="kpi"><b>${routes.length}</b><small>Rotas ativas</small></div>
+        <div class="kpi"><b>${stock.filter(p=>p.disponibilidade_catalogo==="em_falta").length}</b><small>Itens de estoque em falta</small></div>
+        <div class="kpi"><b>${featured.length}</b><small>Destaques do catálogo</small></div>
+      </div>
+
+      <div class="section-head"><div><h2>Catálogo e estoque</h2><p>Controle rápido do que o cliente enxerga.</p></div></div>
+      <div class="panel">
+        ${stock.length?stock.map(p=>`<div class="row"><div><div class="row-title">${esc(p.produto)}</div><div class="row-sub">${esc(categoryKey(p))} • ${measure(p)} • atacado ${brl(p.preco_atacado)} • varejo ${brl(p.preco_varejo)}</div><div style="margin-top:6px"><span class="status ${p.disponibilidade_catalogo==="disponivel"?"ok":p.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(p.disponibilidade_catalogo)}</span>${p.destaque?' <span class="status warn">destaque</span>':""}</div></div><div class="inline-actions"><button class="button ${p.disponibilidade_catalogo==="em_falta"?"soft":"danger"}" onclick="window.adminToggleAvailability('${p.produto_id}','${p.disponibilidade_catalogo}')">${p.disponibilidade_catalogo==="em_falta"?"Disponibilizar":"Marcar falta"}</button><button class="button ghost" onclick="window.adminToggleFeatured('${p.produto_id}',${p.destaque})">${p.destaque?"Remover destaque":"Destacar"}</button><button class="button ghost" onclick="window.adminEditPresentation('${p.produto_id}')">Editar</button></div></div>`).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
+      </div>
+
+      <div class="section-head"><h2>Rotas</h2></div>
+      <div class="panel">${routes.map(r=>`<div class="row"><div><div class="row-title">${esc(r.nome)}</div><div class="row-sub">${esc(r.dia_semana||"")} • pedidos até ${fmtTime(r.hora_limite_pedido)} • saída ${fmtTime(r.hora_inicio_padrao)}${r.hora_inicio_antecipada?" • antecipada "+fmtTime(r.hora_inicio_antecipada):""}</div></div><span class="status ok">ativa</span></div>`).join("")}</div>
+
+      <div class="section-head"><h2>Pedidos recentes</h2></div>
+      <div class="panel">${orders.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}</div><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div><b>${brl(o.total)}</b></div>`).join("")||'<div class="empty">Sem pedidos.</div>'}</div>
+    `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+window.adminToggleAvailability=async(id,current)=>{
+  const next=current==="em_falta"?"disponivel":"em_falta";
+  try{
+    await rpc("admin_atualizar_produto_catalogo",{p_produto_id:id,p_descricao_cliente:null,p_imagem_url:null,p_ordem_exibicao:null,p_destaque:null,p_disponibilidade_catalogo:next,p_ativo:null},true);
+    showToast(next==="em_falta"?"Produto marcado em falta.":"Produto disponibilizado.");
+    await loadCatalog();await renderAdmin();
+  }catch(e){showToast(e.message)}
+};
+window.adminToggleFeatured=async(id,current)=>{
+  try{
+    await rpc("admin_atualizar_produto_catalogo",{p_produto_id:id,p_descricao_cliente:null,p_imagem_url:null,p_ordem_exibicao:null,p_destaque:!current,p_disponibilidade_catalogo:null,p_ativo:null},true);
+    showToast(!current?"Produto destacado.":"Destaque removido.");
+    await loadCatalog();await renderAdmin();
+  }catch(e){showToast(e.message)}
+};
+window.adminEditPresentation=async id=>{
+  const p=state.catalog.find(x=>x.produto_id===id);if(!p)return;
+  const desc=prompt("Descrição que o cliente verá:",p.descricao_cliente||"");
+  if(desc===null)return;
+  const img=prompt("URL da foto do produto (pode deixar vazio por enquanto):",p.imagem_url||"");
+  if(img===null)return;
+  try{
+    await rpc("admin_atualizar_produto_catalogo",{p_produto_id:id,p_descricao_cliente:desc||null,p_imagem_url:img||null,p_ordem_exibicao:null,p_destaque:null,p_disponibilidade_catalogo:null,p_ativo:null},true);
+    showToast("Apresentação do produto atualizada.");await loadCatalog();await renderAdmin();
+  }catch(e){showToast(e.message)}
+};
 
 boot();
