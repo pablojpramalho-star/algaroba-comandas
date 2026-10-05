@@ -1,0 +1,356 @@
+const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
+const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
+
+const $=s=>document.querySelector(s);
+const main=$("#main"),toastEl=$("#toast"),clientNav=$("#clientNav"),accountLabel=$("#accountLabel"),cartCount=$("#cartCount");
+const brl=v=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(v||0));
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const fmtDate=v=>v?new Date(v+"T12:00:00").toLocaleDateString("pt-BR"):"";
+const fmtDateTime=v=>v?new Date(v).toLocaleString("pt-BR"):"";
+const fmtTime=v=>v?String(v).slice(0,5):"";
+
+const state={
+  session:JSON.parse(localStorage.getItem("algaroba_session")||"null"),
+  role:null,profile:null,catalog:[],filter:"Todos",
+  cart:JSON.parse(localStorage.getItem("algaroba_cart")||"{}"),
+  deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null
+};
+
+function showToast(message){
+  toastEl.textContent=message;toastEl.style.display="block";
+  clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toastEl.style.display="none",2800);
+}
+function loading(label="Carregando..."){main.innerHTML='<div class="loading"><span class="spinner"></span><span>'+esc(label)+'</span></div>'}
+function saveCart(){
+  localStorage.setItem("algaroba_cart",JSON.stringify(state.cart));
+  cartCount.textContent=Object.values(state.cart).reduce((a,b)=>a+Number(b||0),0);
+}
+function authHeaders(){
+  const h={"apikey":PUBLISHABLE_KEY};
+  if(state.session?.access_token)h["Authorization"]="Bearer "+state.session.access_token;
+  return h;
+}
+async function refreshSession(){
+  if(!state.session?.refresh_token)return false;
+  const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:state.session.refresh_token})});
+  if(!r.ok)return false;
+  state.session=await r.json();localStorage.setItem("algaroba_session",JSON.stringify(state.session));return true;
+}
+async function request(path,{method="GET",body,headers={},retry=true}={}){
+  const h={...authHeaders(),...headers};let payload=body;
+  if(body!==undefined && !(body instanceof FormData)){h["Content-Type"]="application/json";payload=JSON.stringify(body)}
+  let r=await fetch(SUPABASE_URL+path,{method,headers:h,body:payload});
+  if(r.status===401&&retry&&state.session&&await refreshSession())return request(path,{method,body,headers,retry:false});
+  const text=await r.text();let data=null;try{data=text?JSON.parse(text):null}catch{data=text}
+  if(!r.ok)throw new Error(data?.message||data?.error_description||data?.hint||data?.details||text||"Falha na operação.");
+  return data;
+}
+const rpc=(name,params={},auth=true)=>request("/rest/v1/rpc/"+name,{method:"POST",body:params,headers:auth?{}:{"Authorization":PUBLISHABLE_KEY}});
+async function table(path){return request("/rest/v1/"+path)}
+
+function categoryKey(p){return p.linha||p.categoria||"Outros"}
+function categoryOrder(){
+  const preferred=["Tradicional","Zero","Classic","Intense","Raiz","Xaropes","Coberturas","Grãos e Complementos"];
+  const found=[...new Set(state.catalog.map(categoryKey))];
+  return [...preferred.filter(x=>found.includes(x)),...found.filter(x=>!preferred.includes(x)).sort()];
+}
+function productIcon(p){
+  const c=(p.categoria||"").toLowerCase(),n=(p.produto||"").toLowerCase(),l=(p.linha||"").toLowerCase();
+  if(c.includes("xarope"))return "🍯"; if(c.includes("cobertura"))return "🍓"; if(c.includes("grão"))return "🥜";
+  if(n.includes("lácteo"))return "🥛"; if(l.includes("zero"))return "🌿"; if(l.includes("intense"))return "🍫"; return "🥤";
+}
+function measure(p){
+  if(p.volume_litros)return Number(p.volume_litros).toLocaleString("pt-BR",{maximumFractionDigits:2})+" L"+(p.peso_kg?" • "+Number(p.peso_kg).toLocaleString("pt-BR",{maximumFractionDigits:2})+" kg":"");
+  if(p.peso_volume)return Number(p.peso_volume).toLocaleString("pt-BR",{maximumFractionDigits:3})+" "+esc(p.unidade||"");
+  return "";
+}
+function cartItems(){return Object.entries(state.cart).map(([id,q])=>({p:state.catalog.find(x=>x.produto_id===id),q:Number(q)})).filter(x=>x.p&&x.q>0)}
+function cartUnits(){return cartItems().reduce((a,x)=>a+x.q,0)}
+function effectivePrice(p,modalidade=null){
+  const units=cartUnits();
+  return Number(modalidade==="retirada_fabrica"||units>=6?p.preco_atacado:p.preco_varejo);
+}
+function statusClass(v){
+  if(["pago","pagamento_confirmado","entregue","pronto","aprovado"].includes(v))return "ok";
+  if(["cancelado","devolvido","rejeitado","atrasado"].includes(v))return "bad";
+  return "warn";
+}
+function nav(view){
+  document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav===view));
+}
+function setClientNavigation(){
+  const internal=state.session&&state.role&&state.role!=="cliente";
+  clientNav.classList.toggle("hidden",internal);
+  accountLabel.textContent=state.session?(state.role==="cliente"?(state.profile?.nome?.split(" ")[0]||"Conta"):"Painel"):"Entrar";
+}
+async function loadCatalog(){
+  try{state.catalog=await rpc(state.session&&state.role==="cliente"?"catalogo_cliente":"catalogo_publico",{},!!state.session&&state.role==="cliente")||[]}
+  catch(e){console.error(e);state.catalog=[];showToast("Não foi possível carregar o catálogo.")}
+}
+async function loadIdentity(){
+  if(!state.session){state.role=null;state.profile=null;return}
+  try{
+    state.role=await rpc("current_user_role",{},true);
+    if(state.role==="cliente"){
+      const p=await rpc("meu_perfil_cliente",{},true);state.profile=Array.isArray(p)?p[0]:p;
+    }
+  }catch(e){console.error(e);state.role=null;state.profile=null}
+}
+async function boot(){
+  saveCart();
+  window.addEventListener("online",()=>$("#offlineBanner").classList.add("hidden"));
+  window.addEventListener("offline",()=>$("#offlineBanner").classList.remove("hidden"));
+  if(!navigator.onLine)$("#offlineBanner").classList.remove("hidden");
+  if(state.session)await loadIdentity();
+  await loadCatalog();setClientNavigation();go(state.role&&state.role!=="cliente"?"internal":"home");
+}
+async function go(view){
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(state.session&&state.role&&state.role!=="cliente"&&view!=="login"&&view!=="internal")view="internal";
+  nav(view);
+  if(view==="home")renderHome();
+  else if(view==="catalog")renderCatalog();
+  else if(view==="cart")renderCart();
+  else if(view==="delivery")renderDelivery();
+  else if(view==="review")renderReview();
+  else if(view==="success")renderSuccess();
+  else if(view==="orders")await renderOrders();
+  else if(view==="account")await renderAccount();
+  else if(view==="login")renderLogin();
+  else if(view==="internal")await renderInternal();
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-go]");if(b){e.preventDefault();go(b.dataset.go)}
+});
+$("#cartButton").addEventListener("click",()=>go("cart"));
+$("#accountButton").addEventListener("click",()=>go(state.session&&state.role!=="cliente"?"internal":"account"));
+
+function renderHome(){
+  const cats=categoryOrder();
+  main.innerHTML=`
+  <section class="hero">
+    <div class="eyebrow">Pedido direto da fábrica</div>
+    <h1>Direto da nossa fábrica para você.</h1>
+    <p>Os produtos de fabricação são preparados após o pedido para garantir qualidade e frescor. Xaropes, coberturas e grãos dependem da disponibilidade em estoque.</p>
+    <button class="button" data-go="catalog">Começar meu pedido →</button>
+  </section>
+  <div class="section-head"><div><h2>Linhas e produtos</h2><p>Catálogo conectado à base da Algaroba.</p></div></div>
+  <div class="grid">
+    ${cats.map((c,i)=>`<button class="category-card" type="button" onclick="window.chooseCategory(${JSON.stringify(c)})"><div class="category-icon">${["🥤","🌿","🥛","🍫","🌾","🍯","🍓","🥜"][i%8]}</div><strong>${esc(c)}</strong><div class="small">${state.catalog.filter(p=>categoryKey(p)===c).length} opções no catálogo →</div></button>`).join("")}
+  </div>
+  <div class="section-head"><h2>Como funciona</h2></div>
+  <div class="grid">
+    <div class="info-card"><div class="big-icon">🧾</div><strong>Pedido até 11h</strong><div class="small">A manhã fica reservada para controle, produção, conferência e montagem da carga.</div></div>
+    <div class="info-card"><div class="big-icon">🏭</div><strong>Produção sob encomenda</strong><div class="small">Os shakes são produzidos após o pedido.</div></div>
+    <div class="info-card"><div class="big-icon">🚚</div><strong>Rotas à tarde</strong><div class="small">Saída padrão às 14h, com possibilidade de 13h nas rotas maiores. Sem horário exato de chegada.</div></div>
+    <div class="info-card"><div class="big-icon">📦</div><strong>Retirada na fábrica</strong><div class="small">Preço de atacado em qualquer quantidade. Logística por conta do comprador.</div></div>
+  </div>
+  <div class="notice green" style="margin-top:14px"><b>Regra comercial:</b> nas entregas, pedidos com 6 ou mais unidades utilizam preço de atacado. Na retirada na fábrica, o atacado vale desde a primeira unidade.</div>`;
+}
+window.chooseCategory=c=>{state.filter=c;go("catalog")};
+
+function renderCatalog(){
+  const filters=["Todos",...categoryOrder()];
+  const list=state.catalog.filter(p=>state.filter==="Todos"||categoryKey(p)===state.filter);
+  main.innerHTML=`
+    <div class="section-head"><div><h2>Produtos</h2><p>${list.length} itens exibidos</p></div></div>
+    <div class="filterbar">${filters.map(f=>`<button class="chip ${f===state.filter?"active":""}" type="button" onclick="window.setFilter(${JSON.stringify(f)})">${esc(f)}</button>`).join("")}</div>
+    <div class="products">
+      ${list.map(p=>`<article class="product-card">
+        <div class="product-visual">${productIcon(p)}</div>
+        <div class="product-meta">${esc(categoryKey(p))}${measure(p)?" • "+measure(p):""}</div>
+        <h3>${esc(p.produto)}</h3>
+        <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
+        ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':`<div class="qtybar"><button type="button" onclick="window.changeQty('${p.produto_id}',-1)">−</button><b id="qty-${p.produto_id}">${state.cart[p.produto_id]||0}</b><button type="button" onclick="window.changeQty('${p.produto_id}',1)">+</button><button class="add" type="button" onclick="window.changeQty('${p.produto_id}',1)">Adicionar</button></div>`}
+      </article>`).join("")||'<div class="empty"><div class="empty-icon">🔎</div>Nenhum produto encontrado.</div>'}
+    </div>`;
+}
+window.setFilter=f=>{state.filter=f;renderCatalog()};
+window.changeQty=(id,delta)=>{
+  const n=Math.max(0,Number(state.cart[id]||0)+delta);if(n)state.cart[id]=n;else delete state.cart[id];saveCart();
+  const e=$("#qty-"+id);if(e)e.textContent=state.cart[id]||0;
+};
+
+function renderCart(){
+  const items=cartItems(),units=cartUnits(),atacado=units>=6,total=items.reduce((s,x)=>s+x.q*effectivePrice(x.p),0);
+  main.innerHTML=`
+    <div class="section-head"><div><h2>Meu pedido</h2><p>${units} unidades</p></div></div>
+    ${items.length?`<div class="panel">
+      ${items.map(x=>`<div class="row"><div><div class="row-title">${esc(x.p.produto)}</div><div class="row-sub">${esc(categoryKey(x.p))} • ${brl(effectivePrice(x.p))} por unidade</div><div class="qtybar" style="margin-top:8px"><button onclick="window.cartQty('${x.p.produto_id}',-1)">−</button><b>${x.q}</b><button onclick="window.cartQty('${x.p.produto_id}',1)">+</button></div></div><b>${brl(x.q*effectivePrice(x.p))}</b></div>`).join("")}
+      <div class="summary"><div class="summary-line"><span>Regra estimada</span><b>${atacado?"Atacado":"Varejo"}</b></div><div class="summary-line total"><span>Total estimado</span><span>${brl(total)}</span></div></div>
+    </div>
+    <div class="notice" style="margin-top:12px">Se escolher <b>retirada na fábrica</b>, o sistema recalcula automaticamente todos os itens para preço de atacado, mesmo abaixo de 6 unidades.</div>
+    <button class="button orange" style="width:100%;margin-top:13px" type="button" onclick="window.checkout()">Escolher entrega / retirada →</button>`:
+    '<div class="empty"><div class="empty-icon">🛒</div>Seu carrinho está vazio.<br><br><button class="button" data-go="catalog">Escolher produtos</button></div>'}`;
+}
+window.cartQty=(id,d)=>{window.changeQty(id,d);renderCart()};
+window.checkout=async()=>{
+  if(!state.session||state.role!=="cliente"){state.returnView="delivery";showToast("Entre com seu cadastro para finalizar o pedido.");go("login");return}
+  try{loading("Consultando opções de entrega...");state.deliveryOptions=await rpc("opcoes_entrega_cliente",{},true)||[];state.selectedDelivery=null;go("delivery")}
+  catch(e){showToast(e.message);renderCart()}
+};
+
+function deliveryTitle(o){return o.modalidade==="retirada_fabrica"?"🏭 Retirada na fábrica":o.modalidade==="rota"?"🚚 "+(o.rota_nome||"Entrega por rota"):"📍 Entrega a combinar"}
+function renderDelivery(){
+  if(!state.deliveryOptions.length){main.innerHTML='<div class="empty"><div class="empty-icon">📍</div>Nenhuma opção de recebimento disponível.</div>';return}
+  main.innerHTML=`
+    <div class="section-head"><div><h2>Entrega ou retirada</h2><p>Escolha como deseja receber.</p></div></div>
+    <div class="notice"><b>Importante:</b> pedidos até 11h. As rotas saem normalmente às 14h e podem sair às 13h nas rotas maiores. Não trabalhamos com horário exato de chegada.</div>
+    <div style="margin-top:12px">
+      ${state.deliveryOptions.map((o,i)=>`<div class="delivery-card ${state.selectedDelivery===i?"selected":""}" onclick="window.pickDelivery(${i})"><strong>${deliveryTitle(o)}</strong><small>${o.identificacao?esc(o.identificacao)+" • ":""}${o.bairro?esc(o.bairro)+", ":""}${esc(o.cidade||"")}${o.proxima_data?" • "+fmtDate(o.proxima_data):""}<br>${esc(o.observacao||"")}</small></div>`).join("")}
+    </div>
+    <button class="button" style="width:100%;margin-top:13px" type="button" onclick="window.deliveryNext()">Continuar →</button>`;
+}
+window.pickDelivery=i=>{state.selectedDelivery=i;renderDelivery()};
+window.deliveryNext=()=>{if(state.selectedDelivery===null){showToast("Escolha uma opção.");return}go("review")};
+
+function renderReview(){
+  const d=state.deliveryOptions[state.selectedDelivery],items=cartItems(),total=items.reduce((s,x)=>s+x.q*effectivePrice(x.p,d.modalidade),0);
+  main.innerHTML=`
+    <div class="section-head"><div><h2>Revisar pedido</h2><p>Confira antes de enviar à Produção.</p></div></div>
+    <div class="panel">
+      ${items.map(x=>`<div class="row"><div><div class="row-title">${esc(x.p.produto)}</div><div class="row-sub">${x.q} un. • ${brl(effectivePrice(x.p,d.modalidade))} cada</div></div><b>${brl(x.q*effectivePrice(x.p,d.modalidade))}</b></div>`).join("")}
+      <div class="summary"><div class="summary-line"><span>Recebimento</span><b>${esc(deliveryTitle(d).replace(/^.. /,""))}</b></div><div class="summary-line total"><span>Total estimado</span><span>${brl(total)}</span></div></div>
+    </div>
+    <div class="field"><label>Observação do pedido (opcional)</label><textarea id="orderObs" rows="3" placeholder="Informação importante para a produção ou entrega..."></textarea></div>
+    <div class="notice">O valor final só é confirmado após a Produção. Se um item de estoque estiver indisponível, ele poderá ser retirado e o total será recalculado automaticamente.</div>
+    <button id="submitOrder" class="button orange" style="width:100%;margin-top:13px" type="button" onclick="window.submitOrder()">Enviar pedido para a fábrica →</button>`;
+}
+window.submitOrder=async()=>{
+  const d=state.deliveryOptions[state.selectedDelivery],btn=$("#submitOrder");btn.disabled=true;btn.textContent="Enviando...";
+  try{
+    const data=await rpc("criar_pedido_cliente_com_entrega",{p_itens:cartItems().map(x=>({produto_id:x.p.produto_id,quantidade:x.q})),p_modalidade_entrega:d.modalidade,p_endereco_id:d.endereco_id||null,p_observacao:$("#orderObs").value||null},true);
+    state.lastOrder=Array.isArray(data)?data[0]:data;state.cart={};saveCart();go("success");
+  }catch(e){showToast(e.message);btn.disabled=false;btn.textContent="Enviar pedido para a fábrica →"}
+};
+function renderSuccess(){
+  const o=state.lastOrder||{};
+  main.innerHTML=`<div class="success"><div class="success-icon">✅</div><h2>Pedido enviado!</h2><p>Seu pedido foi recebido e seguirá para a Produção.</p><div class="notice green"><b>Número do pedido</b><br><span style="font-size:23px;font-weight:900">${esc(o.numero||"—")}</span></div><p class="small" style="margin:15px 0">A forma de pagamento será escolhida depois que a Produção confirmar o pedido e o valor final.</p><div class="actions">${o.pedido_id?`<button class="button soft" onclick="window.downloadPdf('${o.pedido_id}')">Resumo em PDF</button>`:""}<button class="button" data-go="orders">Acompanhar pedido</button></div></div>`;
+}
+async function renderOrders(){
+  if(!state.session){main.innerHTML='<div class="login-card"><h2>Meus pedidos</h2><p class="small">Entre para acompanhar seus pedidos.</p><button class="button" data-go="login">Entrar</button></div>';return}
+  if(state.role!=="cliente"){go("internal");return}
+  loading("Carregando seus pedidos...");
+  try{
+    const rows=await rpc("meus_pedidos",{},true)||[];
+    main.innerHTML=`<div class="section-head"><div><h2>Meus pedidos</h2><p>Acompanhamento individual</p></div></div><div class="panel">${rows.length?rows.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}${o.data_entrega_prevista?" • "+fmtDate(o.data_entrega_prevista):""}</div><div style="margin-top:7px"><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div></div><div style="text-align:right"><b>${brl(o.total)}</b><div class="inline-actions" style="margin-top:7px"><button class="button soft" onclick="window.downloadPdf('${o.pedido_id}')">PDF</button>${o.status==="pronto"?`<button class="button" onclick="window.choosePix('${o.pedido_id}')">Pix</button><button class="button ghost" onclick="window.choosePrazo('${o.pedido_id}')">Prazo</button>`:""}</div></div></div>`).join(""):'<div class="empty"><div class="empty-icon">▤</div>Nenhum pedido ainda.</div>'}</div>`;
+  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+window.downloadPdf=async id=>{
+  try{
+    const r=await fetch(SUPABASE_URL+"/functions/v1/pedido-pdf",{method:"POST",headers:{...authHeaders(),"Content-Type":"application/json"},body:JSON.stringify({pedido_id:id})});
+    if(!r.ok)throw new Error("Não foi possível gerar o PDF.");
+    const blob=await r.blob(),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="pedido-algaroba.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
+  }catch(e){showToast(e.message)}
+};
+window.choosePix=async id=>{
+  try{
+    await rpc("escolher_forma_pagamento_cliente",{p_pedido_id:id,p_metodo:"pix"},true);
+    const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp,application/pdf";input.onchange=async()=>{if(!input.files?.[0])return;await window.uploadProof(id,input.files[0])};input.click();
+  }catch(e){showToast(e.message)}
+};
+window.uploadProof=async(id,file)=>{
+  try{
+    showToast("Enviando comprovante...");
+    const fd=new FormData();fd.append("pedido_id",id);fd.append("arquivo",file);
+    await request("/functions/v1/upload-comprovante",{method:"POST",body:fd});
+    showToast("Comprovante enviado para conferência.");await renderOrders();
+  }catch(e){showToast(e.message)}
+};
+window.choosePrazo=async id=>{
+  try{await rpc("escolher_forma_pagamento_cliente",{p_pedido_id:id,p_metodo:"prazo"},true);showToast("Pedido liberado conforme sua condição de prazo.");await renderOrders()}
+  catch(e){showToast(e.message)}
+};
+
+function renderLogin(){
+  if(state.session){
+    main.innerHTML=`<div class="account-card"><div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div><h2 style="text-align:center">Conta Algaroba</h2><p style="text-align:center"><b>${esc(state.profile?.nome||state.session.user?.email||"Usuário")}</b><br><span class="status">${esc(state.role||"")}</span></p><div class="actions"><button class="button" onclick="window.afterLogin()">Abrir painel</button><button class="button ghost" onclick="window.logout()">Sair</button></div></div>`;return
+  }
+  main.innerHTML=`<div class="login-card"><div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div><h2>Entrar na Algaroba</h2><p class="small" style="text-align:center">Acesso do cliente e da equipe da fábrica.</p><form onsubmit="window.login(event)"><div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div><button id="loginSubmit" class="button" style="width:100%" type="submit">Entrar</button></form><div class="notice green" style="margin-top:13px">O catálogo pode ser consultado sem login. O acesso é exigido para finalizar pedidos e usar os painéis internos.</div></div>`;
+}
+window.login=async e=>{
+  e.preventDefault();const btn=$("#loginSubmit");btn.disabled=true;btn.textContent="Entrando...";
+  try{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:$("#email").value.trim(),password:$("#password").value})});
+    const data=await r.json();if(!r.ok)throw new Error(data.error_description||data.msg||"E-mail ou senha inválidos.");
+    state.session=data;localStorage.setItem("algaroba_session",JSON.stringify(data));await loadIdentity();await loadCatalog();setClientNavigation();
+    const target=state.returnView|| (state.role==="cliente"?"home":"internal");state.returnView=null;go(target);
+  }catch(e2){showToast(e2.message);btn.disabled=false;btn.textContent="Entrar"}
+};
+window.logout=async()=>{
+  try{if(state.session)await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",headers:authHeaders()})}catch{}
+  localStorage.removeItem("algaroba_session");state.session=null;state.role=null;state.profile=null;await loadCatalog();setClientNavigation();go("home");
+};
+window.afterLogin=()=>go(state.role==="cliente"?"home":"internal");
+
+async function renderAccount(){
+  if(!state.session){renderLogin();return}
+  if(state.role!=="cliente"){go("internal");return}
+  loading("Carregando cadastro...");
+  try{
+    const addresses=await table("cliente_enderecos?select=id,identificacao,logradouro,numero,bairro,cidade,uf,recebimento_inicio,recebimento_fim,intervalo_inicio,intervalo_fim,observacao_recebimento,janela_recebimento_confirmada&ativo=eq.true&order=identificacao.asc");
+    main.innerHTML=`<div class="account-card"><h2>Olá, ${esc(state.profile?.nome?.split(" ")[0]||"cliente")}</h2><div class="small">${esc(state.profile?.whatsapp||state.profile?.telefone||"")}</div></div>
+    <div class="section-head"><div><h2>Horário de recebimento</h2><p>Ajuda a Expedição a organizar a sequência da rota, sem prometer horário de chegada.</p></div></div>
+    ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.numero||"")} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty">Nenhum endereço cadastrado.</div>'}
+    <div class="actions" style="max-width:470px;margin:14px auto"><button class="button ghost" onclick="window.logout()">Sair da conta</button></div>`;
+  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+window.saveReceiving=async id=>{
+  const v=x=>$("#"+x+"-"+id)?.value||null;
+  try{await rpc("cliente_salvar_horario_recebimento",{p_endereco_id:id,p_recebimento_inicio:v("ini"),p_recebimento_fim:v("fim"),p_intervalo_inicio:v("intini"),p_intervalo_fim:v("intfim"),p_observacao:$("#obs-"+id)?.value||null},true);showToast("Horário de recebimento salvo.")}
+  catch(e){showToast(e.message)}
+};
+
+async function renderInternal(){
+  if(!state.session||!state.role){state.returnView="internal";go("login");return}
+  setClientNavigation();
+  if(state.role==="producao")return renderProduction();
+  if(state.role==="expedicao")return renderExpedition();
+  if(state.role==="financeiro")return renderFinance();
+  return renderAdmin();
+}
+async function renderProduction(){
+  loading("Carregando Produção...");
+  try{
+    const rows=await rpc("producao_fila",{},true)||[],groups={};rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
+    main.innerHTML=`<div class="rolebar"><b>🏭 Produção</b><span>sem preços e sem financeiro</span></div><div class="section-head"><div><h2>Fila de Produção</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">Solicitado: ${x.quantidade_solicitada} • ${esc(x.modelo_fornecimento)}</div><span class="status ${statusClass(x.status_item)}">${esc(x.status_item)}</span></div><div class="inline-actions"><button class="button soft" onclick="window.prodUpdate('${x.item_id}','pronto',${Number(x.quantidade_solicitada)})">Pronto</button>${x.modelo_fornecimento==="estoque"?`<button class="button danger" onclick="window.prodUpdate('${x.item_id}','indisponivel',0)">Em falta</button>`:""}</div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.prodFinish('${pid}')">Finalizar pedido</button></div></div>`).join("")||'<div class="empty">Nenhum pedido aguardando produção.</div>'}`;
+  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+window.prodUpdate=async(id,status,q)=>{
+  let obs=null;if(status==="indisponivel")obs=prompt("Motivo da indisponibilidade:")||"Indisponível";
+  try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);showToast("Item atualizado.");await renderProduction()}catch(e){showToast(e.message)}
+};
+window.prodFinish=async id=>{try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);showToast("Pedido finalizado.");await renderProduction()}catch(e){showToast(e.message)}};
+
+async function renderExpedition(){
+  loading("Carregando Expedição...");
+  try{
+    const rows=await rpc("expedicao_fila",{},true)||[],groups={};rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
+    main.innerHTML=`<div class="rolebar"><b>🚚 Expedição</b><span>pedidos financeiramente liberados</span></div><div class="section-head"><div><h2>Fila de Expedição</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div><div class="notice green" style="margin-bottom:11px">Saída padrão das rotas às 14h, podendo antecipar para 13h em rotas maiores. Não há promessa de horário ao cliente.</div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b><div class="small">${esc(it[0].modalidade_entrega||"")} • ${esc(it[0].endereco||"")}</div></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">${x.quantidade} un.</div></div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.expUpdate('${pid}','${it[0].modalidade_entrega==="retirada_fabrica"?"entregue":"saiu_entrega"}')">${it[0].modalidade_entrega==="retirada_fabrica"?"Marcar como retirado":"Saiu para entrega"}</button></div></div>`).join("")||'<div class="empty">Nenhum pedido liberado para Expedição.</div>'}`;
+  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+window.expUpdate=async(id,status)=>{try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");await renderExpedition()}catch(e){showToast(e.message)}};
+
+async function renderFinance(){
+  loading("Carregando Financeiro...");
+  try{
+    const rows=await table("comprovantes_pagamento?select=id,pedido_id,status,mime_type,created_at,observacao_cliente&order=created_at.desc&limit=50");
+    main.innerHTML=`<div class="rolebar"><b>💳 Financeiro</b><span>comprovantes e liberação</span></div><div class="section-head"><div><h2>Comprovantes Pix</h2><p>${rows.length} registros recentes</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div><div class="panel">${rows.length?rows.map(x=>`<div class="row"><div><div class="row-title">Pedido ${esc(String(x.pedido_id).slice(0,8))}</div><div class="row-sub">${fmtDateTime(x.created_at)} • ${esc(x.mime_type||"arquivo")}</div><span class="status ${statusClass(x.status)}">${esc(x.status)}</span></div><div class="inline-actions">${x.status!=="aprovado"?`<button class="button" onclick="window.approveProof('${x.id}')">Aprovar</button><button class="button danger" onclick="window.rejectProof('${x.id}')">Rejeitar</button>`:""}</div></div>`).join(""):'<div class="empty">Sem comprovantes.</div>'}</div>`;
+  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+window.approveProof=async id=>{try{await rpc("financeiro_aprovar_comprovante",{p_comprovante_id:id,p_observacao:"Aprovado pelo painel"},true);showToast("Pagamento aprovado.");await renderFinance()}catch(e){showToast(e.message)}};
+window.rejectProof=async id=>{const motivo=prompt("Motivo da rejeição:");if(!motivo)return;try{await rpc("financeiro_rejeitar_comprovante",{p_comprovante_id:id,p_motivo:motivo},true);showToast("Comprovante rejeitado.");await renderFinance()}catch(e){showToast(e.message)}};
+
+async function renderAdmin(){
+  loading("Carregando Administração...");
+  try{
+    const [orders,routes]=await Promise.all([
+      table("pedidos?select=id,numero,status,status_financeiro,total,data_pedido,modalidade_entrega&order=data_pedido.desc&limit=30"),
+      table("rotas?select=id,nome,dia_semana,hora_limite_pedido,hora_inicio_padrao,hora_inicio_antecipada,ativo&ativo=eq.true&order=nome.asc")
+    ]);
+    const total=orders.reduce((a,x)=>a+Number(x.total||0),0),pending=orders.filter(x=>x.status_financeiro!=="pago").length;
+    main.innerHTML=`<div class="rolebar"><b>📊 Administração</b><span>${esc(state.role)}</span></div><div class="section-head"><div><h2>Painel da fábrica</h2><p>Visão operacional dos dados atuais</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div><div class="kpis"><div class="kpi"><b>${orders.length}</b><small>Pedidos recentes</small></div><div class="kpi"><b>${brl(total)}</b><small>Total dos 30 recentes</small></div><div class="kpi"><b>${pending}</b><small>Financeiro pendente</small></div><div class="kpi"><b>${routes.length}</b><small>Rotas ativas</small></div></div><div class="section-head"><h2>Rotas</h2></div><div class="panel">${routes.map(r=>`<div class="row"><div><div class="row-title">${esc(r.nome)}</div><div class="row-sub">${esc(r.dia_semana||"")} • pedidos até ${fmtTime(r.hora_limite_pedido)} • saída ${fmtTime(r.hora_inicio_padrao)}</div></div><span class="status ok">ativa</span></div>`).join("")}</div><div class="section-head"><h2>Pedidos recentes</h2></div><div class="panel">${orders.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}</div><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div><b>${brl(o.total)}</b></div>`).join("")||'<div class="empty">Sem pedidos.</div>'}</div>`;
+  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+
+boot();
