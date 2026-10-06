@@ -180,6 +180,7 @@ function captureAuthCallback(){
 
 async function boot(){
   const authCallback=captureAuthCallback();
+  const requestedView=new URLSearchParams(window.location.search).get("abrir");
   saveCart();
   window.addEventListener("online",()=>$("#offlineBanner").classList.add("hidden"));
   window.addEventListener("offline",()=>$("#offlineBanner").classList.remove("hidden"));
@@ -187,7 +188,12 @@ async function boot(){
   if(state.session)await loadIdentity();
   await loadCatalog();setClientNavigation();
   if(state.session&&!state.role)go("complete-profile");
-  else go(state.role&&state.role!=="cliente"?"internal":"home");
+  else if(state.role&&state.role!=="cliente")go("internal");
+  else if(requestedView==="pedido"){state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")}
+  else if(requestedView==="pedidos")go("orders");
+  else if(requestedView==="info")go("info");
+  else go("home");
+  if(requestedView)history.replaceState(null,"",window.location.pathname);
   if(authCallback?.confirmed)setTimeout(()=>showToast("E-mail confirmado. Complete seu cadastro."),120);
   else if(authCallback?.error)setTimeout(()=>showToast(authCallback.error),120);
 }
@@ -253,7 +259,7 @@ function renderHome(){
             <span class="cart-line-icon"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.5h9.7L20 7H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg></span>
             <span>Fazer meu pedido</span><b>→</b>
           </button>
-          <button class="mock-secondary" type="button" data-go="info"><span>◒</span><div><b>Conheça nossas linhas</b><small>Produtos, informações e mais</small></div><strong>›</strong></button>
+          <button class="mock-secondary" type="button" onclick="window.location.href='./catalogo.html'"><span>▤</span><div><b>Ver catálogo completo</b><small>47 sabores + Tradicional Raiz e demais produtos</small></div><strong>›</strong></button>
         </div>
       </div>
     </section>
@@ -313,6 +319,7 @@ function renderGroupChooser(){
         <h2>Escolha sua linha</h2>
         <p>Produtos de alta qualidade para o seu negócio.</p>
       </div>
+      <a class="catalog-inline-link" href="./catalogo.html">Ver catálogo completo →</a>
     </div>
     <div class="mock-category-list">
       ${state.groups.map(g=>`<button class="mock-category-card category-${g.chave}" type="button" onclick="window.chooseGroup('${g.chave}')">
