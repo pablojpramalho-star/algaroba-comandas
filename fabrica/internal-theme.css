@@ -305,3 +305,40 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
   .stock-big-grid{grid-template-columns:1fr}
   .today-flow span{font-size:7px}.today-flow b{display:block;margin:0 0 2px}
 }
+
+/* Produção por pedido */
+.production-order-list,.expedition-order-list{display:grid;gap:9px}
+.production-order-card,.expedition-order-card{overflow:hidden;border:1px solid #dec9a6;border-radius:17px;background:#fffdf8;box-shadow:0 4px 12px rgba(61,42,20,.04)}
+.production-order-card.complete,.expedition-order-card.ready{border-color:#b8d1ad}
+.production-order-summary,.expedition-order-summary{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border:0;background:transparent;text-align:left;color:#173e31}
+.production-order-summary>div:first-child span,.expedition-order-summary>div:first-child>span{display:block;font-size:8px;font-weight:950;letter-spacing:.08em;color:#b2643c}
+.production-order-summary strong,.expedition-order-summary strong{display:block;margin-top:2px;font:700 18px/1.05 Georgia,"Times New Roman",serif;color:#075139}
+.production-order-summary small,.expedition-order-summary small{display:block;margin-top:4px;font-size:8px;color:#776f62}
+.production-progress,.expedition-summary-status{text-align:right;flex:0 0 auto}
+.production-progress b{display:block;font:700 19px Georgia,"Times New Roman",serif;color:#075139}
+.production-progress span{display:block;margin-top:3px;font-size:8px;font-weight:900;color:#4e6a58}
+.production-order-body,.expedition-order-body{border-top:1px solid #eee0c7;background:#fffaf0}
+.production-item{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px 11px;border-bottom:1px solid #f0e4d0}
+.production-item.resolved{background:#f7fbf3}.production-item.unavailable{background:#fff5ef}
+.production-item-check{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#f1eadf;color:#8a8174;font-weight:950}
+.production-item.resolved .production-item-check{background:#dcebd6;color:#0b6943}.production-item.unavailable .production-item-check{background:#f7ddd4;color:#a33f2b}
+.production-item-copy strong{display:block;font:700 15px/1.08 Georgia,"Times New Roman",serif;color:#075139}.production-item-copy small{display:block;margin-top:3px;font-size:8px;color:#776f62}
+.prod-done,.prod-missing{display:inline-block;margin-top:5px;padding:3px 6px;border-radius:999px;font-size:7px;font-weight:900}.prod-done{background:#dcebd6;color:#0a6542}.prod-missing{background:#f6ddd4;color:#9d3e2a}
+.production-item-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.production-item-actions button{min-height:34px;padding:0 8px;border:1px solid #dcc8a7;border-radius:9px;background:#fff8e8;color:#1b5a3f;font-size:7px;font-weight:900}.production-item-actions .prod-primary{background:#0a6843;border-color:#0a6843;color:#fff}.production-item-actions .prod-missing-btn{background:#a62a1d;border-color:#a62a1d;color:#fff}
+.production-order-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;font-size:8px;color:#756d61}.production-order-footer b{color:#0a6542}.production-order-footer small{font-size:8px}
+
+/* Expedição: segunda conferência */
+.expedition-summary-status b{display:block;padding:4px 7px;border-radius:999px;background:#f1eadf;color:#776d5f;font-size:8px}.expedition-summary-status b.ok{background:#dcebd6;color:#0a6542}.expedition-summary-status b.warn{background:#fff0cf;color:#8b5d17}
+.expedition-summary-status small{font-size:7px!important;margin-top:4px!important}.expedition-summary-status em{display:block;margin-top:3px;font-style:normal;font-size:11px;color:#496754}
+.expedition-address{padding:8px 11px;background:#f4efe3;color:#675f54;font-size:8px}
+.expedition-item{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:10px 11px;border:0;border-bottom:1px solid #f0e4d0;background:#fffdf8;text-align:left;color:#173e31}
+.expedition-item.checked{background:#f4faef}.expedition-check{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#f1eadf;color:#82796c;font-size:15px;font-weight:950}.expedition-item.checked .expedition-check{background:#d8ead2;color:#086440}
+.expedition-item strong{display:block;font:700 14px Georgia,"Times New Roman",serif;color:#075139}.expedition-item small{display:block;margin-top:2px;font-size:8px;color:#756e62}.expedition-item>b{font-size:8px;color:#756e62}.expedition-item.checked>b{color:#086440}
+.expedition-order-footer{display:grid;gap:7px;padding:10px 11px}.expedition-ready{padding:9px 10px;border-radius:12px;background:#e6f1de}.expedition-ready b{display:block;color:#086440;font-size:10px}.expedition-ready small{display:block;margin-top:3px;color:#566b5c;font-size:8px}
+.expedition-route-panel{margin-bottom:8px!important}
+
+@media(max-width:420px){
+  .production-item{grid-template-columns:30px minmax(0,1fr)}.production-item-actions{grid-column:2/3;justify-content:flex-start}
+  .production-order-summary strong,.expedition-order-summary strong{font-size:16px}
+  .expedition-item{grid-template-columns:30px minmax(0,1fr) auto}
+}
