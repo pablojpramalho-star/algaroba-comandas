@@ -164,3 +164,27 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
   .mock-category-card{grid-template-columns:160px 1fr 42px!important}
   .group-scene{min-height:132px!important}
 }
+
+/* Catálogo oficial */
+.catalog-filters{display:flex;gap:7px;overflow:auto;margin:2px 0 10px;padding:2px 1px;scrollbar-width:none}
+.catalog-filters::-webkit-scrollbar{display:none}
+.catalog-filters button{white-space:nowrap;min-height:34px;padding:0 11px;border:1px solid #e0cba8;border-radius:999px;background:#fff8e9;color:#526458;font-size:10px;font-weight:850}
+.catalog-filters button.active{background:var(--alg-green);border-color:var(--alg-green);color:#fff}
+.official-shake-list{grid-template-columns:1fr!important;gap:7px!important}
+.official-shake-card{display:grid!important;grid-template-columns:72px minmax(0,1fr) 30px!important;align-items:center!important;min-height:78px!important;padding:7px!important;border:1px solid #e8d6b7!important;border-radius:14px!important;background:#fffaf0!important;box-shadow:0 4px 12px rgba(51,39,22,.045)!important}
+.catalog-thumb{display:block;width:72px;height:64px;border-radius:11px;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.catalog-thumb.thumb-tradicional,.catalog-thumb.thumb-zero,.catalog-thumb.thumb-raiz{background-image:var(--alg-img-trad)}
+.catalog-thumb.thumb-classic{background-image:var(--alg-img-classic)}
+.catalog-thumb.thumb-intense{background-image:var(--alg-img-intense)}
+.catalog-thumb.thumb-syrup{background-image:var(--alg-img-syrup)}
+.catalog-thumb.thumb-grain{background-image:var(--alg-img-grain)}
+.official-shake-card .shake-copy strong{font-family:Georgia,"Times New Roman",serif;font-size:15px;color:var(--alg-green)}
+.official-shake-card .shake-copy small{font-size:9px}
+.official-shake-card .shake-copy em{font-size:9px;line-height:1.25}
+.official-product-tile{display:grid!important;grid-template-columns:72px minmax(0,1fr)!important;align-items:center!important;gap:9px!important;min-height:82px!important;padding:7px!important}
+.official-product-tile .catalog-thumb{height:66px}
+.official-product-tile strong{font-family:Georgia,"Times New Roman",serif;font-size:14px!important;color:var(--alg-green)!important}
+.catalog-footer{grid-template-columns:repeat(4,1fr)!important}
+@media(min-width:680px){
+  .official-shake-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
