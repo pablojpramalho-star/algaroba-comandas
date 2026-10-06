@@ -169,6 +169,30 @@ async function loadIdentity(){
     state.role=null;state.profile=null;
   }
 }
+async function tryBootstrapFirstAdmin(){
+  if(!state.session||state.role)return false;
+  let email=state.session?.user?.email||null;
+  if(!email){
+    try{
+      const user=await request("/auth/v1/user",{method:"GET"});
+      if(user?.email){
+        email=user.email;
+        state.session.user=user;
+        localStorage.setItem("algaroba_session",JSON.stringify(state.session));
+      }
+    }catch{}
+  }
+  if(String(email||"").trim().toLowerCase()!=="algarobalinefit@gmail.com")return false;
+  try{
+    await rpc("bootstrap_primeiro_admin",{},true);
+    await loadIdentity();
+    return state.role==="administrador";
+  }catch(e){
+    console.warn("Bootstrap ADM:",e.message);
+    return false;
+  }
+}
+
 function captureAuthCallback(){
   const raw=window.location.hash.startsWith("#")?window.location.hash.slice(1):"";
   if(!raw)return null;
@@ -203,11 +227,15 @@ async function boot(){
   if(state.session)await loadIdentity();
   await loadCatalog();setClientNavigation();
   if(requestedView==="interno"){
+    if(state.session&&!state.role)await tryBootstrapFirstAdmin();
     if(state.session&&state.role&&state.role!=="cliente")go("internal");
     else if(state.session&&state.role==="cliente"){showToast("Este acesso é exclusivo para a equipe Algaroba.");go("home")}
     else {state.returnView="internal";go("login")}
   }
-  else if(state.session&&!state.role)go("complete-profile");
+  else if(state.session&&!state.role){
+    const becameAdmin=await tryBootstrapFirstAdmin();
+    go(becameAdmin?"internal":"complete-profile");
+  }
   else if(state.role&&state.role!=="cliente")go("internal");
   else if(requestedView==="pedido"){state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")}
   else if(requestedView==="pedidos")go("orders");
@@ -603,7 +631,11 @@ function renderLogin(){
       <div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div>
       <button id="loginSubmit" class="button" style="width:100%" type="submit">Entrar</button>
     </form>
-    ${internalAccess?`<div class="notice green" style="margin-top:13px"><b>Acesso interno</b><br>Use o e-mail e a senha cadastrados para sua função na Algaroba.</div>`:`
+    ${internalAccess?`
+      <div class="notice green" style="margin-top:13px"><b>Acesso interno</b><br>Use o e-mail e a senha cadastrados para sua função na Algaroba.</div>
+      <div class="auth-divider"><span>primeiro acesso</span></div>
+      <button class="button orange" style="width:100%" type="button" onclick="state.returnView='internal';go('signup')">Criar primeiro acesso ADM</button>
+    `:`
       <div class="auth-divider"><span>ou</span></div>
       <button class="button orange" style="width:100%" type="button" data-go="signup">Criar meu cadastro</button>
       <div class="notice green" style="margin-top:13px">Você pode consultar o catálogo sem login. A conta só é necessária para enviar o pedido.</div>`}
@@ -611,12 +643,13 @@ function renderLogin(){
 }
 
 function renderSignup(){
-  if(state.session){go(state.role?"account":"complete-profile");return}
-  main.innerHTML=`<div class="login-card">
-    <button class="auth-back" type="button" data-go="login">← Já tenho conta</button>
+  if(state.session){go(state.role?(state.role==="cliente"?"account":"internal"):"complete-profile");return}
+  const internalAccess=state.returnView==="internal";
+  main.innerHTML=`<div class="login-card ${internalAccess?"internal-login-card":""}">
+    <button class="auth-back" type="button" data-go="login">← Voltar</button>
     <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
-    <h2>Criar meu cadastro</h2>
-    <p class="small" style="text-align:center">Primeiro crie seu acesso. Depois vamos pedir apenas nome, WhatsApp e endereço.</p>
+    <h2>${internalAccess?"Criar primeiro acesso ADM":"Criar meu cadastro"}</h2>
+    <p class="small" style="text-align:center">${internalAccess?"Use exclusivamente o e-mail Algarobalinefit@gmail.com e escolha sua senha. Após confirmar o e-mail, este acesso será reconhecido como Administrador.":"Primeiro crie seu acesso. Depois vamos pedir apenas nome, WhatsApp e endereço."}</p>
     <form onsubmit="window.signup(event)">
       <div class="field"><label>E-mail</label><input id="signupEmail" type="email" autocomplete="email" required></div>
       <div class="field"><label>Crie uma senha</label><input id="signupPassword" type="password" minlength="6" autocomplete="new-password" required></div>
@@ -644,16 +677,23 @@ window.signup=async e=>{
     if(data.access_token&&data.refresh_token){
       state.session=data;
       localStorage.setItem("algaroba_session",JSON.stringify(data));
-      await loadIdentity();setClientNavigation();
-      showToast("Acesso criado. Agora complete seu cadastro.");
-      go("complete-profile");
+      await loadIdentity();
+      const becameAdmin=await tryBootstrapFirstAdmin();
+      setClientNavigation();
+      if(becameAdmin){
+        showToast("Acesso ADM criado.");
+        go("internal");
+      }else{
+        showToast("Acesso criado. Agora complete seu cadastro.");
+        go("complete-profile");
+      }
     }else{
       localStorage.setItem("algaroba_pending_email",email);
       main.innerHTML=`<div class="login-card auth-success">
         <div class="success-icon">✉️</div>
         <h2>Confirme seu e-mail</h2>
         <p>Enviamos a confirmação para <b>${esc(email)}</b>.</p>
-        <p class="small">Toque no botão de confirmação recebido no e-mail. Depois de confirmar, o portal Algaroba abrirá novamente para você concluir nome, WhatsApp e endereço.</p>
+        <p class="small">${internalAccess?"Toque no botão de confirmação recebido no e-mail. Depois de confirmar, o Painel Algaroba abrirá e ativará automaticamente seu perfil Administrador.":"Toque no botão de confirmação recebido no e-mail. Depois de confirmar, o portal Algaroba abrirá novamente para você concluir nome, WhatsApp e endereço."}</p>
         <button class="button" style="width:100%" data-go="login">Já confirmei • Entrar</button>
       </div>`;
     }
