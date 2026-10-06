@@ -1,5 +1,6 @@
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
+const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
 
 const $=s=>document.querySelector(s);
 const main=$("#main"),toastEl=$("#toast"),clientNav=$("#clientNav"),accountLabel=$("#accountLabel"),cartCount=$("#cartCount");
@@ -132,7 +133,32 @@ async function loadIdentity(){
     state.role=null;state.profile=null;
   }
 }
+function captureAuthCallback(){
+  const raw=window.location.hash.startsWith("#")?window.location.hash.slice(1):"";
+  if(!raw)return null;
+  const params=new URLSearchParams(raw);
+  const error=params.get("error_description")||params.get("error");
+  if(error){
+    history.replaceState(null,"",window.location.pathname+window.location.search);
+    return {error:decodeURIComponent(error.replace(/\+/g," "))};
+  }
+  const accessToken=params.get("access_token"),refreshToken=params.get("refresh_token");
+  if(!accessToken||!refreshToken)return null;
+  state.session={
+    access_token:accessToken,
+    refresh_token:refreshToken,
+    token_type:params.get("token_type")||"bearer",
+    expires_in:Number(params.get("expires_in")||3600),
+    expires_at:Number(params.get("expires_at")||0)
+  };
+  localStorage.setItem("algaroba_session",JSON.stringify(state.session));
+  localStorage.removeItem("algaroba_pending_email");
+  history.replaceState(null,"",window.location.pathname+window.location.search);
+  return {confirmed:true};
+}
+
 async function boot(){
+  const authCallback=captureAuthCallback();
   saveCart();
   window.addEventListener("online",()=>$("#offlineBanner").classList.add("hidden"));
   window.addEventListener("offline",()=>$("#offlineBanner").classList.remove("hidden"));
@@ -141,6 +167,8 @@ async function boot(){
   await loadCatalog();setClientNavigation();
   if(state.session&&!state.role)go("complete-profile");
   else go(state.role&&state.role!=="cliente"?"internal":"home");
+  if(authCallback?.confirmed)setTimeout(()=>showToast("E-mail confirmado. Complete seu cadastro."),120);
+  else if(authCallback?.error)setTimeout(()=>showToast(authCallback.error),120);
 }
 async function go(view){
   window.scrollTo({top:0,behavior:"smooth"});
@@ -509,7 +537,7 @@ window.signup=async e=>{
   if(password!==password2){showToast("As senhas não são iguais.");return}
   const btn=$("#signupSubmit");btn.disabled=true;btn.textContent="Criando...";
   try{
-    const r=await fetch(SUPABASE_URL+"/auth/v1/signup",{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/signup?redirect_to="+encodeURIComponent(AUTH_REDIRECT_URL),{
       method:"POST",
       headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},
       body:JSON.stringify({email,password})
@@ -529,8 +557,8 @@ window.signup=async e=>{
         <div class="success-icon">✉️</div>
         <h2>Confirme seu e-mail</h2>
         <p>Enviamos a confirmação para <b>${esc(email)}</b>.</p>
-        <p class="small">Depois de confirmar, volte aqui e entre com seu e-mail e senha. O sistema vai pedir seu nome, WhatsApp e endereço automaticamente.</p>
-        <button class="button" style="width:100%" data-go="login">Ir para entrar</button>
+        <p class="small">Toque no botão de confirmação recebido no e-mail. Depois de confirmar, o portal Algaroba abrirá novamente para você concluir nome, WhatsApp e endereço.</p>
+        <button class="button" style="width:100%" data-go="login">Já confirmei • Entrar</button>
       </div>`;
     }
   }catch(err){
@@ -577,26 +605,100 @@ function renderAddressSetup(){
   main.innerHTML=`<div class="login-card address-setup-card">
     <div class="step-pill">Última etapa</div>
     <h2>Endereço principal</h2>
-    <p class="small">Esse endereço será usado para localizar sua rota de entrega. Você também poderá escolher retirada na fábrica.</p>
+    <p class="small">Digite o CEP primeiro. Quando houver endereço específico, rua, bairro, cidade e UF serão preenchidos automaticamente. Todos os campos continuam editáveis.</p>
     <form onsubmit="window.savePrimaryAddress(event)">
-      <div class="field"><label>CEP</label><input id="addressCep" inputmode="numeric" autocomplete="postal-code"></div>
+      <div class="field">
+        <label>CEP</label>
+        <div class="cep-row">
+          <input id="addressCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000">
+          <button id="cepLookupButton" class="button soft" type="button">Buscar CEP</button>
+        </div>
+        <div id="cepStatus" class="cep-status" aria-live="polite">Digite os 8 números do CEP.</div>
+      </div>
       <div class="field"><label>Rua / avenida</label><input id="addressStreet" autocomplete="street-address" required></div>
       <div class="grid address-grid">
         <div class="field"><label>Número</label><input id="addressNumber" required></div>
-        <div class="field"><label>Complemento</label><input id="addressComplement"></div>
+        <div class="field"><label>Complemento</label><input id="addressComplement" placeholder="Apto., sala, bloco..."></div>
       </div>
       <div class="field"><label>Bairro</label><input id="addressNeighborhood" required></div>
       <div class="grid address-grid">
-        <div class="field"><label>Cidade</label><input id="addressCity" value="Natal" required></div>
-        <div class="field"><label>UF</label><input id="addressUf" value="RN" maxlength="2" required></div>
+        <div class="field"><label>Cidade</label><input id="addressCity" required></div>
+        <div class="field"><label>UF</label><input id="addressUf" maxlength="2" required></div>
       </div>
       <div class="field"><label>Ponto de referência <span class="small">(opcional)</span></label><input id="addressReference"></div>
       <button id="addressSubmit" class="button orange" style="width:100%" type="submit">Salvar e continuar →</button>
     </form>
     <button class="button ghost" style="width:100%;margin-top:8px" type="button" onclick="window.skipAddress()">Cadastrar depois</button>
   </div>`;
+  window.bindCepLookup();
 }
 
+window.bindCepLookup=()=>{
+  const input=$("#addressCep"),button=$("#cepLookupButton");
+  if(!input||!button)return;
+  const format=()=>{
+    const digits=input.value.replace(/\D/g,"").slice(0,8);
+    input.value=digits.length>5?digits.slice(0,5)+"-"+digits.slice(5):digits;
+    if(digits.length===8)window.lookupCep(digits);
+    else {
+      const status=$("#cepStatus");
+      if(status){status.textContent="Digite os 8 números do CEP.";status.className="cep-status"}
+    }
+  };
+  input.addEventListener("input",format);
+  input.addEventListener("blur",()=>{
+    const digits=input.value.replace(/\D/g,"");
+    if(digits.length===8)window.lookupCep(digits);
+  });
+  button.addEventListener("click",()=>{
+    const digits=input.value.replace(/\D/g,"");
+    if(digits.length!==8){showToast("Digite um CEP com 8 números.");input.focus();return}
+    window.lookupCep(digits,true);
+  });
+};
+
+window.lookupCep=async(cep,force=false)=>{
+  const digits=String(cep||"").replace(/\D/g,"");
+  if(digits.length!==8)return;
+  const status=$("#cepStatus"),button=$("#cepLookupButton");
+  if(!force&&window.lookupCep.lastCep===digits&&window.lookupCep.lastOk)return;
+  const requestId=(window.lookupCep.requestId||0)+1;window.lookupCep.requestId=requestId;
+  if(status){status.textContent="Consultando CEP...";status.className="cep-status loading-cep"}
+  if(button)button.disabled=true;
+  try{
+    const r=await fetch("https://viacep.com.br/ws/"+digits+"/json/");
+    if(!r.ok)throw new Error("Não foi possível consultar o CEP.");
+    const data=await r.json();
+    if(requestId!==window.lookupCep.requestId)return;
+    if(data.erro)throw new Error("CEP não encontrado.");
+
+    const street=$("#addressStreet"),neighborhood=$("#addressNeighborhood"),city=$("#addressCity"),uf=$("#addressUf");
+    if(data.logradouro)street.value=data.logradouro;
+    if(data.bairro)neighborhood.value=data.bairro;
+    if(data.localidade)city.value=data.localidade;
+    if(data.uf)uf.value=data.uf;
+
+    window.lookupCep.lastCep=digits;window.lookupCep.lastOk=true;
+    const generic=!data.logradouro||!data.bairro;
+    if(status){
+      status.textContent=generic
+        ?"CEP geral da cidade/região. Cidade e UF foram preenchidas; complete rua e bairro manualmente."
+        :"Endereço localizado. Confira os dados e informe número/complemento.";
+      status.className="cep-status "+(generic?"generic-cep":"ok-cep");
+    }
+    if(generic){
+      if(!data.logradouro)street.focus();
+      else if(!data.bairro)neighborhood.focus();
+    }else{
+      $("#addressNumber")?.focus();
+    }
+  }catch(err){
+    window.lookupCep.lastOk=false;
+    if(status){status.textContent=err.message+" Preencha o endereço manualmente.";status.className="cep-status error-cep"}
+  }finally{
+    if(button)button.disabled=false;
+  }
+};
 window.savePrimaryAddress=async e=>{
   e.preventDefault();
   const btn=$("#addressSubmit");btn.disabled=true;btn.textContent="Salvando...";
