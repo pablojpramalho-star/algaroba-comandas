@@ -980,9 +980,9 @@ async function roleDisplay(role){
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","administrativo","producao","financeiro","expedicao"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","administrativo","producao","financeiro","caixa","estoque","expedicao"];
   if(role==="vendas")return ["administrativo"];
-  if(role==="financeiro")return ["financeiro"];
+  if(role==="financeiro")return ["financeiro","caixa"];
   if(role==="producao")return ["producao"];
   if(role==="expedicao")return ["expedicao"];
   return [];
@@ -993,16 +993,19 @@ function internalModuleMeta(key){
     administrativo:{label:"Administrativo",icon:"▤",desc:"Pedidos e clientes"},
     producao:{label:"Produção",icon:"◫",desc:"Fila de fabricação"},
     financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
+    caixa:{label:"Caixa",icon:"▣",desc:"Abertura e movimentos"},
+    estoque:{label:"Estoque",icon:"▦",desc:"Produtos e insumos"},
     expedicao:{label:"Expedição",icon:"⇢",desc:"Rotas e entregas"}
   })[key]||{label:key,icon:"•",desc:""};
 }
 function internalShell(active){
-  const modules=internalModulesForRole(state.role);
+  const safeRole=typeof state.role==="string"?state.role:"administrador";
+  const modules=internalModulesForRole(safeRole);
   return `
     <section class="internal-shell-head">
       <div class="internal-brand">
         <img src="../algaroba-icon.svg" alt="">
-        <div><strong>Algaroba Fábrica</strong><span>Painel interno • ${esc(roleDisplay(state.role))}</span></div>
+        <div><strong>Algaroba Fábrica</strong><span>Painel interno • ${esc(roleDisplay(safeRole))}</span></div>
       </div>
       <div class="internal-head-actions">
         <button class="internal-refresh" type="button" onclick="window.refreshInternal()">↻ Atualizar</button>
@@ -1033,6 +1036,8 @@ function renderInternal(){
   if(state.internalModule==="administrativo")return renderAdministrative();
   if(state.internalModule==="producao")return renderProduction();
   if(state.internalModule==="financeiro")return renderFinance();
+  if(state.internalModule==="caixa")return renderCash();
+  if(state.internalModule==="estoque")return renderStock();
   if(state.internalModule==="expedicao")return renderExpedition();
   state.internalModule=allowed[0];return renderInternal();
 }
@@ -1071,6 +1076,19 @@ async function renderAdministrative(){
       </section>
       <div id="adminOrdersList"></div>
       <div class="internal-footnote">${open} pedidos ainda em fluxo • os módulos Produção, Financeiro e Expedição atualizam esta tela automaticamente.</div>
+      <div class="section-head"><div><h2>Histórico unificado do cliente</h2><p>Sistema antigo + sistema novo, somente para uso administrativo.</p></div></div>
+      <div class="admin-client-tool">
+        <div class="admin-client-search">
+          <input id="adminClientSearch" type="search" placeholder="Buscar por nome, WhatsApp ou CPF/CNPJ">
+          <button class="button" type="button" onclick="window.adminSearchClients()">Buscar</button>
+        </div>
+        <div class="admin-period">
+          <label>De <input id="adminClientStart" type="date" value="${new Date().getFullYear()}-01-01"></label>
+          <label>Até <input id="adminClientEnd" type="date" value="${new Date().getFullYear()}-12-31"></label>
+        </div>
+        <div id="adminClientResults" class="admin-client-results"><div class="small">Pesquise um cliente para abrir o relatório anual unificado.</div></div>
+        <div id="adminClientReport"></div>
+      </div>
     `;
     renderAdministrativeRows();
   }catch(e){main.innerHTML=internalShell("administrativo")+'<div class="empty">'+esc(e.message)+'</div>'}
@@ -1242,85 +1260,160 @@ window.openProof=async id=>{
 window.approveProof=async id=>{try{await rpc("financeiro_aprovar_comprovante",{p_comprovante_id:id,p_observacao:"Aprovado pelo painel"},true);showToast("Pagamento aprovado.");state.internalModule="financeiro";await renderFinance()}catch(e){showToast(e.message)}};
 window.rejectProof=async id=>{const motivo=prompt("Motivo da rejeição:");if(!motivo)return;try{await rpc("financeiro_rejeitar_comprovante",{p_comprovante_id:id,p_motivo:motivo},true);showToast("Comprovante rejeitado.");await renderFinance()}catch(e){showToast(e.message)}};
 
-async function renderAdmin(){
-  loading("Carregando Administração...");
+async function renderCash(){
+  loading("Carregando Caixa...");
   try{
-    const [orders,routes,stock,flowRows]=await Promise.all([
-      table("pedidos?select=id,numero,status,status_financeiro,total,data_pedido,modalidade_entrega&order=data_pedido.desc&limit=30"),
-      table("rotas?select=id,nome,dia_semana,hora_limite_pedido,hora_inicio_padrao,hora_inicio_antecipada,ativo&ativo=eq.true&order=nome.asc"),
+    const [panelRows,moves,pendingRows]=await Promise.all([
+      rpc("caixa_painel",{},true),
+      rpc("caixa_movimentos_recentes",{p_limit:40},true),
+      rpc("financeiro_pagamentos_pendentes",{},true)
+    ]);
+    const c=Array.isArray(panelRows)?panelRows[0]:panelRows;
+    const pending=pendingRows||[];
+    main.innerHTML=internalShell("caixa")+`
+      <section class="internal-title"><div><span class="internal-eyebrow">CAIXA</span><h1>Movimento do caixa</h1><p>Abertura, recebimentos, sangrias e fechamento.</p></div></section>
+      ${c?`
+        <section class="cash-balance">
+          <span>Saldo calculado</span><b>${brl(c.saldo_calculado)}</b><small>Aberto em ${fmtDateTime(c.aberto_em)} • ${c.movimentos||0} movimentos</small>
+        </section>
+        <section class="cash-mini-kpis">
+          <div><span>Inicial</span><b>${brl(c.saldo_inicial)}</b></div>
+          <div><span>Entradas</span><b>${brl(c.entradas)}</b></div>
+          <div><span>Saídas</span><b>${brl(c.saidas)}</b></div>
+        </section>
+        <div class="cash-actions">
+          <button onclick="window.cashMove('suprimento')"><b>＋</b><span>Suprimento</span></button>
+          <button onclick="window.cashMove('sangria')"><b>−</b><span>Sangria</span></button>
+          <button onclick="window.cashMove('entrada')"><b>↧</b><span>Entrada</span></button>
+          <button onclick="window.cashMove('saida')"><b>↥</b><span>Saída</span></button>
+          <button class="close" onclick="window.cashClose(${Number(c.saldo_calculado||0)})"><b>✓</b><span>Fechar caixa</span></button>
+        </div>
+      `:`
+        <section class="cash-closed"><b>Caixa fechado</b><p>Abra o caixa para começar a registrar os movimentos.</p><button class="button orange" onclick="window.cashOpen()">Abrir caixa</button></section>
+      `}
+      <div class="section-head"><div><h2>Recebimentos pendentes</h2><p>Pedidos prontos aguardando confirmação.</p></div></div>
+      <div class="cash-pending">
+        ${pending.length?pending.slice(0,8).map(x=>`<article><div><b>${esc(x.numero)} • ${esc(x.cliente_nome)}</b><small>${esc(x.metodo)} • pendente ${brl(x.valor_pendente)}</small></div><button onclick="window.cashReceive('${x.pedido_id}',${Number(x.valor_pendente)})">Dar recebido</button></article>`).join(""):'<div class="empty compact">Nenhum recebimento manual pendente.</div>'}
+      </div>
+      <div class="section-head"><div><h2>Movimentos recentes</h2><p>Últimos lançamentos deste caixa e anteriores.</p></div></div>
+      <div class="cash-movements">
+        ${(moves||[]).length?(moves||[]).map(m=>`<article class="${["saida","sangria","estorno"].includes(m.tipo)?"out":"in"}"><div><b>${esc(m.descricao||m.tipo)}</b><small>${m.pedido_numero?esc(m.pedido_numero)+" • ":""}${fmtDateTime(m.created_at)}</small></div><strong>${["saida","sangria","estorno"].includes(m.tipo)?"−":"＋"}${brl(m.valor)}</strong></article>`).join(""):'<div class="empty compact">Sem movimentos registrados.</div>'}
+      </div>
+    `;
+  }catch(e){main.innerHTML=internalShell("caixa")+'<div class="empty">'+esc(e.message)+'</div>'}
+}
+window.cashOpen=async()=>{
+  const raw=prompt("Saldo inicial do caixa:","0");if(raw===null)return;
+  const value=Number(raw.replace(",","."));if(!Number.isFinite(value)||value<0){showToast("Saldo inválido.");return}
+  const obs=prompt("Observação da abertura (opcional):")||null;
+  try{await rpc("caixa_abrir",{p_saldo_inicial:value,p_observacao:obs},true);showToast("Caixa aberto.");await renderCash()}catch(e){showToast(e.message)}
+};
+window.cashMove=async tipo=>{
+  const labels={suprimento:"Suprimento",sangria:"Sangria",entrada:"Entrada",saida:"Saída"};
+  const raw=prompt("Valor da "+labels[tipo]+":","0,00");if(raw===null)return;
+  const value=Number(raw.replace(".","").replace(",","."));if(!Number.isFinite(value)||value<=0){showToast("Valor inválido.");return}
+  const desc=prompt("Descrição / observação:")||labels[tipo];
+  try{await rpc("caixa_registrar_movimento",{p_tipo:tipo,p_valor:value,p_metodo:null,p_descricao:desc},true);showToast(labels[tipo]+" registrada.");await renderCash()}catch(e){showToast(e.message)}
+};
+window.cashClose=async expected=>{
+  const raw=prompt("Valor contado no caixa:",String(expected.toFixed(2)).replace(".",","));if(raw===null)return;
+  const value=Number(raw.replace(".","").replace(",","."));if(!Number.isFinite(value)||value<0){showToast("Valor inválido.");return}
+  const obs=prompt("Observação do fechamento (opcional):")||null;
+  try{
+    const rows=await rpc("caixa_fechar",{p_saldo_final_informado:value,p_observacao:obs},true);
+    const x=Array.isArray(rows)?rows[0]:rows;
+    showToast("Caixa fechado. Diferença: "+brl(x?.diferenca||0));
+    await renderCash();
+  }catch(e){showToast(e.message)}
+};
+window.cashReceive=async(id,pending)=>{
+  const raw=prompt("Valor recebido:",String(pending).replace(".",","));if(raw===null)return;
+  const value=Number(raw.replace(",","."));if(!Number.isFinite(value)||value<=0||value>pending){showToast("Valor inválido.");return}
+  const obs=prompt("Observação / nº da nota (opcional):")||null;
+  try{await rpc("financeiro_registrar_pagamento_manual",{p_pedido_id:id,p_valor:value,p_observacao:obs},true);showToast("Recebimento registrado.");await renderCash()}catch(e){showToast(e.message)}
+};
+
+async function renderStock(){
+  loading("Carregando Estoque...");
+  try{
+    const [products,inputs]=await Promise.all([
       rpc("estoque_painel",{},true),
-      rpc("painel_fluxo_interno",{},true)
+      rpc("estoque_insumos_painel",{},true)
+    ]);
+    main.innerHTML=internalShell("estoque")+`
+      <section class="internal-title"><div><span class="internal-eyebrow">ESTOQUE</span><h1>Estoque atual</h1><p>Produtos prontos e matérias-primas da fábrica.</p></div></section>
+      <div class="stock-section-head"><div><h2>Produtos prontos</h2><p>Xaropes, coberturas, grãos e complementos.</p></div><span>${(products||[]).length} itens</span></div>
+      <section class="stock-big-grid">
+        ${(products||[]).length?(products||[]).map(s=>`<article class="stock-big-card ${s.abaixo_minimo?"low":""}">
+          <div class="stock-big-name"><strong>${esc(s.produto)}</strong><small>${esc(s.categoria||"")}</small></div>
+          <div class="stock-big-number"><b>${Number(s.quantidade_atual).toLocaleString("pt-BR")}</b><span>em estoque</span></div>
+          <div class="stock-big-meta"><span>Mínimo <b>${Number(s.estoque_minimo).toLocaleString("pt-BR")}</b></span><span class="status ${s.disponibilidade_catalogo==="disponivel"?"ok":"bad"}">${esc(s.disponibilidade_catalogo)}</span></div>
+          <div class="stock-big-actions">
+            <button onclick="window.adminStockEntry('${s.produto_id}',${Number(s.quantidade_atual)})"><b>＋</b><span>Entrada</span></button>
+            <button onclick="window.adminSetStock('${s.produto_id}',${Number(s.quantidade_atual)},${Number(s.estoque_minimo)})"><b>↕</b><span>Ajustar</span></button>
+          </div>
+        </article>`).join(""):'<div class="empty compact">Nenhum produto de estoque cadastrado.</div>'}
+      </section>
+      <div class="stock-section-head"><div><h2>Matérias-primas</h2><p>Saborizantes, embalagens, etiquetas e ingredientes.</p></div><span>${(inputs||[]).length} itens</span></div>
+      <section class="stock-big-grid raw-materials">
+        ${(inputs||[]).length?(inputs||[]).map(s=>`<article class="stock-big-card ${s.abaixo_minimo?"low":""}">
+          <div class="stock-big-name"><strong>${esc(s.insumo)}</strong><small>${esc(s.categoria)} • ${esc(s.unidade)}</small></div>
+          <div class="stock-big-number"><b>${Number(s.quantidade_atual).toLocaleString("pt-BR")}</b><span>${esc(s.unidade)} em estoque</span></div>
+          <div class="stock-big-meta"><span>Mínimo <b>${Number(s.estoque_minimo).toLocaleString("pt-BR")}</b></span>${s.abaixo_minimo?'<span class="status warn">baixo</span>':""}</div>
+        </article>`).join(""):'<div class="raw-material-placeholder"><b>Pronto para cadastrar</b><p>Quando você me passar a relação de matérias-primas e as receitas, elas entram aqui e passam a alimentar o controle automático de consumo.</p></div>'}
+      </section>
+    `;
+  }catch(e){main.innerHTML=internalShell("estoque")+'<div class="empty">'+esc(e.message)+'</div>'}
+}
+
+async function renderAdmin(){
+  loading("Carregando visão geral...");
+  try{
+    const [flowRows,allRows]=await Promise.all([
+      rpc("painel_fluxo_interno",{},true),
+      rpc("administrativo_pedidos_fila",{p_limit:80},true)
     ]);
     const flow=Array.isArray(flowRows)?flowRows[0]:flowRows||{};
-    const total=orders.reduce((a,x)=>a+Number(x.total||0),0),pending=orders.filter(x=>x.status_financeiro!=="pago").length;
-    const featured=state.catalog.filter(p=>p.destaque);
+    const now=new Date();
+    const today=(allRows||[]).filter(x=>{
+      const d=new Date(x.data_pedido);
+      return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+    });
+    const clients=new Set(today.map(x=>x.cliente_id||x.cliente_nome).filter(Boolean));
+    const total=today.reduce((s,x)=>s+Number(x.total||0),0);
+    const pending=today.filter(x=>!["pago","cancelado","estornado"].includes(x.status_financeiro)).length;
+    const received=today.filter(x=>["recebido","confirmado"].includes(x.status)).length;
+    const production=today.filter(x=>x.status==="em_producao").length;
+    const ready=today.filter(x=>x.status==="pronto").length;
+    const released=today.filter(x=>["pagamento_confirmado","saiu_entrega"].includes(x.status)).length;
+
     main.innerHTML=internalShell("dashboard")+`
-      <div class="internal-title"><div><span class="internal-eyebrow">VISÃO GERAL</span><h1>Painel da fábrica</h1><p>Operação, clientes, estoque e rotas em um único lugar.</p></div></div>
-      <section class="internal-module-grid">
-        <button onclick="window.openInternalModule('administrativo')"><b>▤</b><span>Administrativo</span><small>${flow.recebidos||0} na entrada • ${flow.pedidos_hoje||0} hoje</small></button>
-        <button onclick="window.openInternalModule('producao')"><b>◫</b><span>Produção</span><small>${flow.em_producao||0} em produção</small></button>
-        <button onclick="window.openInternalModule('financeiro')"><b>R$</b><span>Financeiro</span><small>${flow.financeiro_pendente||0} pendências</small></button>
-        <button onclick="window.openInternalModule('expedicao')"><b>⇢</b><span>Expedição</span><small>${flow.liberados_expedicao||0} liberados • ${flow.em_rota||0} em rota</small></button>
+      <section class="internal-title dashboard-title">
+        <div><span class="internal-eyebrow">HOJE • ${new Date().toLocaleDateString("pt-BR")}</span><h1>Visão geral</h1><p>O que está acontecendo na fábrica agora.</p></div>
       </section>
-      <div class="kpis">
-        <div class="kpi"><b>${orders.length}</b><small>Pedidos recentes</small></div>
-        <div class="kpi"><b>${brl(total)}</b><small>Total dos 30 recentes</small></div>
-        <div class="kpi"><b>${pending}</b><small>Financeiro pendente</small></div>
-        <div class="kpi"><b>${routes.length}</b><small>Rotas ativas</small></div>
-        <div class="kpi"><b>${stock.filter(p=>p.disponibilidade_catalogo==="em_falta").length}</b><small>Itens de estoque em falta</small></div>
-        <div class="kpi"><b>${featured.length}</b><small>Destaques do catálogo</small></div>
-      </div>
-
-      <div class="section-head"><div><h2>Histórico unificado do cliente</h2><p>Sistema antigo + sistema novo em uma única visão administrativa.</p></div></div>
-      <div class="admin-client-tool">
-        <div class="admin-client-search">
-          <input id="adminClientSearch" type="search" placeholder="Buscar por nome, WhatsApp ou CPF/CNPJ">
-          <button class="button" type="button" onclick="window.adminSearchClients()">Buscar</button>
+      <section class="today-kpis">
+        <div><span>Pedidos</span><b>${today.length}</b></div>
+        <div><span>Clientes</span><b>${clients.size}</b></div>
+        <div><span>Valor do dia</span><b>${brl(total)}</b></div>
+        <div><span>Financeiro pendente</span><b>${pending}</b></div>
+      </section>
+      <section class="today-flow">
+        <span><b>${received}</b> Entrada</span>
+        <span><b>${production}</b> Produção</span>
+        <span><b>${ready}</b> Prontos</span>
+        <span><b>${released}</b> Liberados</span>
+      </section>
+      <section class="today-orders-card">
+        <div class="today-orders-head"><div><strong>Pedidos de hoje</strong><small>${today.length} pedidos</small></div><button type="button" onclick="window.openInternalModule('administrativo')">Ver todos →</button></div>
+        <div class="today-orders-scroll">
+          ${today.length?today.map(x=>`<article class="today-order">
+            <div><b>${esc(x.cliente_nome)}</b><small>${esc(x.numero)} • ${fmtDateTime(x.data_pedido)}</small></div>
+            <div class="today-order-status"><span class="status ${statusClass(x.status)}">${esc(x.status)}</span><strong>${brl(x.total)}</strong></div>
+          </article>`).join(""):'<div class="empty compact">Nenhum pedido feito hoje.</div>'}
         </div>
-        <div class="admin-period">
-          <label>De <input id="adminClientStart" type="date" value="${new Date().getFullYear()}-01-01"></label>
-          <label>Até <input id="adminClientEnd" type="date" value="${new Date().getFullYear()}-12-31"></label>
-        </div>
-        <div id="adminClientResults" class="admin-client-results"><div class="small">Pesquise um cliente para abrir o relatório anual unificado.</div></div>
-        <div id="adminClientReport"></div>
-      </div>
-
-      <div class="section-head"><div><h2>Catálogo e estoque</h2><p>Controle rápido do que o cliente enxerga.</p></div></div>
-      <div class="panel">
-        ${stock.length?stock.map(s=>{const p=state.catalog.find(x=>x.produto_id===s.produto_id)||s;return `
-          <article class="stock-line-card">
-            <div class="stock-line-head">
-              <strong>${esc(s.produto)}</strong>
-              <button class="stock-edit-mini" type="button" onclick="window.adminEditPresentation('${s.produto_id}')" aria-label="Editar ${esc(s.produto)}" title="Editar produto">✎</button>
-            </div>
-            <div class="stock-line-info">
-              <span class="stock-category">${esc(s.categoria||categoryKey(p))}</span>
-              <span>Saldo <b>${Number(s.quantidade_atual).toLocaleString("pt-BR")}</b></span>
-              <span>Mínimo <b>${Number(s.estoque_minimo).toLocaleString("pt-BR")}</b></span>
-              <span class="status ${s.disponibilidade_catalogo==="disponivel"?"ok":s.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(s.disponibilidade_catalogo)}</span>
-              ${s.abaixo_minimo?'<span class="status warn">abaixo do mínimo</span>':""}
-            </div>
-            <div class="stock-line-actions">
-              <button class="stock-action entry" type="button" onclick="window.adminStockEntry('${s.produto_id}',${Number(s.quantidade_atual)})">
-                <b>＋</b><span>Entrada</span>
-              </button>
-              <button class="stock-action" type="button" onclick="window.adminSetStock('${s.produto_id}',${Number(s.quantidade_atual)},${Number(s.estoque_minimo)})">
-                <b>↕</b><span>Ajustar</span>
-              </button>
-              <button class="stock-action ${p.destaque?"undo":""}" type="button" onclick="window.adminToggleFeatured('${s.produto_id}',${!!p.destaque})">
-                <b>${p.destaque?"↶":"★"}</b><span>${p.destaque?"Desfazer":"Destacar"}</span>
-              </button>
-            </div>
-          </article>`}).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
-      </div>
-
-      <div class="section-head"><h2>Rotas</h2></div>
-      <div class="panel">${routes.map(r=>`<div class="row"><div><div class="row-title">${esc(r.nome)}</div><div class="row-sub">${esc(r.dia_semana||"")} • pedidos até ${fmtTime(r.hora_limite_pedido)} • saída ${fmtTime(r.hora_inicio_padrao)}${r.hora_inicio_antecipada?" • antecipada "+fmtTime(r.hora_inicio_antecipada):""}</div></div><span class="status ok">ativa</span></div>`).join("")}</div>
-
-      <div class="section-head"><h2>Pedidos recentes</h2></div>
-      <div class="panel">${orders.map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${esc(o.modalidade_entrega||"")}</div><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${statusClass(o.status_financeiro)}">${esc(o.status_financeiro)}</span></div><b>${brl(o.total)}</b></div>`).join("")||'<div class="empty">Sem pedidos.</div>'}</div>
+      </section>
     `;
-  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  }catch(e){main.innerHTML=internalShell("dashboard")+'<div class="empty">'+esc(e.message)+'</div>'}
 }
 window.adminSearchClients=async()=>{
   const box=document.querySelector("#adminClientResults");
@@ -1365,7 +1458,7 @@ window.adminStockEntry=async(id,current)=>{
   const raw=prompt("Quantidade que está entrando no estoque:","1");if(raw===null)return;
   const qtd=Number(raw.replace(",","."));if(!Number.isFinite(qtd)||qtd<=0){showToast("Quantidade inválida.");return}
   const obs=prompt("Observação da entrada (opcional):")||null;
-  try{await rpc("admin_movimentar_estoque",{p_produto_id:id,p_quantidade:qtd,p_tipo:"entrada",p_observacao:obs},true);showToast("Entrada registrada.");await loadCatalog();await renderAdmin()}catch(e){showToast(e.message)}
+  try{await rpc("admin_movimentar_estoque",{p_produto_id:id,p_quantidade:qtd,p_tipo:"entrada",p_observacao:obs},true);showToast("Entrada registrada.");await loadCatalog();await renderStock()}catch(e){showToast(e.message)}
 };
 window.adminSetStock=async(id,current,minCurrent)=>{
   const raw=prompt("Saldo físico atual:",String(current).replace(".",","));if(raw===null)return;
@@ -1373,7 +1466,7 @@ window.adminSetStock=async(id,current,minCurrent)=>{
   const rawMin=prompt("Estoque mínimo:",String(minCurrent).replace(".",","));if(rawMin===null)return;
   const minimo=Number(rawMin.replace(",","."));if(!Number.isFinite(minimo)||minimo<0){showToast("Estoque mínimo inválido.");return}
   const obs=prompt("Motivo do ajuste (opcional):")||null;
-  try{await rpc("admin_ajustar_estoque",{p_produto_id:id,p_nova_quantidade:qtd,p_estoque_minimo:minimo,p_observacao:obs},true);showToast("Estoque ajustado.");await loadCatalog();await renderAdmin()}catch(e){showToast(e.message)}
+  try{await rpc("admin_ajustar_estoque",{p_produto_id:id,p_nova_quantidade:qtd,p_estoque_minimo:minimo,p_observacao:obs},true);showToast("Estoque ajustado.");await loadCatalog();await renderStock()}catch(e){showToast(e.message)}
 };
 window.adminToggleFeatured=async(id,current)=>{
   try{
