@@ -259,7 +259,7 @@ function renderHome(){
             <span class="cart-line-icon"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.5h9.7L20 7H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg></span>
             <span>Fazer meu pedido</span><b>→</b>
           </button>
-          <button class="mock-secondary" type="button" onclick="window.location.href='./catalogo.html'"><span>▤</span><div><b>Ver catálogo completo</b><small>47 sabores + Tradicional Raiz e demais produtos</small></div><strong>›</strong></button>
+          <button class="mock-secondary" type="button" onclick="window.location.href='./catalogo.html'"><span>▤</span><div><b>Catálogo Algaroba</b><small>Veja todos os produtos</small></div><strong>›</strong></button>
         </div>
       </div>
     </section>
