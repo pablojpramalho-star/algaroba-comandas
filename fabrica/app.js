@@ -124,8 +124,13 @@ async function loadIdentity(){
     state.role=await rpc("current_user_role",{},true);
     if(state.role==="cliente"){
       const p=await rpc("meu_perfil_cliente",{},true);state.profile=Array.isArray(p)?p[0]:p;
+    }else{
+      state.profile=null;
     }
-  }catch(e){console.error(e);state.role=null;state.profile=null}
+  }catch(e){
+    console.error(e);
+    state.role=null;state.profile=null;
+  }
 }
 async function boot(){
   saveCart();
@@ -133,7 +138,9 @@ async function boot(){
   window.addEventListener("offline",()=>$("#offlineBanner").classList.remove("hidden"));
   if(!navigator.onLine)$("#offlineBanner").classList.remove("hidden");
   if(state.session)await loadIdentity();
-  await loadCatalog();setClientNavigation();go(state.role&&state.role!=="cliente"?"internal":"home");
+  await loadCatalog();setClientNavigation();
+  if(state.session&&!state.role)go("complete-profile");
+  else go(state.role&&state.role!=="cliente"?"internal":"home");
 }
 async function go(view){
   window.scrollTo({top:0,behavior:"smooth"});
@@ -149,6 +156,9 @@ async function go(view){
   else if(view==="info")await renderInfo();
   else if(view==="account")await renderAccount();
   else if(view==="login")renderLogin();
+  else if(view==="signup")renderSignup();
+  else if(view==="complete-profile")renderCompleteProfile();
+  else if(view==="address-setup")renderAddressSetup();
   else if(view==="internal")await renderInternal();
 }
 document.addEventListener("click",e=>{
@@ -458,16 +468,165 @@ window.choosePrazo=async id=>window.chooseMethod(id,"prazo");
 
 function renderLogin(){
   if(state.session){
+    if(!state.role){renderCompleteProfile();return}
     main.innerHTML=`<div class="account-card"><div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div><h2 style="text-align:center">Conta Algaroba</h2><p style="text-align:center"><b>${esc(state.profile?.nome||state.session.user?.email||"Usuário")}</b><br><span class="status">${esc(state.role||"")}</span></p><div class="actions"><button class="button" onclick="window.afterLogin()">Abrir painel</button><button class="button ghost" onclick="window.logout()">Sair</button></div></div>`;return
   }
-  main.innerHTML=`<div class="login-card"><div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div><h2>Entrar na Algaroba</h2><p class="small" style="text-align:center">Acesso do cliente e da equipe da fábrica.</p><form onsubmit="window.login(event)"><div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div><button id="loginSubmit" class="button" style="width:100%" type="submit">Entrar</button></form><div class="notice green" style="margin-top:13px">O catálogo pode ser consultado sem login. O acesso é exigido para finalizar pedidos e usar os painéis internos.</div></div>`;
+  main.innerHTML=`<div class="login-card">
+    <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+    <h2>Entrar na Algaroba</h2>
+    <p class="small" style="text-align:center">Entre para finalizar pedidos e acompanhar suas compras.</p>
+    <form onsubmit="window.login(event)">
+      <div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div>
+      <button id="loginSubmit" class="button" style="width:100%" type="submit">Entrar</button>
+    </form>
+    <div class="auth-divider"><span>ou</span></div>
+    <button class="button orange" style="width:100%" type="button" data-go="signup">Criar meu cadastro</button>
+    <div class="notice green" style="margin-top:13px">Você pode consultar o catálogo sem login. A conta só é necessária para enviar o pedido.</div>
+  </div>`;
 }
+
+function renderSignup(){
+  if(state.session){go(state.role?"account":"complete-profile");return}
+  main.innerHTML=`<div class="login-card">
+    <button class="auth-back" type="button" data-go="login">← Já tenho conta</button>
+    <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+    <h2>Criar meu cadastro</h2>
+    <p class="small" style="text-align:center">Primeiro crie seu acesso. Depois vamos pedir apenas nome, WhatsApp e endereço.</p>
+    <form onsubmit="window.signup(event)">
+      <div class="field"><label>E-mail</label><input id="signupEmail" type="email" autocomplete="email" required></div>
+      <div class="field"><label>Crie uma senha</label><input id="signupPassword" type="password" minlength="6" autocomplete="new-password" required></div>
+      <div class="field"><label>Repita a senha</label><input id="signupPassword2" type="password" minlength="6" autocomplete="new-password" required></div>
+      <button id="signupSubmit" class="button orange" style="width:100%" type="submit">Criar acesso →</button>
+    </form>
+    <div class="notice" style="margin-top:13px">Se a confirmação por e-mail estiver habilitada, você receberá uma mensagem para confirmar seu acesso antes de concluir o cadastro.</div>
+  </div>`;
+}
+
+window.signup=async e=>{
+  e.preventDefault();
+  const email=$("#signupEmail").value.trim(),password=$("#signupPassword").value,password2=$("#signupPassword2").value;
+  if(password!==password2){showToast("As senhas não são iguais.");return}
+  const btn=$("#signupSubmit");btn.disabled=true;btn.textContent="Criando...";
+  try{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/signup",{
+      method:"POST",
+      headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})
+    });
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.msg||data.error_description||data.message||"Não foi possível criar o acesso.");
+
+    if(data.access_token&&data.refresh_token){
+      state.session=data;
+      localStorage.setItem("algaroba_session",JSON.stringify(data));
+      await loadIdentity();setClientNavigation();
+      showToast("Acesso criado. Agora complete seu cadastro.");
+      go("complete-profile");
+    }else{
+      localStorage.setItem("algaroba_pending_email",email);
+      main.innerHTML=`<div class="login-card auth-success">
+        <div class="success-icon">✉️</div>
+        <h2>Confirme seu e-mail</h2>
+        <p>Enviamos a confirmação para <b>${esc(email)}</b>.</p>
+        <p class="small">Depois de confirmar, volte aqui e entre com seu e-mail e senha. O sistema vai pedir seu nome, WhatsApp e endereço automaticamente.</p>
+        <button class="button" style="width:100%" data-go="login">Ir para entrar</button>
+      </div>`;
+    }
+  }catch(err){
+    showToast(err.message);btn.disabled=false;btn.textContent="Criar acesso →";
+  }
+};
+
+function renderCompleteProfile(){
+  if(!state.session){go("login");return}
+  if(state.role){go(state.role==="cliente"?"account":"internal");return}
+  main.innerHTML=`<div class="login-card">
+    <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+    <h2>Complete seu cadastro</h2>
+    <p class="small" style="text-align:center">Se seu WhatsApp já estiver na nossa base, vamos vincular sua conta ao cadastro existente para evitar duplicidade.</p>
+    <form onsubmit="window.completeProfile(event)">
+      <div class="field"><label>Nome / nome do estabelecimento</label><input id="profileName" autocomplete="name" required></div>
+      <div class="field"><label>WhatsApp com DDD</label><input id="profileWhatsapp" inputmode="tel" autocomplete="tel" placeholder="(84) 99999-9999" required></div>
+      <div class="field"><label>CPF ou CNPJ <span class="small">(opcional)</span></label><input id="profileDocument" inputmode="numeric" autocomplete="off"></div>
+      <button id="profileSubmit" class="button orange" style="width:100%" type="submit">Continuar →</button>
+    </form>
+  </div>`;
+}
+
+window.completeProfile=async e=>{
+  e.preventDefault();
+  const btn=$("#profileSubmit");btn.disabled=true;btn.textContent="Salvando...";
+  try{
+    const result=await rpc("concluir_cadastro_cliente",{
+      p_nome:$("#profileName").value.trim(),
+      p_whatsapp:$("#profileWhatsapp").value.trim(),
+      p_cpf_cnpj:$("#profileDocument").value.trim()||null
+    },true);
+    const row=Array.isArray(result)?result[0]:result;
+    await loadIdentity();await loadCatalog();setClientNavigation();
+    showToast(row?.cadastro_vinculado_existente?"Cadastro existente localizado e vinculado.":"Cadastro criado com sucesso.");
+    go("address-setup");
+  }catch(err){
+    showToast(err.message);btn.disabled=false;btn.textContent="Continuar →";
+  }
+};
+
+function renderAddressSetup(){
+  if(!state.session||state.role!=="cliente"){go("login");return}
+  main.innerHTML=`<div class="login-card address-setup-card">
+    <div class="step-pill">Última etapa</div>
+    <h2>Endereço principal</h2>
+    <p class="small">Esse endereço será usado para localizar sua rota de entrega. Você também poderá escolher retirada na fábrica.</p>
+    <form onsubmit="window.savePrimaryAddress(event)">
+      <div class="field"><label>CEP</label><input id="addressCep" inputmode="numeric" autocomplete="postal-code"></div>
+      <div class="field"><label>Rua / avenida</label><input id="addressStreet" autocomplete="street-address" required></div>
+      <div class="grid address-grid">
+        <div class="field"><label>Número</label><input id="addressNumber" required></div>
+        <div class="field"><label>Complemento</label><input id="addressComplement"></div>
+      </div>
+      <div class="field"><label>Bairro</label><input id="addressNeighborhood" required></div>
+      <div class="grid address-grid">
+        <div class="field"><label>Cidade</label><input id="addressCity" value="Natal" required></div>
+        <div class="field"><label>UF</label><input id="addressUf" value="RN" maxlength="2" required></div>
+      </div>
+      <div class="field"><label>Ponto de referência <span class="small">(opcional)</span></label><input id="addressReference"></div>
+      <button id="addressSubmit" class="button orange" style="width:100%" type="submit">Salvar e continuar →</button>
+    </form>
+    <button class="button ghost" style="width:100%;margin-top:8px" type="button" onclick="window.skipAddress()">Cadastrar depois</button>
+  </div>`;
+}
+
+window.savePrimaryAddress=async e=>{
+  e.preventDefault();
+  const btn=$("#addressSubmit");btn.disabled=true;btn.textContent="Salvando...";
+  try{
+    await rpc("cliente_salvar_endereco_principal",{
+      p_cep:$("#addressCep").value.trim()||null,
+      p_logradouro:$("#addressStreet").value.trim(),
+      p_numero:$("#addressNumber").value.trim(),
+      p_complemento:$("#addressComplement").value.trim()||null,
+      p_bairro:$("#addressNeighborhood").value.trim(),
+      p_cidade:$("#addressCity").value.trim(),
+      p_uf:$("#addressUf").value.trim(),
+      p_referencia:$("#addressReference").value.trim()||null
+    },true);
+    showToast("Endereço salvo.");
+    const target=state.returnView||"home";state.returnView=null;go(target);
+  }catch(err){
+    showToast(err.message);btn.disabled=false;btn.textContent="Salvar e continuar →";
+  }
+};
+window.skipAddress=()=>{const target=state.returnView||"home";state.returnView=null;go(target)};
+
 window.login=async e=>{
   e.preventDefault();const btn=$("#loginSubmit");btn.disabled=true;btn.textContent="Entrando...";
   try{
     const r=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:$("#email").value.trim(),password:$("#password").value})});
     const data=await r.json();if(!r.ok)throw new Error(data.error_description||data.msg||"E-mail ou senha inválidos.");
-    state.session=data;localStorage.setItem("algaroba_session",JSON.stringify(data));await loadIdentity();await loadCatalog();setClientNavigation();
+    state.session=data;localStorage.setItem("algaroba_session",JSON.stringify(data));
+    await loadIdentity();await loadCatalog();setClientNavigation();
+    if(!state.role){go("complete-profile");return}
     const target=state.returnView|| (state.role==="cliente"?"home":"internal");state.returnView=null;go(target);
   }catch(e2){showToast(e2.message);btn.disabled=false;btn.textContent="Entrar"}
 };
@@ -533,10 +692,11 @@ async function renderAccount(){
     const addresses=await table("cliente_enderecos?select=id,identificacao,logradouro,numero,bairro,cidade,uf,recebimento_inicio,recebimento_fim,intervalo_inicio,intervalo_fim,observacao_recebimento,janela_recebimento_confirmada&ativo=eq.true&order=identificacao.asc");
     main.innerHTML=`<div class="account-card"><h2>Olá, ${esc(state.profile?.nome?.split(" ")[0]||"cliente")}</h2><div class="small">${esc(state.profile?.whatsapp||state.profile?.telefone||"")}</div></div>
     <div class="section-head"><div><h2>Horário de recebimento</h2><p>Ajuda a Expedição a organizar a sequência da rota, sem prometer horário de chegada.</p></div></div>
-    ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.numero||"")} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty">Nenhum endereço cadastrado.</div>'}
+    ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.numero||"")} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty"><div class="empty-icon">📍</div>Nenhum endereço cadastrado.<br><br><button class="button" onclick="window.goAddressSetup()">Cadastrar endereço</button></div>'}
     <div class="actions" style="max-width:470px;margin:14px auto"><button class="button ghost" onclick="window.logout()">Sair da conta</button></div>`;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+window.goAddressSetup=()=>go("address-setup");
 window.saveReceiving=async id=>{
   const v=x=>$("#"+x+"-"+id)?.value||null;
   try{await rpc("cliente_salvar_horario_recebimento",{p_endereco_id:id,p_recebimento_inicio:v("ini"),p_recebimento_fim:v("fim"),p_intervalo_inicio:v("intini"),p_intervalo_fim:v("intfim"),p_observacao:$("#obs-"+id)?.value||null},true);showToast("Horário de recebimento salvo.")}
