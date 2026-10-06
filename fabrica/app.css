@@ -176,3 +176,14 @@
 .step-pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .address-grid{grid-template-columns:1fr 1fr}
 @media(max-width:420px){.address-grid{grid-template-columns:1fr}}
+
+.advantages-grid{display:grid;gap:9px}
+.advantage-card{display:flex;gap:10px;align-items:flex-start;padding:13px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.advantage-card>span{font-size:25px}.advantage-card b{display:block;color:var(--green)}.advantage-card small{display:block;margin-top:3px;color:var(--muted);line-height:1.4}.advantage-card em{display:inline-flex;margin-top:6px;padding:4px 7px;border-radius:9px;background:var(--green-soft);color:var(--green);font-size:9px;font-style:normal;font-weight:850}
+.advantage-empty{padding:18px;border:1px dashed var(--line);border-radius:15px;color:var(--muted);font-size:12px;text-align:center}
+.admin-client-tool{padding:14px;border:1px solid var(--line);border-radius:20px;background:var(--paper);box-shadow:0 7px 18px rgba(35,51,41,.05)}
+.admin-client-search{display:flex;gap:8px}.admin-client-search input{flex:1;min-width:0;border:1px solid var(--line);border-radius:13px;padding:11px;background:#fff;color:var(--ink)}
+.admin-period{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}.admin-period label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px}.admin-period input{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;color:var(--ink)}
+.admin-client-results{display:grid;gap:7px;margin:10px 0}.admin-client-result{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:11px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);cursor:pointer}.admin-client-result b,.admin-client-result small{display:block}.admin-client-result small{margin-top:2px;color:var(--muted);font-size:10px}.admin-client-result>span{color:var(--green);font-size:10px;font-weight:850}
+.admin-unified-report{margin-top:14px}.section-head.compact{margin:12px 0 8px}.section-head.compact h3{margin:0}.admin-history-list{margin-top:10px}
+@media(min-width:760px){.advantages-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-client-kpis{grid-template-columns:repeat(4,1fr)}}
