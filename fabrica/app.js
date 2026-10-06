@@ -634,7 +634,7 @@ function renderLogin(){
     ${internalAccess?`
       <div class="notice green" style="margin-top:13px"><b>Acesso interno</b><br>Use o e-mail e a senha cadastrados para sua função na Algaroba.</div>
       <div class="auth-divider"><span>primeiro acesso</span></div>
-      <button class="button orange" style="width:100%" type="button" onclick="state.returnView='internal';go('signup')">Criar primeiro acesso ADM</button>
+      <button class="button orange" style="width:100%" type="button" onclick="window.startInternalSignup()">Criar primeiro acesso ADM</button>
     `:`
       <div class="auth-divider"><span>ou</span></div>
       <button class="button orange" style="width:100%" type="button" data-go="signup">Criar meu cadastro</button>
@@ -877,6 +877,7 @@ window.logout=async()=>{
   localStorage.removeItem("algaroba_session");state.session=null;state.role=null;state.profile=null;await loadCatalog();setClientNavigation();go("home");
 };
 window.afterLogin=()=>go(state.role==="cliente"?"home":"internal");
+window.startInternalSignup=()=>{state.returnView="internal";go("signup")};
 
 async function renderInfo(){
   loading("Carregando informações...");
