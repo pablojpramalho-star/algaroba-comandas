@@ -689,11 +689,34 @@ async function renderAccount(){
   if(state.role!=="cliente"){go("internal");return}
   loading("Carregando cadastro...");
   try{
-    const addresses=await table("cliente_enderecos?select=id,identificacao,logradouro,numero,bairro,cidade,uf,recebimento_inicio,recebimento_fim,intervalo_inicio,intervalo_fim,observacao_recebimento,janela_recebimento_confirmada&ativo=eq.true&order=identificacao.asc");
-    main.innerHTML=`<div class="account-card"><h2>Olá, ${esc(state.profile?.nome?.split(" ")[0]||"cliente")}</h2><div class="small">${esc(state.profile?.whatsapp||state.profile?.telefone||"")}</div></div>
-    <div class="section-head"><div><h2>Horário de recebimento</h2><p>Ajuda a Expedição a organizar a sequência da rota, sem prometer horário de chegada.</p></div></div>
-    ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.numero||"")} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty"><div class="empty-icon">📍</div>Nenhum endereço cadastrado.<br><br><button class="button" onclick="window.goAddressSetup()">Cadastrar endereço</button></div>'}
-    <div class="actions" style="max-width:470px;margin:14px auto"><button class="button ghost" onclick="window.logout()">Sair da conta</button></div>`;
+    const [addresses,promotions,benefits,conditionRows]=await Promise.all([
+      table("cliente_enderecos?select=id,identificacao,logradouro,numero,bairro,cidade,uf,recebimento_inicio,recebimento_fim,intervalo_inicio,intervalo_fim,observacao_recebimento,janela_recebimento_confirmada&ativo=eq.true&order=identificacao.asc"),
+      rpc("minhas_promocoes",{},true),
+      rpc("meus_beneficios_disponiveis",{},true),
+      rpc("minha_condicao_comercial_resumo",{},true)
+    ]);
+    const condition=Array.isArray(conditionRows)?conditionRows[0]:conditionRows;
+    const hasAdvantages=condition?.possui_desconto_especial||condition?.compra_prazo_habilitada||(promotions||[]).length||(benefits||[]).length;
+
+    main.innerHTML=`
+      <div class="account-card">
+        <h2>Olá, ${esc(state.profile?.nome?.split(" ")[0]||"cliente")}</h2>
+        <div class="small">${esc(state.profile?.whatsapp||state.profile?.telefone||"")}</div>
+      </div>
+
+      <div class="section-head"><div><h2>Minhas vantagens</h2><p>Mostramos apenas os benefícios disponíveis para você, sem expor métricas financeiras internas.</p></div></div>
+      <div class="advantages-grid">
+        ${condition?.possui_desconto_especial?`<div class="advantage-card"><span>🏷️</span><div><b>Condição especial ativa</b><small>Seus preços elegíveis já aparecem ajustados no catálogo.</small></div></div>`:""}
+        ${condition?.compra_prazo_habilitada?`<div class="advantage-card"><span>🧾</span><div><b>Compra a prazo habilitada</b><small>A opção aparece quando o pedido estiver pronto e elegível.</small></div></div>`:""}
+        ${(promotions||[]).map(p=>`<div class="advantage-card"><span>🎯</span><div><b>${esc(p.nome)}</b><small>${esc(p.descricao||p.condicao_texto||"Promoção disponível para seu cadastro.")}</small>${p.tem_desconto?'<em>Condição promocional disponível</em>':""}</div></div>`).join("")}
+        ${(benefits||[]).map(b=>`<div class="advantage-card"><span>🎁</span><div><b>${esc(b.nome)}</b><small>${esc(b.descricao||"Brinde disponível para resgate.")}</small><em>Brinde disponível</em></div></div>`).join("")}
+        ${!hasAdvantages?'<div class="advantage-empty">As vantagens disponíveis para seu cadastro aparecerão aqui.</div>':""}
+      </div>
+
+      <div class="section-head"><div><h2>Horário de recebimento</h2><p>Ajuda a Expedição a organizar a sequência da rota, sem prometer horário de chegada.</p></div></div>
+      ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.numero||"")} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty"><div class="empty-icon">📍</div>Nenhum endereço cadastrado.<br><br><button class="button" onclick="window.goAddressSetup()">Cadastrar endereço</button></div>'}
+      <div class="actions" style="max-width:470px;margin:14px auto"><button class="button ghost" onclick="window.logout()">Sair da conta</button></div>
+    `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 window.goAddressSetup=()=>go("address-setup");
@@ -877,6 +900,20 @@ async function renderAdmin(){
         <div class="kpi"><b>${featured.length}</b><small>Destaques do catálogo</small></div>
       </div>
 
+      <div class="section-head"><div><h2>Histórico unificado do cliente</h2><p>Sistema antigo + sistema novo em uma única visão administrativa.</p></div></div>
+      <div class="admin-client-tool">
+        <div class="admin-client-search">
+          <input id="adminClientSearch" type="search" placeholder="Buscar por nome, WhatsApp ou CPF/CNPJ">
+          <button class="button" type="button" onclick="window.adminSearchClients()">Buscar</button>
+        </div>
+        <div class="admin-period">
+          <label>De <input id="adminClientStart" type="date" value="${new Date().getFullYear()}-01-01"></label>
+          <label>Até <input id="adminClientEnd" type="date" value="${new Date().getFullYear()}-12-31"></label>
+        </div>
+        <div id="adminClientResults" class="admin-client-results"><div class="small">Pesquise um cliente para abrir o relatório anual unificado.</div></div>
+        <div id="adminClientReport"></div>
+      </div>
+
       <div class="section-head"><div><h2>Catálogo e estoque</h2><p>Controle rápido do que o cliente enxerga.</p></div></div>
       <div class="panel">
         ${stock.length?stock.map(s=>{const p=state.catalog.find(x=>x.produto_id===s.produto_id)||s;return `<div class="row"><div><div class="row-title">${esc(s.produto)}</div><div class="row-sub">${esc(s.categoria||categoryKey(p))} • Saldo: <b>${s.quantidade_atual}</b> • Mínimo: ${s.estoque_minimo}</div><div style="margin-top:6px"><span class="status ${s.disponibilidade_catalogo==="disponivel"?"ok":s.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(s.disponibilidade_catalogo)}</span> ${s.abaixo_minimo?'<span class="status warn">abaixo do mínimo</span>':""}${p.destaque?' <span class="status warn">destaque</span>':""}</div></div><div class="inline-actions"><button class="button soft" onclick="window.adminStockEntry('${s.produto_id}',${Number(s.quantidade_atual)})">Entrada</button><button class="button ghost" onclick="window.adminSetStock('${s.produto_id}',${Number(s.quantidade_atual)},${Number(s.estoque_minimo)})">Ajustar</button><button class="button ghost" onclick="window.adminToggleFeatured('${s.produto_id}',${!!p.destaque})">${p.destaque?"Remover destaque":"Destacar"}</button><button class="button ghost" onclick="window.adminEditPresentation('${s.produto_id}')">Editar</button></div></div>`}).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
@@ -890,6 +927,45 @@ async function renderAdmin(){
     `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+window.adminSearchClients=async()=>{
+  const box=document.querySelector("#adminClientResults");
+  const term=document.querySelector("#adminClientSearch")?.value?.trim()||"";
+  if(box)box.innerHTML='<div class="loading"><span class="spinner"></span><span>Buscando clientes...</span></div>';
+  try{
+    const rows=await rpc("admin_buscar_clientes_unificados",{p_busca:term||null},true)||[];
+    if(!box)return;
+    box.innerHTML=rows.length?rows.slice(0,30).map(c=>`<button class="admin-client-result" type="button" onclick="window.adminOpenUnifiedClient('${c.cliente_referencia_id}')"><div><b>${esc(c.nome_exibicao)}</b><small>${esc(c.whatsapp||c.cpf_cnpj||"Sem telefone/documento")}</small><small>${c.registros_vinculados>1?c.registros_vinculados+" cadastros administrativos unificados":esc(c.nomes_registros||"")}</small></div><span>Ver relatório →</span></button>`).join(""):'<div class="empty">Nenhum cliente encontrado.</div>';
+  }catch(e){if(box)box.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+};
+window.adminOpenUnifiedClient=async clientId=>{
+  const reportBox=document.querySelector("#adminClientReport");
+  const start=document.querySelector("#adminClientStart")?.value||null;
+  const end=document.querySelector("#adminClientEnd")?.value||null;
+  if(reportBox)reportBox.innerHTML='<div class="loading"><span class="spinner"></span><span>Montando histórico unificado...</span></div>';
+  try{
+    const [summaryRows,history]=await Promise.all([
+      rpc("admin_resumo_cliente_unificado",{p_cliente_id:clientId,p_inicio:start,p_fim:end},true),
+      rpc("admin_relatorio_cliente_unificado",{p_cliente_id:clientId,p_inicio:start,p_fim:end},true)
+    ]);
+    const s=Array.isArray(summaryRows)?summaryRows[0]:summaryRows;
+    if(!reportBox)return;
+    reportBox.innerHTML=`
+      <div class="admin-unified-report">
+        <div class="section-head compact"><div><h3>${esc(s?.nome_exibicao||"Cliente")}</h3><p>${start?fmtDate(start):"Início"} a ${end?fmtDate(end):"Hoje"}</p></div></div>
+        <div class="kpis admin-client-kpis">
+          <div class="kpi"><b>${s?.pedidos||0}</b><small>Pedidos no período</small></div>
+          <div class="kpi"><b>${brl(s?.total_comprado||0)}</b><small>Total comprado</small></div>
+          <div class="kpi"><b>${brl(s?.total_pago||0)}</b><small>Total pago</small></div>
+          <div class="kpi"><b>${brl(s?.saldo_pendente||0)}</b><small>Saldo pendente</small></div>
+        </div>
+        <div class="panel admin-history-list">
+          ${(history||[]).length?(history||[]).map(o=>`<div class="row"><div><div class="row-title">${esc(o.numero)} • ${esc(o.cliente_nome_registro)}</div><div class="row-sub">${fmtDateTime(o.data_pedido)} • ${o.origem==="my_loja_store"?"Sistema antigo":"Sistema novo"}</div><div style="margin-top:6px"><span class="status ${statusClass(o.status)}">${esc(o.status)}</span> <span class="status ${o.visivel_no_portal?"ok":"warn"}">${o.visivel_no_portal?"Visível no portal":"Somente administrativo"}</span></div></div><div style="text-align:right"><b>${brl(o.total)}</b><div class="row-sub">Pago ${brl(o.valor_pago)}</div></div></div>`).join(""):'<div class="empty">Sem compras neste período.</div>'}
+        </div>
+      </div>
+    `;
+  }catch(e){if(reportBox)reportBox.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+};
+
 window.adminStockEntry=async(id,current)=>{
   const raw=prompt("Quantidade que está entrando no estoque:","1");if(raw===null)return;
   const qtd=Number(raw.replace(",","."));if(!Number.isFinite(qtd)||qtd<=0){showToast("Quantidade inválida.");return}
