@@ -104,7 +104,7 @@ function nav(view){
 function setClientNavigation(){
   const internal=state.session&&state.role&&state.role!=="cliente";
   clientNav.classList.toggle("hidden",internal);
-  accountLabel.textContent=state.session?(state.role==="cliente"?(state.profile?.nome?.split(" ")[0]||"Conta"):"Painel"):"Entrar";
+  accountLabel.textContent=state.session?(state.role==="cliente"?(state.profile?.nome?.split(" ")[0]||"Conta"):(state.role?"Painel":"Cadastro")):"Entrar";
 }
 async function loadCatalog(){
   try{
@@ -544,7 +544,7 @@ function renderCompleteProfile(){
   main.innerHTML=`<div class="login-card">
     <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
     <h2>Complete seu cadastro</h2>
-    <p class="small" style="text-align:center">Se seu WhatsApp já estiver na nossa base, vamos vincular sua conta ao cadastro existente para evitar duplicidade.</p>
+    <p class="small" style="text-align:center">Informe seus dados. Se encontrarmos um cadastro antigo com os mesmos dados, ele será marcado para conferência sem liberar histórico automaticamente.</p>
     <form onsubmit="window.completeProfile(event)">
       <div class="field"><label>Nome / nome do estabelecimento</label><input id="profileName" autocomplete="name" required></div>
       <div class="field"><label>WhatsApp com DDD</label><input id="profileWhatsapp" inputmode="tel" autocomplete="tel" placeholder="(84) 99999-9999" required></div>
