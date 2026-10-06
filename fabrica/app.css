@@ -168,3 +168,11 @@
   .draft-quantity button{font-size:11px;padding:10px 2px}
   .draft-number{font-size:17px}
 }
+
+.auth-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:11px}
+.auth-divider:before,.auth-divider:after{content:"";height:1px;background:var(--line);flex:1}
+.auth-back{border:0;background:transparent;color:var(--green);font-weight:800;padding:0 0 8px;cursor:pointer}
+.auth-success{text-align:center}.auth-success .success-icon{font-size:52px}
+.step-pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.address-grid{grid-template-columns:1fr 1fr}
+@media(max-width:420px){.address-grid{grid-template-columns:1fr}}
