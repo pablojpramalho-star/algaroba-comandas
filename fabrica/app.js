@@ -202,7 +202,12 @@ async function boot(){
   if(!navigator.onLine)$("#offlineBanner").classList.remove("hidden");
   if(state.session)await loadIdentity();
   await loadCatalog();setClientNavigation();
-  if(state.session&&!state.role)go("complete-profile");
+  if(requestedView==="interno"){
+    if(state.session&&state.role&&state.role!=="cliente")go("internal");
+    else if(state.session&&state.role==="cliente"){showToast("Este acesso é exclusivo para a equipe Algaroba.");go("home")}
+    else {state.returnView="internal";go("login")}
+  }
+  else if(state.session&&!state.role)go("complete-profile");
   else if(state.role&&state.role!=="cliente")go("internal");
   else if(requestedView==="pedido"){state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")}
   else if(requestedView==="pedidos")go("orders");
@@ -588,18 +593,20 @@ function renderLogin(){
     if(!state.role){renderCompleteProfile();return}
     main.innerHTML=`<div class="account-card"><div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div><h2 style="text-align:center">Conta Algaroba</h2><p style="text-align:center"><b>${esc(state.profile?.nome||state.session.user?.email||"Usuário")}</b><br><span class="status">${esc(state.role||"")}</span></p><div class="actions"><button class="button" onclick="window.afterLogin()">Abrir painel</button><button class="button ghost" onclick="window.logout()">Sair</button></div></div>`;return
   }
-  main.innerHTML=`<div class="login-card">
+  const internalAccess=state.returnView==="internal";
+  main.innerHTML=`<div class="login-card ${internalAccess?"internal-login-card":""}">
     <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
-    <h2>Entrar na Algaroba</h2>
-    <p class="small" style="text-align:center">Entre para finalizar pedidos e acompanhar suas compras.</p>
+    <h2>${internalAccess?"Painel Algaroba Fábrica":"Entrar na Algaroba"}</h2>
+    <p class="small" style="text-align:center">${internalAccess?"Acesso exclusivo da equipe administrativa e operacional.":"Entre para finalizar pedidos e acompanhar suas compras."}</p>
     <form onsubmit="window.login(event)">
       <div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email" required></div>
       <div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div>
       <button id="loginSubmit" class="button" style="width:100%" type="submit">Entrar</button>
     </form>
-    <div class="auth-divider"><span>ou</span></div>
-    <button class="button orange" style="width:100%" type="button" data-go="signup">Criar meu cadastro</button>
-    <div class="notice green" style="margin-top:13px">Você pode consultar o catálogo sem login. A conta só é necessária para enviar o pedido.</div>
+    ${internalAccess?`<div class="notice green" style="margin-top:13px"><b>Acesso interno</b><br>Use o e-mail e a senha cadastrados para sua função na Algaroba.</div>`:`
+      <div class="auth-divider"><span>ou</span></div>
+      <button class="button orange" style="width:100%" type="button" data-go="signup">Criar meu cadastro</button>
+      <div class="notice green" style="margin-top:13px">Você pode consultar o catálogo sem login. A conta só é necessária para enviar o pedido.</div>`}
   </div>`;
 }
 
@@ -820,7 +827,9 @@ window.login=async e=>{
     state.session=data;localStorage.setItem("algaroba_session",JSON.stringify(data));
     await loadIdentity();await loadCatalog();setClientNavigation();
     if(!state.role){go("complete-profile");return}
-    const target=state.returnView|| (state.role==="cliente"?"home":"internal");state.returnView=null;go(target);
+    let target=state.returnView|| (state.role==="cliente"?"home":"internal");
+    if(target==="internal"&&state.role==="cliente"){state.returnView=null;showToast("Este acesso é exclusivo para a equipe Algaroba.");go("home");return}
+    state.returnView=null;go(target);
   }catch(e2){showToast(e2.message);btn.disabled=false;btn.textContent="Entrar"}
 };
 window.logout=async()=>{
