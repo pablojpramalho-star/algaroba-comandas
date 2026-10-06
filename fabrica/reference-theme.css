@@ -281,3 +281,244 @@ body{background:
   .mock-product-controls{grid-template-columns:27px 27px 30px!important;padding-right:6px!important}.mock-qty{width:27px!important;height:32px!important}.mock-qty.plus{width:30px!important}
   .mock-cart-row{grid-template-columns:82px minmax(0,1fr) 102px!important;gap:8px!important;padding:9px!important}.mini-product{width:82px!important;height:74px!important}.mock-cart-copy strong{font-size:17px!important}
 }
+
+
+/* =========================================================
+   BRIGHT MODE 2 — versão clara aprovada
+   Corrige Samsung Internet / Android que estava forçando dark mode.
+   ========================================================= */
+:root{
+  color-scheme:only light!important;
+  --ref-green:#06492f;
+  --ref-green-2:#0b6743;
+  --ref-cream:#fff8e9;
+  --ref-paper:#fffdf7;
+  --ref-orange:#f05b22;
+  --ref-ink:#063d2b;
+  --ref-muted:#6a665c;
+}
+html{
+  color-scheme:only light!important;
+  background:#fff8e9!important;
+  forced-color-adjust:none!important;
+}
+html *,body *{forced-color-adjust:none!important}
+body{
+  color-scheme:only light!important;
+  background:
+    radial-gradient(circle at 3% 16%,rgba(153,190,99,.12),transparent 190px),
+    radial-gradient(circle at 97% 33%,rgba(242,167,89,.10),transparent 220px),
+    linear-gradient(180deg,#fffaf1 0%,#fff3dc 100%)!important;
+  color:#063d2b!important;
+}
+.app{
+  background:linear-gradient(180deg,#fffaf1 0%,#fff1d7 100%)!important;
+  color:#063d2b!important;
+}
+.main{
+  background:
+    radial-gradient(circle at -6% 20%,rgba(119,167,76,.09),transparent 200px),
+    radial-gradient(circle at 106% 48%,rgba(242,159,75,.08),transparent 230px),
+    transparent!important;
+}
+
+/* Cabeçalho realmente claro */
+.topbar{
+  background:rgba(255,250,241,.985)!important;
+  border-bottom:1px solid #ead8b8!important;
+  box-shadow:0 5px 18px rgba(101,68,28,.055)!important;
+}
+.brand-copy strong{color:#06452f!important}
+.brand-copy small{color:#655f55!important}
+.top-button{
+  background:#fffdf7!important;
+  color:#075139!important;
+  border-color:#cfd8af!important;
+}
+.top-button svg{stroke:#075139!important}
+.brand-logo{background:#e7f0df!important}
+
+/* Home clara, sem véu escuro */
+.ref-home-card{
+  background:
+    radial-gradient(circle at 14% 12%,rgba(255,255,255,.98),transparent 230px),
+    linear-gradient(135deg,#fffdf6 0%,#fff2d7 100%)!important;
+  border-color:#ead3aa!important;
+  box-shadow:0 12px 30px rgba(89,58,22,.075)!important;
+}
+.ref-home-card:before,.ref-home-card:after{opacity:.12!important}
+.ref-home-copy h1{color:#06452f!important}
+.ref-home-copy h1 em{color:#cd552e!important}
+.ref-home-copy p{color:#55594f!important}
+.ref-kicker{color:#0a6242!important}
+.ref-kicker i{background:#dcebd2!important;color:#17613f!important}
+.ref-home-photo{
+  filter:brightness(1.20) saturate(1.14) contrast(.97)!important;
+  background-position:center!important;
+}
+.ref-home-photo:after{
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,248,230,.04))!important;
+}
+
+/* Categorias vivas */
+.mock-page-head h2,.section-head h2{color:#06452f!important}
+.mock-page-head p,.section-head p{color:#55665a!important}
+.mock-category-card{
+  background:#fffaf0!important;
+  border-color:#ead1a9!important;
+  box-shadow:0 7px 18px rgba(79,54,24,.065)!important;
+}
+.mock-category-card .group-scene{
+  filter:brightness(1.18) saturate(1.20) contrast(.98)!important;
+}
+.category-tradicional{
+  background:linear-gradient(90deg,#fffaf0 0 45%,#f2f5df 45% 100%)!important;
+}
+.category-classic{
+  background:linear-gradient(90deg,#fffaf0 0 45%,#ffe5c5 45% 100%)!important;
+}
+.category-intense{
+  background:linear-gradient(90deg,#fffaf0 0 45%,#ffe1df 45% 100%)!important;
+  border-color:#e9bea9!important;
+}
+.category-intense .mock-category-copy strong{color:#9c1f24!important}
+.category-intense .mock-category-copy span{color:#5c423c!important}
+.category-intense .mock-category-copy small{color:#9c4a45!important}
+.category-graos-farinaceos{
+  background:linear-gradient(90deg,#fffaf0 0 45%,#f1f4df 45% 100%)!important;
+}
+.category-xaropes-coberturas{
+  background:linear-gradient(90deg,#fffaf0 0 45%,#ffe3b3 45% 100%)!important;
+}
+.mock-category-copy strong{color:#06452f!important}
+.mock-category-copy span{color:#544f46!important}
+.mock-category-copy small{color:#a25a37!important}
+.mock-category-arrow{background:#1f773f!important}
+
+/* Produtos: branco/creme, sem marrom escuro */
+.catalog-group-head{
+  background:#fffaf0!important;
+  border-bottom-color:#ead2aa!important;
+  color:#06452f!important;
+}
+.group-head-copy h2{color:#06452f!important}
+.group-head-copy p,.eyebrow.dark{color:#70685b!important}
+.group-intro,.catalog-search{
+  background:#fffdf7!important;
+  border-color:#e3cba5!important;
+  color:#153e30!important;
+}
+.mock-product-card{
+  background:#fffdf8!important;
+  border-color:#ecd6b2!important;
+  box-shadow:0 5px 14px rgba(70,48,24,.05)!important;
+  color:#173e31!important;
+}
+.mock-product-photo{
+  filter:brightness(1.20) saturate(1.18) contrast(.98)!important;
+}
+.mock-product-copy h3{color:#06452f!important}
+.mock-product-kicker{color:#777166!important}
+.mock-product-copy p,.mock-made{color:#7a766c!important}
+.mock-price-lines{color:#284f3d!important}
+.mock-price-lines span:first-child b{color:#12613f!important}
+.mock-price-lines span:last-child b{color:#e85a2a!important}
+.mock-qty.minus{
+  background:#f2f0e7!important;color:#7f8279!important;border-color:#ebe5d7!important;
+}
+.mock-qty.plus{
+  background:#087043!important;color:#fff!important;border-color:#087043!important;
+}
+.mock-count{color:#06452f!important}
+.group-draft-action{
+  background:rgba(255,252,244,.985)!important;
+  border-color:#ead0a9!important;
+  box-shadow:0 -5px 18px rgba(77,50,20,.07)!important;
+}
+
+/* Carrinho claro */
+.mock-cart-list,.mock-cart-row{
+  background:#fffdf8!important;
+  color:#153e30!important;
+  border-color:#ead3ae!important;
+}
+.mini-product{
+  filter:brightness(1.18) saturate(1.16)!important;
+}
+.mock-cart-copy strong{color:#06452f!important}
+.mock-cart-copy small{color:#706a5e!important}
+.mock-cart-copy span{color:#12613f!important}
+.mock-cart-summary{background:#fff6df!important}
+.mock-cart-summary>strong{color:#07543a!important}
+.mock-receive-note{
+  background:#fff9e9!important;color:#244b3a!important;border-color:#e5ceaa!important;
+}
+
+/* Formulários e outras telas */
+.login-card,.account-card,.panel,.delivery-card,.info-highlight,.info-line-card,.advantage-card,.admin-client-tool,.notice{
+  background:#fffdf8!important;
+  color:#173e31!important;
+  border-color:#ead4b2!important;
+  box-shadow:0 5px 15px rgba(76,50,20,.05)!important;
+}
+.field input,.field select,.field textarea{
+  background:#fffdf9!important;
+  color:#173e31!important;
+  border-color:#decaa9!important;
+}
+.delivery-card.selected{background:#fff7e9!important}
+
+/* Catálogo público */
+.catalog-top{
+  background:rgba(255,250,241,.985)!important;
+  border-bottom-color:#ead4b3!important;
+}
+.catalog-brand,.catalog-brand strong{color:#06452f!important}
+.catalog-brand small{color:#6e6658!important}
+.order-link{background:#fffdf7!important;color:#075139!important;border-color:#cdbb97!important}
+.catalog-shell{
+  background:
+    radial-gradient(circle at 2% 18%,rgba(115,167,77,.09),transparent 190px),
+    linear-gradient(180deg,#fffaf1,#fff2dc)!important;
+}
+.catalog-hero{
+  background:
+    linear-gradient(90deg,rgba(255,251,241,.99) 0 52%,rgba(255,251,241,.38) 75%),
+    var(--alg-img-classic) center/cover!important;
+  filter:none!important;
+}
+.catalog-hero:before{opacity:.10!important}
+.catalog-hero .eyebrow{color:#aa6540!important}
+.hero-copy h1{color:#06452f!important}
+.hero-copy p{color:#55594f!important}
+.catalog-section,.official-shake-card,.official-product-tile,.search-box{
+  background:#fffdf8!important;
+  color:#173e31!important;
+  border-color:#ead4b1!important;
+}
+.catalog-thumb{filter:brightness(1.18) saturate(1.17)!important}
+.section-links button,.catalog-filters button{
+  background:#fff8e8!important;color:#1d5d3f!important;border-color:#e1caa3!important;
+}
+.catalog-filters button.active{background:#0a7045!important;color:#fff!important}
+
+/* A barra inferior continua verde para contraste, mas mais viva */
+.bottom-nav,.catalog-footer{
+  background:linear-gradient(180deg,#08633f,#03462f)!important;
+  border-top-color:rgba(255,255,255,.14)!important;
+}
+.bottom-nav button,.catalog-footer a{color:#d5dfd9!important}
+.bottom-nav button.active,.catalog-footer a.active{
+  color:#ffd17a!important;background:rgba(255,255,255,.07)!important;
+}
+
+/* Samsung Internet: neutraliza auto-darkening */
+@media (prefers-color-scheme:dark){
+  :root,html,body{color-scheme:only light!important}
+  body,.app,.main{background-color:#fff8e9!important;color:#063d2b!important}
+  .topbar,.catalog-top{background:#fffaf1!important;color:#063d2b!important}
+  .mock-category-card,.mock-product-card,.mock-cart-list,.mock-cart-row,
+  .panel,.delivery-card,.catalog-section,.official-shake-card,.official-product-tile{
+    background-color:#fffdf8!important;color:#173e31!important;
+  }
+}
