@@ -1287,7 +1287,31 @@ async function renderAdmin(){
 
       <div class="section-head"><div><h2>Catálogo e estoque</h2><p>Controle rápido do que o cliente enxerga.</p></div></div>
       <div class="panel">
-        ${stock.length?stock.map(s=>{const p=state.catalog.find(x=>x.produto_id===s.produto_id)||s;return `<div class="row"><div><div class="row-title">${esc(s.produto)}</div><div class="row-sub">${esc(s.categoria||categoryKey(p))} • Saldo: <b>${s.quantidade_atual}</b> • Mínimo: ${s.estoque_minimo}</div><div style="margin-top:6px"><span class="status ${s.disponibilidade_catalogo==="disponivel"?"ok":s.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(s.disponibilidade_catalogo)}</span> ${s.abaixo_minimo?'<span class="status warn">abaixo do mínimo</span>':""}${p.destaque?' <span class="status warn">destaque</span>':""}</div></div><div class="inline-actions"><button class="button soft" onclick="window.adminStockEntry('${s.produto_id}',${Number(s.quantidade_atual)})">Entrada</button><button class="button ghost" onclick="window.adminSetStock('${s.produto_id}',${Number(s.quantidade_atual)},${Number(s.estoque_minimo)})">Ajustar</button><button class="button ghost" onclick="window.adminToggleFeatured('${s.produto_id}',${!!p.destaque})">${p.destaque?"Remover destaque":"Destacar"}</button><button class="button ghost" onclick="window.adminEditPresentation('${s.produto_id}')">Editar</button></div></div>`}).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
+        ${stock.length?stock.map(s=>{const p=state.catalog.find(x=>x.produto_id===s.produto_id)||s;return `
+          <article class="stock-compact-card">
+            <div class="stock-compact-head">
+              <div class="stock-compact-title">
+                <strong>${esc(s.produto)}</strong>
+                <span>${esc(s.categoria||categoryKey(p))}</span>
+              </div>
+              <div class="stock-compact-balance">
+                <b>${Number(s.quantidade_atual).toLocaleString("pt-BR")}</b>
+                <small>saldo</small>
+              </div>
+            </div>
+            <div class="stock-compact-meta">
+              <span>Mínimo: <b>${Number(s.estoque_minimo).toLocaleString("pt-BR")}</b></span>
+              <span class="status ${s.disponibilidade_catalogo==="disponivel"?"ok":s.disponibilidade_catalogo==="em_falta"?"bad":"warn"}">${esc(s.disponibilidade_catalogo)}</span>
+              ${s.abaixo_minimo?'<span class="status warn">abaixo do mínimo</span>':""}
+              ${p.destaque?'<span class="status warn">destaque</span>':""}
+            </div>
+            <div class="stock-compact-actions">
+              <button type="button" onclick="window.adminStockEntry('${s.produto_id}',${Number(s.quantidade_atual)})"><b>＋</b><span>Entrada</span></button>
+              <button type="button" onclick="window.adminSetStock('${s.produto_id}',${Number(s.quantidade_atual)},${Number(s.estoque_minimo)})"><b>↕</b><span>Ajustar</span></button>
+              <button type="button" onclick="window.adminToggleFeatured('${s.produto_id}',${!!p.destaque})"><b>★</b><span>${p.destaque?"Retirar":"Destacar"}</span></button>
+              <button type="button" onclick="window.adminEditPresentation('${s.produto_id}')"><b>✎</b><span>Editar</span></button>
+            </div>
+          </article>`}).join(""):'<div class="empty">Nenhum item de estoque cadastrado.</div>'}
       </div>
 
       <div class="section-head"><h2>Rotas</h2></div>
