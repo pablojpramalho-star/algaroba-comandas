@@ -16,7 +16,9 @@ const state={
   role:null,profile:null,catalog:[],groups:[],selectedGroup:null,search:"",groupInfoOpen:false,
   drafts:{},
   cart:JSON.parse(localStorage.getItem("algaroba_cart")||"{}"),
-  deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null
+  deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null,
+  internalModule:localStorage.getItem("algaroba_internal_module")||null,
+  adminOrders:[],adminQuery:""
 };
 
 function showToast(message){
@@ -138,6 +140,7 @@ function nav(view){
 function setClientNavigation(){
   const internal=state.session&&state.role&&state.role!=="cliente";
   clientNav.classList.toggle("hidden",internal);
+  document.body.classList.toggle("internal-mode",!!internal);
   accountLabel.textContent=state.session?(state.role==="cliente"?(state.profile?.nome?.split(" ")[0]||"Conta"):(state.role?"Painel":"Cadastro")):"Entrar";
 }
 async function loadCatalog(){
@@ -916,24 +919,145 @@ window.saveReceiving=async id=>{
   catch(e){showToast(e.message)}
 };
 
-async function renderInternal(){
+async function roleDisplay(role){
+  return ({
+    administrador:"ADM",
+    gerente:"Gerência",
+    vendas:"Administrativo",
+    financeiro:"Financeiro",
+    producao:"Produção",
+    expedicao:"Expedição"
+  })[role]||role||"Interno";
+}
+function internalModulesForRole(role){
+  if(["administrador","gerente"].includes(role))return ["dashboard","administrativo","producao","financeiro","expedicao"];
+  if(role==="vendas")return ["administrativo"];
+  if(role==="financeiro")return ["financeiro"];
+  if(role==="producao")return ["producao"];
+  if(role==="expedicao")return ["expedicao"];
+  return [];
+}
+function internalModuleMeta(key){
+  return ({
+    dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo da fábrica"},
+    administrativo:{label:"Administrativo",icon:"▤",desc:"Pedidos e clientes"},
+    producao:{label:"Produção",icon:"◫",desc:"Fila de fabricação"},
+    financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
+    expedicao:{label:"Expedição",icon:"⇢",desc:"Rotas e entregas"}
+  })[key]||{label:key,icon:"•",desc:""};
+}
+function internalShell(active){
+  const modules=internalModulesForRole(state.role);
+  return `
+    <section class="internal-shell-head">
+      <div class="internal-brand">
+        <img src="../algaroba-icon.svg" alt="">
+        <div><strong>Algaroba Fábrica</strong><span>Painel interno • ${esc(roleDisplay(state.role))}</span></div>
+      </div>
+      <div class="internal-head-actions">
+        <button class="internal-refresh" type="button" onclick="window.refreshInternal()">↻ Atualizar</button>
+        <button class="internal-logout" type="button" onclick="window.logout()">Sair</button>
+      </div>
+    </section>
+    <nav class="internal-nav" aria-label="Módulos internos">
+      ${modules.map(key=>{const m=internalModuleMeta(key);return `<button type="button" class="${active===key?"active":""}" onclick="window.openInternalModule('${key}')"><b>${m.icon}</b><span>${m.label}</span><small>${m.desc}</small></button>`}).join("")}
+    </nav>
+  `;
+}
+window.openInternalModule=key=>{
+  if(!internalModulesForRole(state.role).includes(key)){showToast("Seu perfil não tem acesso a este módulo.");return}
+  state.internalModule=key;
+  localStorage.setItem("algaroba_internal_module",key);
+  renderInternal();
+};
+window.refreshInternal=()=>renderInternal();
+function renderInternal(){
   if(!state.session||!state.role){state.returnView="internal";go("login");return}
   setClientNavigation();
-  if(state.role==="producao")return renderProduction();
-  if(state.role==="expedicao")return renderExpedition();
-  if(state.role==="financeiro")return renderFinance();
-  return renderAdmin();
+  const allowed=internalModulesForRole(state.role);
+  if(!allowed.length){main.innerHTML='<div class="empty">Perfil interno sem módulo configurado.</div>';return}
+  if(!allowed.includes(state.internalModule))state.internalModule=allowed[0];
+  localStorage.setItem("algaroba_internal_module",state.internalModule);
+
+  if(state.internalModule==="dashboard")return renderAdmin();
+  if(state.internalModule==="administrativo")return renderAdministrative();
+  if(state.internalModule==="producao")return renderProduction();
+  if(state.internalModule==="financeiro")return renderFinance();
+  if(state.internalModule==="expedicao")return renderExpedition();
+  state.internalModule=allowed[0];return renderInternal();
 }
+async function renderAdministrative(){
+  loading("Carregando Administrativo...");
+  try{
+    const [flow,rows]=await Promise.all([
+      rpc("painel_fluxo_interno",{},true),
+      rpc("administrativo_pedidos_fila",{p_limit:120},true)
+    ]);
+    const f=Array.isArray(flow)?flow[0]:flow||{};
+    state.adminOrders=rows||[];
+    const open=state.adminOrders.filter(x=>!["entregue","cancelado","devolvido"].includes(x.status)).length;
+    main.innerHTML=`
+      ${internalShell("administrativo")}
+      <section class="internal-title">
+        <div><span class="internal-eyebrow">CENTRAL ADMINISTRATIVA</span><h1>Pedidos e atendimento</h1><p>Acompanhe o pedido desde a entrada até a entrega.</p></div>
+      </section>
+      <div class="internal-kpis">
+        <button onclick="window.adminSetFilter('')" class="internal-kpi"><span>Hoje</span><b>${f.pedidos_hoje||0}</b><small>${brl(f.total_pedidos_hoje||0)}</small></button>
+        <button onclick="window.adminSetFilter('recebido')" class="internal-kpi"><span>Entrada</span><b>${f.recebidos||0}</b><small>recebidos</small></button>
+        <button onclick="window.adminSetFilter('em_producao')" class="internal-kpi"><span>Produção</span><b>${f.em_producao||0}</b><small>em andamento</small></button>
+        <button onclick="window.adminSetFilter('pronto')" class="internal-kpi"><span>Prontos</span><b>${f.prontos_aguardando_pagamento||0}</b><small>aguardando pagamento</small></button>
+        <button onclick="window.adminSetFilter('pagamento_confirmado')" class="internal-kpi"><span>Expedição</span><b>${f.liberados_expedicao||0}</b><small>liberados</small></button>
+      </div>
+      <section class="internal-toolbar">
+        <label class="internal-search"><span>⌕</span><input id="adminOrderSearch" type="search" value="${esc(state.adminQuery)}" placeholder="Buscar pedido, cliente ou WhatsApp" oninput="window.adminFilterOrders(this.value)"></label>
+        <div class="internal-chip-row">
+          <button onclick="window.adminSetFilter('')">Todos</button>
+          <button onclick="window.adminSetFilter('recebido')">Recebidos</button>
+          <button onclick="window.adminSetFilter('em_producao')">Produção</button>
+          <button onclick="window.adminSetFilter('pronto')">Prontos</button>
+          <button onclick="window.adminSetFilter('pagamento_confirmado')">Liberados</button>
+          <button onclick="window.adminSetFilter('entregue')">Entregues</button>
+        </div>
+      </section>
+      <div id="adminOrdersList"></div>
+      <div class="internal-footnote">${open} pedidos ainda em fluxo • os módulos Produção, Financeiro e Expedição atualizam esta tela automaticamente.</div>
+    `;
+    renderAdministrativeRows();
+  }catch(e){main.innerHTML=internalShell("administrativo")+'<div class="empty">'+esc(e.message)+'</div>'}
+}
+function renderAdministrativeRows(){
+  const box=document.querySelector("#adminOrdersList");if(!box)return;
+  const q=(state.adminQuery||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  const rows=state.adminOrders.filter(x=>{
+    if(!q)return true;
+    const hay=[x.numero,x.cliente_nome,x.whatsapp,x.status,x.status_financeiro,x.modalidade_entrega,x.rota_nome].filter(Boolean).join(" ").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+    return hay.includes(q);
+  });
+  box.innerHTML=`<section class="internal-list">
+    ${rows.length?rows.map(x=>`<article class="internal-order-card">
+      <div class="internal-order-main">
+        <div class="internal-order-number">${esc(x.numero)}</div>
+        <h3>${esc(x.cliente_nome)}</h3>
+        <p>${fmtDateTime(x.data_pedido)} • ${esc(x.itens)} itens / ${Number(x.unidades||0).toLocaleString("pt-BR")} un.</p>
+        <div class="internal-statuses"><span class="status ${statusClass(x.status)}">${esc(x.status)}</span><span class="status ${statusClass(x.status_financeiro)}">${esc(x.status_financeiro)}</span></div>
+      </div>
+      <div class="internal-order-logistics"><span>${x.modalidade_entrega==="retirada_fabrica"?"Retirada na fábrica":esc(x.rota_nome||x.modalidade_entrega||"Entrega a definir")}</span><small>${x.data_entrega_prevista?fmtDate(x.data_entrega_prevista):"Sem data prevista"}</small></div>
+      <div class="internal-order-money"><b>${brl(x.total)}</b><small>Pago ${brl(x.valor_pago)}</small><small>Pendente ${brl(x.valor_pendente)}</small></div>
+    </article>`).join(""):'<div class="empty">Nenhum pedido encontrado.</div>'}
+  </section>`;
+}
+window.adminFilterOrders=v=>{state.adminQuery=v;renderAdministrativeRows()};
+window.adminSetFilter=status=>{state.adminQuery=status;const e=document.querySelector("#adminOrderSearch");if(e)e.value=status;renderAdministrativeRows()};
 async function renderProduction(){
   loading("Carregando Produção...");
   try{
     const rows=await rpc("producao_fila",{},true)||[],groups={};rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
-    main.innerHTML=`<div class="rolebar"><b>🏭 Produção</b><span>sem preços e sem financeiro</span></div><div class="section-head"><div><h2>Fila de Produção</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">Solicitado: ${x.quantidade_solicitada} • ${esc(x.modelo_fornecimento)}</div><span class="status ${statusClass(x.status_item)}">${esc(x.status_item)}</span></div><div class="inline-actions">${x.modelo_fornecimento==="estoque"?`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','separado',${Number(x.quantidade_solicitada)})">Separado</button><button class="button ghost" onclick="window.prodAdjust('${x.item_id}',${Number(x.quantidade_solicitada)},${Number(x.quantidade_faturada||x.quantidade_solicitada)})">Ajustar qtd.</button><button class="button danger" onclick="window.prodUpdate('${x.item_id}','indisponivel',0)">Em falta</button>`:`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','pronto',${Number(x.quantidade_solicitada)})">Pronto</button>`}</div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.prodFinish('${pid}')">Finalizar pedido</button></div></div>`).join("")||'<div class="empty">Nenhum pedido aguardando produção.</div>'}`;
+    main.innerHTML=internalShell("producao")+`<div class="internal-title"><div><span class="internal-eyebrow">PRODUÇÃO</span><h1>Fila de produção</h1><p>Itens para fabricar e separar, sem preços ou dados financeiros.</p></div></div><div class="section-head"><div><h2>Fila de Produção</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">Solicitado: ${x.quantidade_solicitada} • ${esc(x.modelo_fornecimento)}</div><span class="status ${statusClass(x.status_item)}">${esc(x.status_item)}</span></div><div class="inline-actions">${x.modelo_fornecimento==="estoque"?`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','separado',${Number(x.quantidade_solicitada)})">Separado</button><button class="button ghost" onclick="window.prodAdjust('${x.item_id}',${Number(x.quantidade_solicitada)},${Number(x.quantidade_faturada||x.quantidade_solicitada)})">Ajustar qtd.</button><button class="button danger" onclick="window.prodUpdate('${x.item_id}','indisponivel',0)">Em falta</button>`:`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','pronto',${Number(x.quantidade_solicitada)})">Pronto</button>`}</div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.prodFinish('${pid}')">Finalizar pedido</button></div></div>`).join("")||'<div class="empty">Nenhum pedido aguardando produção.</div>'}`;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 window.prodUpdate=async(id,status,q)=>{
   let obs=null;if(status==="indisponivel")obs=prompt("Motivo da indisponibilidade:")||"Indisponível";
-  try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);showToast("Item atualizado.");await renderProduction()}catch(e){showToast(e.message)}
+  try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);showToast("Item atualizado.");state.internalModule="producao";await renderProduction()}catch(e){showToast(e.message)}
 };
 window.prodAdjust=async(id,solicitada,atual)=>{
   const raw=prompt("Quantidade realmente disponível (máximo "+solicitada+"):",String(atual).replace(".",","));
@@ -956,8 +1080,8 @@ async function renderExpedition(){
     ]);
     const queue=rows||[],groups={};queue.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
     const routeGroups={};(planning||[]).forEach(x=>(routeGroups[x.rota_id]??={meta:x,items:[]}).items.push(x));
-    main.innerHTML=`
-      <div class="rolebar"><b>🚚 Expedição</b><span>rotas e janelas de recebimento</span></div>
+    main.innerHTML=internalShell("expedicao")+`
+      <div class="internal-title"><div><span class="internal-eyebrow">EXPEDIÇÃO</span><h1>Rotas e entregas</h1><p>Pedidos liberados pelo Financeiro e planejamento operacional.</p></div></div>
       <div class="section-head"><div><h2>Planejamento de hoje</h2><p>${fmtDate(today)} • saída padrão às 14h</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
       <div class="notice green" style="margin-bottom:11px">As prioridades abaixo servem apenas para organizar a logística. O cliente continua sem receber previsão de horário de chegada.</div>
 
@@ -981,7 +1105,7 @@ async function renderExpedition(){
     `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
-window.expUpdate=async(id,status)=>{try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");await renderExpedition()}catch(e){showToast(e.message)}};
+window.expUpdate=async(id,status)=>{try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");state.internalModule="expedicao";await renderExpedition()}catch(e){showToast(e.message)}};
 window.startRoute=async(rotaId,data)=>{
   const motorista=prompt("Nome do motorista (opcional):")||null;
   const veiculo=prompt("Veículo/placa (opcional):")||null;
@@ -1006,8 +1130,8 @@ async function renderFinance(){
       rpc("financeiro_pagamentos_pendentes",{},true)
     ]);
     const proofs=rows||[],pendingProofs=proofs.filter(x=>["enviado","em_analise"].includes(x.comprovante_status)),manualRows=manual||[];
-    main.innerHTML=`
-      <div class="rolebar"><b>💳 Financeiro</b><span>pagamentos e liberação</span></div>
+    main.innerHTML=internalShell("financeiro")+`
+      <div class="internal-title"><div><span class="internal-eyebrow">FINANCEIRO</span><h1>Pagamentos e liberação</h1><p>Conferência financeira antes da Expedição.</p></div></div>
       <div class="section-head"><div><h2>Painel financeiro</h2><p>Conferência antes da liberação do pedido</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
       <div class="kpis" style="margin-bottom:12px">
         <div class="kpi"><b>${pendingProofs.length}</b><small>Pix aguardando análise</small></div>
@@ -1065,22 +1189,29 @@ window.openProof=async id=>{
     window.open(data.signed_url,"_blank","noopener,noreferrer");
   }catch(e){showToast(e.message)}
 };
-window.approveProof=async id=>{try{await rpc("financeiro_aprovar_comprovante",{p_comprovante_id:id,p_observacao:"Aprovado pelo painel"},true);showToast("Pagamento aprovado.");await renderFinance()}catch(e){showToast(e.message)}};
+window.approveProof=async id=>{try{await rpc("financeiro_aprovar_comprovante",{p_comprovante_id:id,p_observacao:"Aprovado pelo painel"},true);showToast("Pagamento aprovado.");state.internalModule="financeiro";await renderFinance()}catch(e){showToast(e.message)}};
 window.rejectProof=async id=>{const motivo=prompt("Motivo da rejeição:");if(!motivo)return;try{await rpc("financeiro_rejeitar_comprovante",{p_comprovante_id:id,p_motivo:motivo},true);showToast("Comprovante rejeitado.");await renderFinance()}catch(e){showToast(e.message)}};
 
 async function renderAdmin(){
   loading("Carregando Administração...");
   try{
-    const [orders,routes,stock]=await Promise.all([
+    const [orders,routes,stock,flowRows]=await Promise.all([
       table("pedidos?select=id,numero,status,status_financeiro,total,data_pedido,modalidade_entrega&order=data_pedido.desc&limit=30"),
       table("rotas?select=id,nome,dia_semana,hora_limite_pedido,hora_inicio_padrao,hora_inicio_antecipada,ativo&ativo=eq.true&order=nome.asc"),
-      rpc("estoque_painel",{},true)
+      rpc("estoque_painel",{},true),
+      rpc("painel_fluxo_interno",{},true)
     ]);
+    const flow=Array.isArray(flowRows)?flowRows[0]:flowRows||{};
     const total=orders.reduce((a,x)=>a+Number(x.total||0),0),pending=orders.filter(x=>x.status_financeiro!=="pago").length;
     const featured=state.catalog.filter(p=>p.destaque);
-    main.innerHTML=`
-      <div class="rolebar"><b>📊 Administração</b><span>${esc(state.role)}</span></div>
-      <div class="section-head"><div><h2>Painel da fábrica</h2><p>Visão operacional dos dados atuais</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
+    main.innerHTML=internalShell("dashboard")+`
+      <div class="internal-title"><div><span class="internal-eyebrow">VISÃO GERAL</span><h1>Painel da fábrica</h1><p>Operação, clientes, estoque e rotas em um único lugar.</p></div></div>
+      <section class="internal-module-grid">
+        <button onclick="window.openInternalModule('administrativo')"><b>▤</b><span>Administrativo</span><small>${flow.recebidos||0} na entrada • ${flow.pedidos_hoje||0} hoje</small></button>
+        <button onclick="window.openInternalModule('producao')"><b>◫</b><span>Produção</span><small>${flow.em_producao||0} em produção</small></button>
+        <button onclick="window.openInternalModule('financeiro')"><b>R$</b><span>Financeiro</span><small>${flow.financeiro_pendente||0} pendências</small></button>
+        <button onclick="window.openInternalModule('expedicao')"><b>⇢</b><span>Expedição</span><small>${flow.liberados_expedicao||0} liberados • ${flow.em_rota||0} em rota</small></button>
+      </section>
       <div class="kpis">
         <div class="kpi"><b>${orders.length}</b><small>Pedidos recentes</small></div>
         <div class="kpi"><b>${brl(total)}</b><small>Total dos 30 recentes</small></div>
