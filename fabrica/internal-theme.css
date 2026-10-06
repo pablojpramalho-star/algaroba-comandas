@@ -248,3 +248,60 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
   .stock-action{min-height:36px;padding:4px 5px}
   .stock-action span{font-size:7.5px}
 }
+
+/* Visão geral curta — foco no dia */
+.dashboard-title{margin-bottom:8px!important}
+.today-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.today-kpis>div{min-height:82px;padding:11px;border:1px solid #dfcaa8;border-radius:16px;background:#fffaf0}
+.today-kpis span{display:block;font-size:8px;font-weight:900;letter-spacing:.06em;color:#94684b}
+.today-kpis b{display:block;margin-top:5px;font:700 24px/1 Georgia,"Times New Roman",serif;color:#075139;overflow-wrap:anywhere}
+.today-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.today-flow span{padding:7px 5px;border-radius:11px;background:#eaf1e3;color:#315744;text-align:center;font-size:8px;font-weight:800}
+.today-flow b{font-size:13px;color:#0a603f;margin-right:3px}
+.today-orders-card{border:1px solid #dfcaa8;border-radius:17px;background:#fffdf8;overflow:hidden}
+.today-orders-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee0c8}
+.today-orders-head strong{display:block;font:700 16px Georgia,"Times New Roman",serif;color:#075139}
+.today-orders-head small{display:block;margin-top:2px;font-size:8px;color:#786f62}
+.today-orders-head button{border:0;background:transparent;color:#0b6542;font-size:9px;font-weight:900}
+.today-orders-scroll{max-height:235px;overflow:auto}
+.today-order{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid #f0e4cf}
+.today-order:last-child{border-bottom:0}
+.today-order b{display:block;font-size:11px;color:#174734}
+.today-order small{display:block;margin-top:2px;font-size:8px;color:#7a7265}
+.today-order-status{text-align:right}.today-order-status strong{display:block;margin-top:3px;font:700 12px Georgia,"Times New Roman",serif;color:#075139}
+
+/* Caixa */
+.cash-balance{padding:18px;border-radius:20px;background:linear-gradient(135deg,#07543a,#08744b);color:#fff;box-shadow:0 8px 20px rgba(7,84,58,.16)}
+.cash-balance span,.cash-balance small{display:block}.cash-balance span{font-size:9px;font-weight:900;letter-spacing:.08em;color:#dceade}.cash-balance b{display:block;margin:5px 0;font:700 38px/1 Georgia,"Times New Roman",serif;color:#fff5dc}.cash-balance small{font-size:8px;color:#d5e2da}
+.cash-mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:8px 0}.cash-mini-kpis>div{padding:9px;border:1px solid #e0cbaa;border-radius:13px;background:#fffaf0}.cash-mini-kpis span{display:block;font-size:8px;color:#7e715f}.cash-mini-kpis b{display:block;margin-top:3px;font-size:13px;color:#0a5a3d}
+.cash-actions{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.cash-actions button{min-height:56px;border:1px solid #dec9a7;border-radius:13px;background:#fff8e8;color:#1c5b40}.cash-actions button b,.cash-actions button span{display:block}.cash-actions button b{font-size:18px}.cash-actions button span{margin-top:3px;font-size:7px;font-weight:900}.cash-actions .close{background:#fff0e8;color:#a1472c;border-color:#e4c2b2}
+.cash-closed{padding:22px;border:1px dashed #d8bd92;border-radius:18px;background:#fffaf0;text-align:center}.cash-closed>b{font:700 24px Georgia,"Times New Roman",serif;color:#075139}.cash-closed p{font-size:10px;color:#746d61}
+.cash-pending,.cash-movements{display:grid;gap:6px}.cash-pending article,.cash-movements article{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e1cfaf;border-radius:12px;background:#fffdf8}.cash-pending b,.cash-movements b{display:block;font-size:10px;color:#174734}.cash-pending small,.cash-movements small{display:block;margin-top:2px;font-size:8px;color:#7b7266}.cash-pending button{min-height:31px;padding:0 9px;border:0;border-radius:9px;background:#0a6742;color:#fff;font-size:8px;font-weight:900}.cash-movements strong{font-size:11px;color:#0b6844}.cash-movements article.out strong{color:#a9442c}
+
+/* Estoque em destaque */
+.stock-section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:14px 2px 8px}.stock-section-head h2{margin:0;font:700 24px/1 Georgia,"Times New Roman",serif;color:#075139}.stock-section-head p{margin:4px 0 0;font-size:9px;color:#746d61}.stock-section-head>span{padding:5px 8px;border-radius:999px;background:#eaf1e3;color:#0b603f;font-size:8px;font-weight:900}
+.stock-big-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stock-big-card{padding:12px;border:1px solid #dfcba9;border-radius:17px;background:#fffdf8;box-shadow:0 4px 11px rgba(63,43,20,.04)}
+.stock-big-card.low{border-color:#e2b89a;background:#fff9f3}
+.stock-big-name strong{display:block;font:700 16px/1.08 Georgia,"Times New Roman",serif;color:#075139}.stock-big-name small{display:block;margin-top:4px;font-size:8px;color:#776f62}
+.stock-big-number{margin:12px 0 9px}.stock-big-number b{display:block;font:700 42px/.85 Georgia,"Times New Roman",serif;color:#0a6542}.stock-big-number span{display:block;margin-top:5px;font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#867867}
+.stock-big-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:8px;color:#756e62}.stock-big-meta>span:first-child{padding:4px 6px;border-radius:999px;background:#f2ebdd}.stock-big-meta b{color:#174f38}
+.stock-big-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:9px;padding-top:8px;border-top:1px solid #eee1ca}.stock-big-actions button{display:flex;justify-content:center;align-items:center;gap:5px;min-height:34px;border:1px solid #d9c5a5;border-radius:9px;background:#fff8e8;color:#1b5b40}.stock-big-actions button b{font-size:13px}.stock-big-actions button span{font-size:7.5px;font-weight:900}
+.raw-material-placeholder{grid-column:1/-1;padding:18px;border:1px dashed #d8bf98;border-radius:16px;background:#fffaf0;text-align:center}.raw-material-placeholder b{font:700 18px Georgia,"Times New Roman",serif;color:#075139}.raw-material-placeholder p{max-width:520px;margin:6px auto 0;font-size:9px;line-height:1.45;color:#746d61}
+
+/* 7 módulos: rolagem horizontal natural no mobile */
+.internal-nav{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media(max-width:760px){
+  .internal-nav{grid-template-columns:repeat(7,82px)}
+  .today-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .today-kpis>div{min-height:68px}.today-kpis b{font-size:21px}
+  .today-flow{grid-template-columns:repeat(4,1fr)}
+  .today-orders-scroll{max-height:205px}
+  .cash-actions{grid-template-columns:repeat(5,72px);overflow:auto;padding-bottom:2px}
+  .stock-big-grid{grid-template-columns:1fr 1fr}
+  .stock-big-number b{font-size:36px}
+}
+@media(max-width:390px){
+  .stock-big-grid{grid-template-columns:1fr}
+  .today-flow span{font-size:7px}.today-flow b{display:block;margin:0 0 2px}
+}
