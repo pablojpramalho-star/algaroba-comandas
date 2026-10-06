@@ -62,6 +62,14 @@ function groupIcon(key){
   };
   return icons[key]||icons.tradicional;
 }
+function groupScene(key){
+  const cls=key==="classic"?"classic":key==="intense"?"intense":key==="graos-farinaceos"?"grain":key==="xaropes-coberturas"?"syrup":"tradicional";
+  return `<div class="group-scene scene-${cls}" aria-hidden="true"><span class="scene-leaf leaf-a"></span><span class="scene-leaf leaf-b"></span><span class="scene-product"><i></i><b>A</b></span></div>`;
+}
+function productThumb(p){
+  return `<div class="mini-product type-${productType(p)}" aria-hidden="true"><span><i></i><b>A</b></span></div>`;
+}
+
 function groupProducts(group){
   if(!group)return[];
   if(group.chave==="tradicional")return state.catalog.filter(p=>["Tradicional","Zero","Raiz"].includes(p.linha));
@@ -215,30 +223,37 @@ $("#accountButton").addEventListener("click",()=>go(state.session&&state.role!==
 
 function renderHome(){
   main.innerHTML=`
-    <section class="home-focus premium-home">
-      <div class="home-hero-card">
-        <div class="home-organic home-organic-a"></div>
-        <div class="home-organic home-organic-b"></div>
-        <div class="home-brand-lockup">
-          <img src="../algaroba-icon.svg" alt="Algaroba" class="home-logo">
-          <div class="home-wordmark"><strong>Algaroba</strong><span>NATURAL COMO NOSSA TERRA</span></div>
+    <section class="mock-home">
+      <div class="mock-home-inner">
+        <span class="mock-leaf mock-leaf-1"></span>
+        <span class="mock-leaf mock-leaf-2"></span>
+        <span class="mock-leaf mock-leaf-3"></span>
+
+        <div class="mock-home-brand">
+          <img src="../algaroba-icon.svg" alt="Algaroba">
+          <div><strong>Algaroba</strong><span>NATURAL COMO NOSSA TERRA</span></div>
         </div>
-        <div class="shake-stage" aria-hidden="true">
-          <div class="shake-shadow"></div>
-          <div class="shake-cup">
-            <div class="shake-straw"></div>
-            <div class="shake-cream"><i></i><i></i><i></i></div>
-            <div class="shake-drip"></div>
-            <div class="shake-label"><img src="../algaroba-icon.svg" alt=""></div>
+
+        <div class="mock-home-copy">
+          <h1>Shakes que<br>conectam<br>bons momentos.</h1>
+          <p>Ingredientes selecionados e muito sabor para o seu dia.</p>
+        </div>
+
+        <div class="mock-shake" aria-hidden="true">
+          <div class="mock-straw"></div>
+          <div class="mock-cream"><i></i><i></i><i></i></div>
+          <div class="mock-cup">
+            <div class="mock-choco"></div>
+            <div class="mock-label"><img src="../algaroba-icon.svg" alt=""></div>
           </div>
         </div>
-        <div class="home-cta">
-          <h1>Faça seu pedido</h1>
-          <button class="button home-order-button" onclick="window.openGroups()">
-            <span class="button-icon">${groupIcon("tradicional")}</span>
-            <span>FAZER MEU PEDIDO</span>
-            <span class="button-arrow">→</span>
+
+        <div class="mock-home-actions">
+          <button class="button mock-primary" onclick="window.openGroups()">
+            <span class="cart-line-icon"><svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.5h9.7L20 7H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg></span>
+            <span>Fazer meu pedido</span><b>→</b>
           </button>
+          <button class="mock-secondary" type="button" data-go="info"><span>◒</span><div><b>Conheça nossas linhas</b><small>Produtos, informações e mais</small></div><strong>›</strong></button>
         </div>
       </div>
     </section>
@@ -293,18 +308,27 @@ window.toggleGroupInfo=()=>{state.groupInfoOpen=!state.groupInfoOpen;renderCatal
 
 function renderGroupChooser(){
   main.innerHTML=`
-    <div class="section-head"><div><h2>Fazer meu pedido</h2><p>Escolha uma linha ou categoria. Você pode voltar e misturar produtos no mesmo pedido.</p></div></div>
-    <div class="catalog-groups">
-      ${state.groups.map(g=>`<button class="group-card" type="button" onclick="window.chooseGroup('${g.chave}')">
-        <div class="group-card-icon">${groupIcon(g.chave)}</div>
-        <div class="group-card-copy"><strong>${esc(g.titulo)}</strong><span>${esc(g.subtitulo||"")}</span><small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"} →</small>${draftUnits(g.chave)>0?`<small class="group-pending">${draftUnits(g.chave)} para adicionar</small>`:""}</div>
+    <div class="mock-page-head">
+      <div>
+        <h2>Escolha sua linha</h2>
+        <p>Produtos de alta qualidade para o seu negócio.</p>
+      </div>
+    </div>
+    <div class="mock-category-list">
+      ${state.groups.map(g=>`<button class="mock-category-card category-${g.chave}" type="button" onclick="window.chooseGroup('${g.chave}')">
+        ${groupScene(g.chave)}
+        <div class="mock-category-copy">
+          <strong>${esc(g.titulo)}</strong>
+          <span>${esc(g.subtitulo||"")}</span>
+          <small>${g.qtd_produtos} ${g.qtd_produtos===1?"opção":"opções"}${draftUnits(g.chave)>0?" • "+draftUnits(g.chave)+" selecionadas":""}</small>
+        </div>
+        <i class="mock-category-arrow">›</i>
       </button>`).join("")}
     </div>
-    ${cartItems().length?`<div class="catalog-bottom-actions"><button class="button orange" type="button" data-go="cart">Finalizar meu pedido →</button></div>`:""}
+    ${cartItems().length?`<div class="catalog-bottom-actions mock-finalize"><button class="button orange" type="button" data-go="cart">Ver pedido e finalizar →</button></div>`:""}
     ${miniCheckout()}
   `;
 }
-
 function miniCheckout(){
   const items=cartItems(),units=cartUnits();
   if(!items.length)return"";
@@ -313,21 +337,29 @@ function miniCheckout(){
 }
 
 function renderProductCards(list,group){
-  return list.map(p=>`<article class="product-card ${p.destaque?"featured":""}">
-    <div class="product-visual type-${productType(p)} ${p.imagem_url?"has-image":""}">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.remove();this.parentElement.classList.remove('has-image')">`:productIcon(p)}</div>
-    <div class="product-meta">${group.tipo_filtro==="linha"?"Sabor":esc(p.categoria||group.titulo)}${measure(p)?" • "+measure(p):""}</div>
-    <h3>${esc(displayProductName(p,group))}</h3>
-    ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
-    <div class="stock-line"><span class="supply-badge ${p.modelo_fornecimento==="estoque"?"stock":"made"}">${p.modelo_fornecimento==="estoque"?"Estoque":"Produção sob encomenda"}</span>${p.destaque?'<span class="featured-badge">Destaque</span>':""}</div>
-    <div class="prices"><span class="price">Atacado ${brl(p.preco_atacado)}</span><span class="price retail">Varejo ${brl(p.preco_varejo)}</span></div>
-    ${p.disponibilidade_catalogo==="em_falta"?'<div class="soldout">Temporariamente em falta</div>':p.disponibilidade_catalogo==="sob_consulta"?'<div class="soldout">Disponibilidade sob consulta</div>':`<div class="draft-quantity">
-      <button class="draft-remove" type="button" id="remove-${p.produto_id}" onclick="window.changeDraftQty('${p.produto_id}',-1)" ${!draftForGroup(group.chave)[p.produto_id]?"disabled":""}>Retirar</button>
-      <output class="draft-number" id="draft-${p.produto_id}" aria-live="polite">${draftForGroup(group.chave)[p.produto_id]||0}</output>
-      <button class="draft-add" type="button" onclick="window.changeDraftQty('${p.produto_id}',1)">Adicionar</button>
-    </div>`}
+  return list.map(p=>`<article class="mock-product-card ${p.destaque?"featured":""}">
+    <div class="mock-product-photo type-${productType(p)} ${p.imagem_url?"has-image":""}">
+      ${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.remove();this.parentElement.classList.remove('has-image')">`:productIcon(p)}
+    </div>
+    <div class="mock-product-copy">
+      <div class="mock-product-kicker">${measure(p)||"1 kg"}</div>
+      <h3>${esc(displayProductName(p,group))}</h3>
+      ${p.descricao_cliente?`<p>${esc(p.descricao_cliente)}</p>`:""}
+      <div class="mock-price-lines">
+        <span>Atacado <b>${brl(p.preco_atacado)}</b></span>
+        <span>Varejo <b>${brl(p.preco_varejo)}</b></span>
+      </div>
+      ${p.modelo_fornecimento==="sob_encomenda"?'<small class="mock-made">Produção sob encomenda</small>':""}
+    </div>
+    <div class="mock-product-controls">
+      ${p.disponibilidade_catalogo==="em_falta"?'<span class="soldout">Em falta</span>':p.disponibilidade_catalogo==="sob_consulta"?'<span class="soldout">Consultar</span>':`
+        <button class="mock-qty minus" type="button" id="remove-${p.produto_id}" onclick="window.changeDraftQty('${p.produto_id}',-1)" ${!draftForGroup(group.chave)[p.produto_id]?"disabled":""}>−</button>
+        <output class="mock-count" id="draft-${p.produto_id}">${draftForGroup(group.chave)[p.produto_id]||0}</output>
+        <button class="mock-qty plus" type="button" onclick="window.changeDraftQty('${p.produto_id}',1)">+</button>
+      `}
+    </div>
   </article>`).join("");
 }
-
 function renderCatalog(){
   const group=state.groups.find(g=>g.chave===state.selectedGroup);
   if(!group){renderGroupChooser();return}
@@ -353,7 +385,7 @@ function renderCatalog(){
       <button class="back-circle" type="button" onclick="window.backToGroups()" aria-label="Voltar às linhas">‹</button>
       <div class="group-head-icon">${groupIcon(group.chave)}</div>
       <div class="group-head-copy">
-        <div class="eyebrow dark">Catálogo Algaroba</div>
+        <div class="eyebrow dark">Produtos Algaroba</div>
         <h2>${esc(group.titulo)}</h2>
         <p>${esc(group.subtitulo||"")}</p>
       </div>
@@ -378,7 +410,7 @@ function renderCatalog(){
     <div class="group-draft-action">
       <small>Selecione as quantidades acima e confirme tudo de uma vez.</small>
       <button id="confirmGroupItems" class="button orange group-draft-button" type="button" onclick="window.addDraftToCart()" ${!draftUnits(group.chave)?"disabled":""}>
-        🛒 Adicionar estes itens ao carrinho <span id="pendingCount">${draftUnits(group.chave)?" • "+draftUnits(group.chave)+" un.":""}</span>
+        Adicionar itens ao carrinho <span id="pendingCount">${draftUnits(group.chave)?" • "+draftUnits(group.chave)+" un.":""}</span>
       </button>
     </div>
     <div class="catalog-bottom-actions">
@@ -397,13 +429,28 @@ window.changeQty=(id,delta)=>{
 function renderCart(){
   const items=cartItems(),units=cartUnits(),atacado=units>=6,total=items.reduce((s,x)=>s+x.q*effectivePrice(x.p),0);
   main.innerHTML=`
-    <div class="section-head"><div><h2>Meu pedido</h2><p>${units} unidades</p></div></div>
-    ${items.length?`<div class="panel">
-      ${items.map(x=>`<div class="row"><div><div class="row-title">${esc(x.p.produto)}</div><div class="row-sub">${esc(categoryKey(x.p))} • ${brl(effectivePrice(x.p))} por unidade</div><div class="qtybar" style="margin-top:8px"><button onclick="window.cartQty('${x.p.produto_id}',-1)">−</button><b>${x.q}</b><button onclick="window.cartQty('${x.p.produto_id}',1)">+</button></div></div><b>${brl(x.q*effectivePrice(x.p))}</b></div>`).join("")}
-      <div class="summary"><div class="summary-line"><span>Regra estimada</span><b>${atacado?"Atacado":"Varejo"}</b></div><div class="summary-line total"><span>Total estimado</span><span>${brl(total)}</span></div></div>
+    <div class="mock-page-head cart-head"><div><h2>Meu pedido</h2><p>${units} ${units===1?"item":"itens"} selecionados</p></div></div>
+    ${items.length?`<div class="mock-cart-list">
+      ${items.map(x=>`<div class="mock-cart-row">
+        ${productThumb(x.p)}
+        <div class="mock-cart-copy">
+          <strong>${esc(x.p.produto)}</strong>
+          <small>${measure(x.p)||esc(categoryKey(x.p))}</small>
+          <span>${brl(effectivePrice(x.p))} <em>${atacado?"(Atacado)":"(Varejo)"}</em></span>
+        </div>
+        <div class="mock-cart-right">
+          <div class="mock-cart-qty"><button onclick="window.cartQty('${x.p.produto_id}',-1)">−</button><b>${x.q}</b><button onclick="window.cartQty('${x.p.produto_id}',1)">+</button></div>
+          <strong>${brl(x.q*effectivePrice(x.p))}</strong>
+        </div>
+      </div>`).join("")}
+      <button class="mock-add-more" type="button" data-go="catalog"><b>＋</b><span>Continuar comprando</span><strong>›</strong></button>
+      <div class="mock-cart-summary">
+        <div><span>Subtotal estimado</span><small>${units} ${units===1?"item":"itens"}</small></div>
+        <strong>${brl(total)}</strong>
+      </div>
     </div>
-    <div class="notice" style="margin-top:12px">Se escolher <b>retirada na fábrica</b>, o sistema recalcula automaticamente todos os itens para preço de atacado, mesmo abaixo de 6 unidades.</div>
-    <button class="button orange" style="width:100%;margin-top:13px" type="button" onclick="window.checkout()">Escolher entrega / retirada →</button>`:
+    <div class="mock-receive-note"><b>Como deseja receber?</b><span>Escolha entrega por rota ou retirada na fábrica no próximo passo.</span></div>
+    <button class="button orange mock-checkout" type="button" onclick="window.checkout()">Ver pedido e finalizar →</button>`:
     '<div class="empty"><div class="empty-icon">🛒</div>Seu carrinho está vazio.<br><br><button class="button" data-go="catalog">Escolher produtos</button></div>'}`;
 }
 window.cartQty=(id,d)=>{window.changeQty(id,d);renderCart()};
