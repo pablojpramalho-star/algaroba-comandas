@@ -187,3 +187,10 @@
 .admin-client-results{display:grid;gap:7px;margin:10px 0}.admin-client-result{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:11px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);cursor:pointer}.admin-client-result b,.admin-client-result small{display:block}.admin-client-result small{margin-top:2px;color:var(--muted);font-size:10px}.admin-client-result>span{color:var(--green);font-size:10px;font-weight:850}
 .admin-unified-report{margin-top:14px}.section-head.compact{margin:12px 0 8px}.section-head.compact h3{margin:0}.admin-history-list{margin-top:10px}
 @media(min-width:760px){.advantages-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-client-kpis{grid-template-columns:repeat(4,1fr)}}
+
+.cep-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.cep-row input{min-width:0}.cep-row .button{white-space:nowrap}
+.cep-status{margin-top:5px;font-size:10px;line-height:1.35;color:var(--muted)}
+.cep-status.loading-cep{color:#6c5a31}.cep-status.ok-cep{color:#2f6848;font-weight:750}
+.cep-status.generic-cep{color:#7a572c;font-weight:750}.cep-status.error-cep{color:var(--danger);font-weight:750}
+@media(max-width:370px){.cep-row{grid-template-columns:1fr}.cep-row .button{width:100%}}
