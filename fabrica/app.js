@@ -18,7 +18,9 @@ const state={
   cart:JSON.parse(localStorage.getItem("algaroba_cart")||"{}"),
   deliveryOptions:[],selectedDelivery:null,lastOrder:null,returnView:null,
   internalModule:localStorage.getItem("algaroba_internal_module")||null,
-  adminOrders:[],adminQuery:""
+  adminOrders:[],adminQuery:"",
+  productionOpenOrder:null,
+  expeditionOpenOrder:null
 };
 
 function showToast(message){
@@ -130,8 +132,8 @@ function effectivePrice(p,modalidade=null){
   return Number(modalidade==="retirada_fabrica"||units>=6?p.preco_atacado:p.preco_varejo);
 }
 function statusClass(v){
-  if(["pago","pagamento_confirmado","entregue","pronto","aprovado"].includes(v))return "ok";
-  if(["cancelado","devolvido","rejeitado","atrasado"].includes(v))return "bad";
+  if(["pago","pagamento_confirmado","entregue","pronto","aprovado","separado","pronto_rota","pronto_retirada","conferido"].includes(v))return "ok";
+  if(["cancelado","devolvido","rejeitado","atrasado","indisponivel"].includes(v))return "bad";
   return "warn";
 }
 function nav(view){
@@ -969,7 +971,7 @@ window.saveReceiving=async id=>{
   catch(e){showToast(e.message)}
 };
 
-async function roleDisplay(role){
+function roleDisplay(role){
   return ({
     administrador:"ADM",
     gerente:"Gerência",
@@ -1119,61 +1121,214 @@ window.adminSetFilter=status=>{state.adminQuery=status;const e=document.querySel
 async function renderProduction(){
   loading("Carregando Produção...");
   try{
-    const rows=await rpc("producao_fila",{},true)||[],groups={};rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
-    main.innerHTML=internalShell("producao")+`<div class="internal-title"><div><span class="internal-eyebrow">PRODUÇÃO</span><h1>Fila de produção</h1><p>Itens para fabricar e separar, sem preços ou dados financeiros.</p></div></div><div class="section-head"><div><h2>Fila de Produção</h2><p>${Object.keys(groups).length} pedidos</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">Solicitado: ${x.quantidade_solicitada} • ${esc(x.modelo_fornecimento)}</div><span class="status ${statusClass(x.status_item)}">${esc(x.status_item)}</span></div><div class="inline-actions">${x.modelo_fornecimento==="estoque"?`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','separado',${Number(x.quantidade_solicitada)})">Separado</button><button class="button ghost" onclick="window.prodAdjust('${x.item_id}',${Number(x.quantidade_solicitada)},${Number(x.quantidade_faturada||x.quantidade_solicitada)})">Ajustar qtd.</button><button class="button danger" onclick="window.prodUpdate('${x.item_id}','indisponivel',0)">Em falta</button>`:`<button class="button soft" onclick="window.prodUpdate('${x.item_id}','pronto',${Number(x.quantidade_solicitada)})">Pronto</button>`}</div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.prodFinish('${pid}')">Finalizar pedido</button></div></div>`).join("")||'<div class="empty">Nenhum pedido aguardando produção.</div>'}`;
-  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+    const rows=await rpc("producao_fila",{},true)||[],groups={};
+    rows.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
+    const ids=Object.keys(groups);
+    main.innerHTML=internalShell("producao")+`
+      <section class="internal-title">
+        <div><span class="internal-eyebrow">PRODUÇÃO</span><h1>Pedidos para produzir</h1><p>Abra um pedido e confira item por item.</p></div>
+      </section>
+      <section class="production-order-list">
+        ${ids.length?ids.map(pid=>{
+          const it=groups[pid],first=it[0];
+          const done=it.filter(x=>["pronto","separado","indisponivel"].includes(x.status_item)).length;
+          const allDone=done===it.length;
+          const open=state.productionOpenOrder===pid;
+          return `<article class="production-order-card ${allDone?"complete":""}">
+            <button class="production-order-summary" type="button" onclick="window.toggleProductionOrder('${pid}')">
+              <div>
+                <span class="production-order-no">${esc(first.numero)}</span>
+                <strong>${esc(first.cliente_nome)}</strong>
+                <small>${it.length} itens • ${done} conferidos</small>
+              </div>
+              <div class="production-progress">
+                <b>${done}/${it.length}</b>
+                <span>${allDone?"✓ Pronto":open?"Fechar":"Abrir"} ${open?"⌃":"⌄"}</span>
+              </div>
+            </button>
+            ${open?`<div class="production-order-body">
+              ${it.map(x=>{
+                const resolved=["pronto","separado","indisponivel"].includes(x.status_item);
+                const unavailable=x.status_item==="indisponivel";
+                const ready=x.status_item==="pronto"||x.status_item==="separado";
+                return `<div class="production-item ${resolved?"resolved":""} ${unavailable?"unavailable":""}">
+                  <div class="production-item-check">${ready?"✓":unavailable?"!":"○"}</div>
+                  <div class="production-item-copy">
+                    <strong>${esc(x.produto)}</strong>
+                    <small>Solicitado: ${Number(x.quantidade_solicitada).toLocaleString("pt-BR")} • ${x.modelo_fornecimento==="estoque"?"estoque":"produção"}</small>
+                    ${ready?`<span class="prod-done">${x.status_item==="separado"?"Separado e pronto":"Pronto"}</span>`:""}
+                    ${unavailable?'<span class="prod-missing">Produto em falta • estoque indisponível</span>':""}
+                  </div>
+                  <div class="production-item-actions">
+                    ${!resolved&&x.modelo_fornecimento==="estoque"?`
+                      <button class="prod-primary" onclick="window.prodUpdate('${x.item_id}','${pid}','separado',${Number(x.quantidade_solicitada)})">✓ Separado</button>
+                      <button onclick="window.prodAdjust('${x.item_id}','${pid}',${Number(x.quantidade_solicitada)},${Number(x.quantidade_faturada||x.quantidade_solicitada)})">Ajustar qtd.</button>
+                      <button class="prod-missing-btn" onclick="window.prodUpdate('${x.item_id}','${pid}','indisponivel',0)">Em falta</button>
+                    `:!resolved?`
+                      <button class="prod-primary" onclick="window.prodUpdate('${x.item_id}','${pid}','pronto',${Number(x.quantidade_solicitada)})">✓ Pronto</button>
+                    `:""}
+                  </div>
+                </div>`;
+              }).join("")}
+              <div class="production-order-footer">
+                <span>${done} de ${it.length} itens concluídos</span>
+                ${allDone?'<b>✓ Pedido pronto para seguir à Expedição</b>':'<small>Conclua todos os itens para finalizar automaticamente.</small>'}
+              </div>
+            </div>`:""}
+          </article>`;
+        }).join(""):'<div class="empty">Nenhum pedido aguardando produção.</div>'}
+      </section>
+    `;
+  }catch(e){main.innerHTML=internalShell("producao")+'<div class="empty">'+esc(e.message)+'</div>'}
 }
-window.prodUpdate=async(id,status,q)=>{
-  let obs=null;if(status==="indisponivel")obs=prompt("Motivo da indisponibilidade:")||"Indisponível";
-  try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);showToast("Item atualizado.");state.internalModule="producao";await renderProduction()}catch(e){showToast(e.message)}
+window.toggleProductionOrder=id=>{
+  state.productionOpenOrder=state.productionOpenOrder===id?null:id;
+  renderProduction();
 };
-window.prodAdjust=async(id,solicitada,atual)=>{
+window.prodUpdate=async(id,pedidoId,status,q)=>{
+  const obs=status==="indisponivel"?"Estoque indisponível — produto em falta.":null;
+  const y=window.scrollY;
+  try{
+    await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);
+    const rows=await rpc("producao_fila",{},true)||[];
+    const orderItems=rows.filter(x=>x.pedido_id===pedidoId);
+    const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));
+    if(allDone){
+      await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
+      state.productionOpenOrder=null;
+      showToast("Pedido pronto e enviado para a Expedição.");
+    }else{
+      state.productionOpenOrder=pedidoId;
+      showToast(status==="indisponivel"?"Produto marcado em falta.":"Item concluído.");
+    }
+    await renderProduction();
+    requestAnimationFrame(()=>window.scrollTo(0,y));
+  }catch(e){showToast(e.message)}
+};
+window.prodAdjust=async(id,pedidoId,solicitada,atual)=>{
   const raw=prompt("Quantidade realmente disponível (máximo "+solicitada+"):",String(atual).replace(".",","));
   if(raw===null)return;
-  const qtd=Number(raw.replace(",","."));if(!Number.isFinite(qtd)||qtd<0||qtd>solicitada){showToast("Quantidade inválida.");return}
-  const motivo=qtd<solicitada?(prompt("Motivo do ajuste:")||"Quantidade parcial em estoque"):null;
+  const qtd=Number(raw.replace(",","."));
+  if(!Number.isFinite(qtd)||qtd<0||qtd>solicitada){showToast("Quantidade inválida.");return}
+  const obs=qtd<=0?"Estoque indisponível — produto em falta.":qtd<solicitada?"Quantidade parcial disponível em estoque.":null;
   const status=qtd<=0?"indisponivel":"separado";
-  try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:qtd,p_observacao:motivo},true);showToast("Quantidade confirmada.");await renderProduction()}catch(e){showToast(e.message)}
+  const y=window.scrollY;
+  try{
+    await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:qtd,p_observacao:obs},true);
+    const rows=await rpc("producao_fila",{},true)||[];
+    const orderItems=rows.filter(x=>x.pedido_id===pedidoId);
+    const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));
+    if(allDone){
+      await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
+      state.productionOpenOrder=null;
+      showToast("Pedido pronto e enviado para a Expedição.");
+    }else{
+      state.productionOpenOrder=pedidoId;
+      showToast("Quantidade confirmada.");
+    }
+    await renderProduction();
+    requestAnimationFrame(()=>window.scrollTo(0,y));
+  }catch(e){showToast(e.message)}
 };
-window.prodFinish=async id=>{try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);showToast("Pedido finalizado.");await renderProduction()}catch(e){showToast(e.message)}};
+window.prodFinish=async id=>{
+  try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);showToast("Pedido pronto e enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
+};
+
 
 async function renderExpedition(){
   loading("Carregando Expedição...");
   try{
     const today=localDateISO();
     const [rows,planning,executions]=await Promise.all([
-      rpc("expedicao_fila",{},true),
+      rpc("expedicao_conferencia_fila",{},true),
       rpc("expedicao_planejamento_rota",{p_data:today},true),
       table("rota_execucoes?select=id,rota_id,data_rota,status,hora_saida_prevista,saiu_em,finalizada_em,motorista,veiculo,odometro_inicio,odometro_fim,entregas_planejadas,entregas_concluidas,entregas_pendentes&data_rota=eq."+today)
     ]);
-    const queue=rows||[],groups={};queue.forEach(x=>(groups[x.pedido_id]??=[]).push(x));
+    const groups={};(rows||[]).forEach(x=>(groups[x.pedido_id]??=[]).push(x));
     const routeGroups={};(planning||[]).forEach(x=>(routeGroups[x.rota_id]??={meta:x,items:[]}).items.push(x));
-    main.innerHTML=internalShell("expedicao")+`
-      <div class="internal-title"><div><span class="internal-eyebrow">EXPEDIÇÃO</span><h1>Rotas e entregas</h1><p>Pedidos liberados pelo Financeiro e planejamento operacional.</p></div></div>
-      <div class="section-head"><div><h2>Planejamento de hoje</h2><p>${fmtDate(today)} • saída padrão às 14h</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
-      <div class="notice green" style="margin-bottom:11px">As prioridades abaixo servem apenas para organizar a logística. O cliente continua sem receber previsão de horário de chegada.</div>
 
+    main.innerHTML=internalShell("expedicao")+`
+      <section class="internal-title">
+        <div><span class="internal-eyebrow">EXPEDIÇÃO</span><h1>Conferência e saída</h1><p>Segunda conferência: abra o pedido, confira cada item e finalize.</p></div>
+      </section>
+      <section class="expedition-order-list">
+        ${Object.keys(groups).length?Object.entries(groups).map(([pid,it])=>{
+          const first=it[0],checked=it.filter(x=>x.expedicao_conferido).length,all=checked===it.length;
+          const open=state.expeditionOpenOrder===pid;
+          const expReady=["pronto_rota","pronto_retirada","conferido"].includes(first.expedicao_status);
+          const readyLabel=first.modalidade_entrega==="retirada_fabrica"?"Pronto para retirada":first.modalidade_entrega==="rota"?"Pronto para rota":"Conferência concluída";
+          const finalLabel=first.modalidade_entrega==="retirada_fabrica"?"Pedido pronto para retirada":first.modalidade_entrega==="rota"?"Pedido pronto para rota":"Concluir conferência";
+          return `<article class="expedition-order-card ${expReady?"ready":""}">
+            <button class="expedition-order-summary" type="button" onclick="window.toggleExpeditionOrder('${pid}')">
+              <div>
+                <span>${esc(first.numero)}</span>
+                <strong>${esc(first.cliente_nome)}</strong>
+                <small>${first.modalidade_entrega==="retirada_fabrica"?"Retirada na fábrica":esc(first.rota_nome||"Rota")} • ${checked}/${it.length} conferidos</small>
+              </div>
+              <div class="expedition-summary-status">
+                <b class="${expReady?"ok":all?"warn":""}">${expReady?"✓ "+readyLabel:checked+"/"+it.length}</b>
+                <small>${first.liberado_financeiro?"Financeiro liberado":"Aguardando financeiro"}</small>
+                <em>${open?"⌃":"⌄"}</em>
+              </div>
+            </button>
+            ${open?`<div class="expedition-order-body">
+              <div class="expedition-address">${esc(first.endereco||"")}</div>
+              ${it.map(x=>`<button class="expedition-item ${x.expedicao_conferido?"checked":""}" type="button" onclick="window.expCheckItem('${x.item_id}','${pid}',${x.expedicao_conferido?"false":"true"})">
+                <span class="expedition-check">${x.expedicao_conferido?"✓":"○"}</span>
+                <div><strong>${esc(x.produto)}</strong><small>${Number(x.quantidade).toLocaleString("pt-BR")} un.</small></div>
+                <b>${x.expedicao_conferido?"Conferido":"Conferir"}</b>
+              </button>`).join("")}
+              <div class="expedition-order-footer">
+                ${!expReady&&all?`<button class="button orange" onclick="window.expFinishCheck('${pid}')">${finalLabel}</button>`:""}
+                ${expReady?`<div class="expedition-ready"><b>✓ ${readyLabel}</b><small>${first.liberado_financeiro?"Pedido liberado pelo Financeiro.":"Conferência física concluída. Aguarde a liberação financeira para saída/retirada."}</small></div>`:""}
+                ${expReady&&first.liberado_financeiro&&first.status_pedido==="pagamento_confirmado"&&first.modalidade_entrega==="rota"?`<button class="button" onclick="window.expUpdate('${pid}','saiu_entrega')">Saiu para entrega →</button>`:""}
+                ${expReady&&first.liberado_financeiro&&first.status_pedido==="pagamento_confirmado"&&first.modalidade_entrega==="retirada_fabrica"?`<button class="button" onclick="window.expUpdate('${pid}','entregue')">Confirmar retirada ✓</button>`:""}
+                ${first.status_pedido==="saiu_entrega"?'<div class="notice green">Pedido em rota.</div>':""}
+              </div>
+            </div>`:""}
+          </article>`;
+        }).join(""):'<div class="empty">Nenhum pedido aguardando conferência na Expedição.</div>'}
+      </section>
+
+      <div class="section-head"><div><h2>Planejamento de hoje</h2><p>${fmtDate(today)} • rotas liberadas para organização</p></div></div>
       ${Object.values(routeGroups).length?Object.values(routeGroups).map(g=>{
         const x=executions.find(e=>e.rota_id===g.meta.rota_id);
-        return `<div class="panel" style="margin-bottom:13px">
-          <div class="summary">
-            <div><b>${esc(g.meta.rota_nome)}</b><span class="status ${x?.status==="em_rota"?"warn":x?.status==="finalizada"?"ok":""}">${esc(x?.status||"planejada")}</span></div>
-            <div class="small">Saída padrão ${fmtTime(g.meta.hora_saida_padrao)} • antecipada ${fmtTime(g.meta.hora_saida_antecipada)} • ${g.items.length} entregas</div>
-            <div class="inline-actions" style="margin-top:8px">
-              ${!x||x.status==="planejada"?`<button class="button" onclick="window.startRoute('${g.meta.rota_id}','${today}')">Iniciar rota</button>`:""}
-              ${x?.status==="em_rota"?`<button class="button orange" onclick="window.finishRoute('${x.id}')">Finalizar rota</button>`:""}
-            </div>
-          </div>
-          ${g.items.map((p,i)=>`<div class="row"><div><div class="row-title">${p.ordem_planejada||i+1}. ${esc(p.cliente_nome)} • ${esc(p.bairro||p.cidade||"")}</div><div class="row-sub">${esc(p.endereco||"")}</div><div class="row-sub">${p.recebimento_inicio||p.recebimento_fim?`Recebe ${fmtTime(p.recebimento_inicio)||"—"}–${fmtTime(p.recebimento_fim)||"—"}`:"Horário de recebimento não informado"}${p.intervalo_inicio?" • intervalo "+fmtTime(p.intervalo_inicio)+"–"+fmtTime(p.intervalo_fim):""}</div>${p.alerta_operacional?`<span class="status warn" style="margin-top:6px">${esc(p.alerta_operacional)}</span>`:""}</div><b>${esc(p.numero)}</b></div>`).join("")}
-        </div>`
-      }).join(""):'<div class="empty"><div class="empty-icon">🛣️</div>Nenhuma entrega programada para hoje.</div>'}
-
-      <div class="section-head"><div><h2>Pedidos liberados</h2><p>${Object.keys(groups).length} pedidos disponíveis para expedição</p></div></div>
-      ${Object.entries(groups).map(([pid,it])=>`<div class="panel" style="margin-bottom:11px"><div class="summary"><b>${esc(it[0].numero)} • ${esc(it[0].cliente_nome)}</b><div class="small">${esc(it[0].modalidade_entrega||"")} • ${esc(it[0].endereco||"")}</div></div>${it.map(x=>`<div class="row"><div><div class="row-title">${esc(x.produto)}</div><div class="row-sub">${x.quantidade} un.</div></div></div>`).join("")}<div style="padding:13px"><button class="button" onclick="window.expUpdate('${pid}','${it[0].modalidade_entrega==="retirada_fabrica"?"entregue":"saiu_entrega"}')">${it[0].modalidade_entrega==="retirada_fabrica"?"Marcar como retirado":"Saiu para entrega"}</button></div></div>`).join("")||'<div class="empty">Nenhum pedido liberado para Expedição.</div>'}
+        return `<div class="panel expedition-route-panel">
+          <div class="summary"><div><b>${esc(g.meta.rota_nome)}</b><span class="status ${x?.status==="em_rota"?"warn":x?.status==="finalizada"?"ok":""}">${esc(x?.status||"planejada")}</span></div>
+          <div class="small">${g.items.length} entregas • saída padrão ${fmtTime(g.meta.hora_saida_padrao)}</div>
+          <div class="inline-actions">
+            ${!x||x.status==="planejada"?`<button class="button" onclick="window.startRoute('${g.meta.rota_id}','${today}')">Iniciar rota</button>`:""}
+            ${x?.status==="em_rota"?`<button class="button orange" onclick="window.finishRoute('${x.id}')">Finalizar rota</button>`:""}
+          </div></div>
+        </div>`;
+      }).join(""):'<div class="empty compact">Nenhuma rota planejada para hoje.</div>'}
     `;
-  }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  }catch(e){main.innerHTML=internalShell("expedicao")+'<div class="empty">'+esc(e.message)+'</div>'}
 }
-window.expUpdate=async(id,status)=>{try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");state.internalModule="expedicao";await renderExpedition()}catch(e){showToast(e.message)}};
+window.toggleExpeditionOrder=id=>{
+  state.expeditionOpenOrder=state.expeditionOpenOrder===id?null:id;
+  renderExpedition();
+};
+window.expCheckItem=async(id,pedidoId,checked)=>{
+  const y=window.scrollY;
+  try{
+    await rpc("expedicao_conferir_item",{p_item_id:id,p_conferido:checked,p_observacao:null},true);
+    state.expeditionOpenOrder=pedidoId;
+    await renderExpedition();
+    requestAnimationFrame(()=>window.scrollTo(0,y));
+  }catch(e){showToast(e.message)}
+};
+window.expFinishCheck=async pedidoId=>{
+  try{
+    const status=await rpc("expedicao_finalizar_conferencia",{p_pedido_id:pedidoId},true);
+    state.expeditionOpenOrder=pedidoId;
+    showToast(status==="pronto_retirada"?"Pedido pronto para retirada.":status==="pronto_rota"?"Pedido pronto para rota.":"Conferência concluída.");
+    await renderExpedition();
+  }catch(e){showToast(e.message)}
+};
+window.expUpdate=async(id,status)=>{
+  try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");state.internalModule="expedicao";state.expeditionOpenOrder=id;await renderExpedition()}catch(e){showToast(e.message)}
+};
 window.startRoute=async(rotaId,data)=>{
   const motorista=prompt("Nome do motorista (opcional):")||null;
   const veiculo=prompt("Veículo/placa (opcional):")||null;
@@ -1189,6 +1344,7 @@ window.finishRoute=async(execId)=>{
   const obs=prompt("Observação de encerramento (opcional):")||null;
   try{await rpc("expedicao_finalizar_rota",{p_execucao_id:execId,p_odometro_fim:km,p_observacao:obs},true);showToast("Rota finalizada.");await renderExpedition()}catch(e){showToast(e.message)}
 };
+
 
 async function renderFinance(){
   loading("Carregando Financeiro...");
