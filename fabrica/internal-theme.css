@@ -151,3 +151,100 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
   .stock-compact-actions button{min-height:46px}
   .stock-compact-actions button span{font-size:7.5px}
 }
+
+/* Estoque compacto v2 — nome horizontal + 3 ações */
+.stock-line-card{
+  padding:11px 12px 10px;
+  border:1px solid #e1ceae;
+  border-radius:15px;
+  background:#fffdf8;
+  box-shadow:0 3px 9px rgba(60,42,20,.035);
+}
+.stock-line-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.stock-line-head>strong{
+  min-width:0;
+  flex:1;
+  font:700 17px/1.15 Georgia,"Times New Roman",serif;
+  color:#074b33;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.stock-edit-mini{
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  border:1px solid #ddc9a7;
+  border-radius:10px;
+  background:#fff8e8;
+  color:#175c3e;
+  font-size:15px;
+}
+.stock-line-info{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:5px 8px;
+  margin-top:7px;
+  color:#70695e;
+  font-size:8.5px;
+}
+.stock-line-info>span:not(.status){
+  padding:3px 0;
+}
+.stock-line-info .stock-category{
+  color:#9b6545;
+  font-weight:850;
+}
+.stock-line-info b{
+  color:#1a5a3f;
+}
+.stock-line-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin-top:9px;
+}
+.stock-action{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:38px;
+  padding:5px 7px;
+  border:1px solid #ddc9a8;
+  border-radius:10px;
+  background:#fff8e8;
+  color:#1a5a3e;
+}
+.stock-action.entry{
+  background:#eaf2e4;
+  border-color:#cddcbe;
+}
+.stock-action.undo{
+  background:#fff3df;
+  color:#99562f;
+}
+.stock-action b{
+  font:800 14px/1 system-ui,sans-serif;
+}
+.stock-action span{
+  font-size:8px;
+  font-weight:900;
+  line-height:1;
+}
+.stock-action:active,.stock-edit-mini:active{transform:translateY(1px)}
+/* Neutraliza o layout compacto v1 antigo caso esteja carregado em cascata */
+.stock-line-card .stock-compact-head,
+.stock-line-card .stock-compact-meta,
+.stock-line-card .stock-compact-actions{display:none!important}
+@media(max-width:420px){
+  .stock-line-card{padding:10px}
+  .stock-line-head>strong{font-size:16px}
+  .stock-line-actions{gap:5px}
+  .stock-action{min-height:36px;padding:4px 5px}
+  .stock-action span{font-size:7.5px}
+}
