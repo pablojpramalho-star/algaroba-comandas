@@ -192,6 +192,7 @@ async function boot(){
   else if(requestedView==="pedido"){state.selectedGroup=null;state.search="";state.groupInfoOpen=false;go("catalog")}
   else if(requestedView==="pedidos")go("orders");
   else if(requestedView==="info")go("info");
+  else if(requestedView==="conta")go("account");
   else go("home");
   if(requestedView)history.replaceState(null,"",window.location.pathname);
   if(authCallback?.confirmed)setTimeout(()=>showToast("E-mail confirmado. Complete seu cadastro."),120);
