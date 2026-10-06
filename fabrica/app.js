@@ -639,6 +639,7 @@ window.bindCepLookup=()=>{
   const format=()=>{
     const digits=input.value.replace(/\D/g,"").slice(0,8);
     input.value=digits.length>5?digits.slice(0,5)+"-"+digits.slice(5):digits;
+    if(input.dataset.lookupCep&&input.dataset.lookupCep!==digits)delete input.dataset.lookupCep;
     if(digits.length===8)window.lookupCep(digits);
     else {
       const status=$("#cepStatus");
@@ -661,7 +662,8 @@ window.lookupCep=async(cep,force=false)=>{
   const digits=String(cep||"").replace(/\D/g,"");
   if(digits.length!==8)return;
   const status=$("#cepStatus"),button=$("#cepLookupButton");
-  if(!force&&window.lookupCep.lastCep===digits&&window.lookupCep.lastOk)return;
+  const cepInput=$("#addressCep");
+  if(!force&&cepInput?.dataset.lookupCep===digits)return;
   const requestId=(window.lookupCep.requestId||0)+1;window.lookupCep.requestId=requestId;
   if(status){status.textContent="Consultando CEP...";status.className="cep-status loading-cep"}
   if(button)button.disabled=true;
@@ -678,7 +680,7 @@ window.lookupCep=async(cep,force=false)=>{
     if(data.localidade)city.value=data.localidade;
     if(data.uf)uf.value=data.uf;
 
-    window.lookupCep.lastCep=digits;window.lookupCep.lastOk=true;
+    if(cepInput)cepInput.dataset.lookupCep=digits;
     const generic=!data.logradouro||!data.bairro;
     if(status){
       status.textContent=generic
@@ -693,7 +695,7 @@ window.lookupCep=async(cep,force=false)=>{
       $("#addressNumber")?.focus();
     }
   }catch(err){
-    window.lookupCep.lastOk=false;
+    if(cepInput)delete cepInput.dataset.lookupCep;
     if(status){status.textContent=err.message+" Preencha o endereço manualmente.";status.className="cep-status error-cep"}
   }finally{
     if(button)button.disabled=false;
