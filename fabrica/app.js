@@ -53,7 +53,14 @@ async function table(path){return request("/rest/v1/"+path)}
 
 function categoryKey(p){return p.linha||p.categoria||"Outros"}
 function groupIcon(key){
-  return ({tradicional:"🥤",classic:"🍓",intense:"🍫","graos-farinaceos":"🥜","xaropes-coberturas":"🍯"})[key]||"▦";
+  const icons={
+    tradicional:`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M15 14h18l-2 25H17L15 14Z"/><path d="M19 10h10M29 10l6-6M20 20c5 3 8-3 12 0"/></svg>`,
+    classic:`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 14c-8 0-14 6-14 14s6 13 14 13 14-5 14-13-6-14-14-14Z"/><path d="M18 13c1-6 5-8 9-6M26 13c2-5 6-6 10-4"/><path d="M16 25h.1M24 22h.1M31 27h.1M22 33h.1"/></svg>`,
+    intense:`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 18 24 9l13 9-3 20H14l-3-20Z"/><path d="m11 18 13 8 13-8M24 9v17M14 38l10-12 10 12"/></svg>`,
+    "graos-farinaceos":`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 37c5-11 11-19 25-26-2 14-9 23-25 26Z"/><path d="M16 32c5-1 10-5 15-11M18 26l-1-7M24 22l1-7M30 18l4-4"/></svg>`,
+    "xaropes-coberturas":`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M18 7h12v8l4 5v20H14V20l4-5V7Z"/><path d="M18 14h12M18 27h12M22 7V4h4v3"/></svg>`
+  };
+  return icons[key]||icons.tradicional;
 }
 function groupProducts(group){
   if(!group)return[];
@@ -78,11 +85,17 @@ function displayProductName(p,group){
   }
   return p.produto;
 }
-function productIcon(p){
+function productType(p){
   const c=(p.categoria||"").toLowerCase(),n=(p.produto||"").toLowerCase(),l=(p.linha||"").toLowerCase();
-  if(c.includes("xarope"))return "🍯"; if(c.includes("cobertura"))return "🍓"; if(c.includes("grão"))return "🥜";
-  if(n.includes("lácteo"))return "🥛"; if(l.includes("zero"))return "🌿"; if(l.includes("intense"))return "🍫"; return "🥤";
+  if(c.includes("xarope"))return "syrup";
+  if(c.includes("cobertura"))return "topping";
+  if(c.includes("grão")||c.includes("farin"))return "grain";
+  if(n.includes("lácteo"))return "milk";
+  if(l.includes("intense"))return "intense";
+  if(l.includes("zero"))return "zero";
+  return "shake";
 }
+function productIcon(p){return `<span class="product-fallback type-${productType(p)}" aria-hidden="true"><i></i><b>A</b></span>`}
 function measure(p){
   if(p.volume_litros)return Number(p.volume_litros).toLocaleString("pt-BR",{maximumFractionDigits:2})+" L"+(p.peso_kg?" • "+Number(p.peso_kg).toLocaleString("pt-BR",{maximumFractionDigits:2})+" kg":"");
   if(p.peso_volume)return Number(p.peso_volume).toLocaleString("pt-BR",{maximumFractionDigits:3})+" "+esc(p.unidade||"");
@@ -202,13 +215,32 @@ $("#accountButton").addEventListener("click",()=>go(state.session&&state.role!==
 
 function renderHome(){
   main.innerHTML=`
-    <section class="home-focus">
-      <div class="home-brand-orbit">
-        <img src="../algaroba-icon.svg" alt="Algaroba" class="home-logo">
-        <div class="home-shake" aria-hidden="true">🥤</div>
+    <section class="home-focus premium-home">
+      <div class="home-hero-card">
+        <div class="home-organic home-organic-a"></div>
+        <div class="home-organic home-organic-b"></div>
+        <div class="home-brand-lockup">
+          <img src="../algaroba-icon.svg" alt="Algaroba" class="home-logo">
+          <div class="home-wordmark"><strong>Algaroba</strong><span>NATURAL COMO NOSSA TERRA</span></div>
+        </div>
+        <div class="shake-stage" aria-hidden="true">
+          <div class="shake-shadow"></div>
+          <div class="shake-cup">
+            <div class="shake-straw"></div>
+            <div class="shake-cream"><i></i><i></i><i></i></div>
+            <div class="shake-drip"></div>
+            <div class="shake-label"><img src="../algaroba-icon.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="home-cta">
+          <h1>Faça seu pedido</h1>
+          <button class="button home-order-button" onclick="window.openGroups()">
+            <span class="button-icon">${groupIcon("tradicional")}</span>
+            <span>FAZER MEU PEDIDO</span>
+            <span class="button-arrow">→</span>
+          </button>
+        </div>
       </div>
-      <div class="home-title">Faça seu pedido</div>
-      <button class="button home-order-button" onclick="window.openGroups()">FAZER MEU PEDIDO →</button>
     </section>
   `;
 }
@@ -282,7 +314,7 @@ function miniCheckout(){
 
 function renderProductCards(list,group){
   return list.map(p=>`<article class="product-card ${p.destaque?"featured":""}">
-    <div class="product-visual">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.parentElement.innerHTML='${productIcon(p)}'">`:productIcon(p)}</div>
+    <div class="product-visual type-${productType(p)} ${p.imagem_url?"has-image":""}">${p.imagem_url?`<img src="${esc(p.imagem_url)}" alt="${esc(displayProductName(p,group))}" loading="lazy" onerror="this.remove();this.parentElement.classList.remove('has-image')">`:productIcon(p)}</div>
     <div class="product-meta">${group.tipo_filtro==="linha"?"Sabor":esc(p.categoria||group.titulo)}${measure(p)?" • "+measure(p):""}</div>
     <h3>${esc(displayProductName(p,group))}</h3>
     ${p.descricao_cliente?`<div class="product-description">${esc(p.descricao_cliente)}</div>`:""}
