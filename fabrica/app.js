@@ -1197,8 +1197,7 @@ window.prodUpdate=async(id,pedidoId,status,q)=>{
     await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);
     const rows=await rpc("producao_fila",{},true)||[];
     const orderItems=rows.filter(x=>x.pedido_id===pedidoId);
-    const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));
-    if(allDone){
+    const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));    if(allDone){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
       showToast("Pedido pronto e enviado para a Expedição.");    }else{
@@ -1423,13 +1422,15 @@ window.rejectProof=async id=>{const motivo=prompt("Motivo da rejeição:");if(!m
 async function renderCash(){
   loading("Carregando Caixa...");
   try{
-    const [panelRows,moves,pendingRows]=await Promise.all([
+    const [panelRows,moves,pendingRows,deliveryPendingRows]=await Promise.all([
       rpc("caixa_painel",{},true),
       rpc("caixa_movimentos_recentes",{p_limit:40},true),
-      rpc("financeiro_pagamentos_pendentes",{},true)
+      rpc("financeiro_pagamentos_pendentes",{},true),
+      rpc("financeiro_pendencias_entrega",{},true)
     ]);
     const c=Array.isArray(panelRows)?panelRows[0]:panelRows;
     const pending=pendingRows||[];
+    const deliveryPending=deliveryPendingRows||[];
     main.innerHTML=internalShell("caixa")+`
       <section class="internal-title"><div><span class="internal-eyebrow">CAIXA</span><h1>Movimento do caixa</h1><p>Abertura, recebimentos, sangrias e fechamento.</p></div></section>
       ${c?`
@@ -1451,6 +1452,10 @@ async function renderCash(){
       `:`
         <section class="cash-closed"><b>Caixa fechado</b><p>Abra o caixa para começar a registrar os movimentos.</p><button class="button orange" onclick="window.cashOpen()">Abrir caixa</button></section>
       `}
+      <div class="section-head"><div><h2>Pendências vindas da entrega</h2><p>Pedidos já entregues que ficaram com saldo em aberto.</p></div></div>
+      <div class="cash-pending delivery-finance-pending">
+        ${deliveryPending.length?deliveryPending.map(x=>`<article><div><b>${esc(x.numero)} • ${esc(x.cliente_nome)}</b><small>Entregue ${fmtDateTime(x.entregue_em)} • saldo ${brl(x.valor_pendente)}</small></div><button onclick="window.cashReceiveDelivery('${x.pedido_id}',${Number(x.valor_pendente)})">Receber</button></article>`).join(""):'<div class="empty compact">Nenhuma pendência financeira vinda da rota.</div>'}
+      </div>
       <div class="section-head"><div><h2>Recebimentos pendentes</h2><p>Pedidos prontos aguardando confirmação.</p></div></div>
       <div class="cash-pending">
         ${pending.length?pending.slice(0,8).map(x=>`<article><div><b>${esc(x.numero)} • ${esc(x.cliente_nome)}</b><small>${esc(x.metodo)} • pendente ${brl(x.valor_pendente)}</small></div><button onclick="window.cashReceive('${x.pedido_id}',${Number(x.valor_pendente)})">Dar recebido</button></article>`).join(""):'<div class="empty compact">Nenhum recebimento manual pendente.</div>'}
@@ -1491,6 +1496,19 @@ window.cashReceive=async(id,pending)=>{
   const value=Number(raw.replace(",","."));if(!Number.isFinite(value)||value<=0||value>pending){showToast("Valor inválido.");return}
   const obs=prompt("Observação / nº da nota (opcional):")||null;
   try{await rpc("financeiro_registrar_pagamento_manual",{p_pedido_id:id,p_valor:value,p_observacao:obs},true);showToast("Recebimento registrado.");await renderCash()}catch(e){showToast(e.message)}
+};
+window.cashReceiveDelivery=async(id,pending)=>{
+  const choice=prompt("Forma recebida: 1 Dinheiro • 2 Pix • 3 Crédito • 4 Débito","1");if(choice===null)return;
+  const method=({"1":"dinheiro","2":"pix","3":"credito","4":"debito"})[choice.trim()];
+  if(!method){showToast("Forma de pagamento inválida.");return}
+  const raw=prompt("Valor recebido:",String(pending).replace(".",","));if(raw===null)return;
+  const value=Number(raw.replace(",","."));if(!Number.isFinite(value)||value<=0||value>pending){showToast("Valor inválido.");return}
+  const obs=prompt("Observação / nº da nota (opcional):")||null;
+  try{
+    await rpc("financeiro_receber_pendencia_entrega",{p_pedido_id:id,p_metodo:method,p_valor:value,p_observacao:obs},true);
+    showToast("Recebimento registrado e cliente notificado.");
+    await renderCash();
+  }catch(e){showToast(e.message)}
 };
 
 async function renderStock(){
