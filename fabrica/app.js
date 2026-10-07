@@ -1,4 +1,4 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261006-flow4";
+import { installInternalFlow } from "./internal-flow.js?v=20261006-flow5";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
