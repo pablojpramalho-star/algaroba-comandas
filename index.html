@@ -35,6 +35,23 @@
 .shake-stock-card{border:2px solid #16883d;border-radius:16px;padding:12px;margin:10px 0;background:linear-gradient(135deg,#dff1e3,#c7e3ce);color:#132019}.shake-stock-card .muted{color:#52645a!important}.shake-stock-card b{color:#132019}.shake-stock-card.near{border-color:#e6a400;background:linear-gradient(135deg,#fff2c2,#f3dfa0);color:#2a2415}.shake-stock-card.near .muted{color:#6f6238!important}.shake-stock-card.near b{color:#2a2415}.shake-stock-card.low{border-color:#ef3434;background:linear-gradient(135deg,#ffd8d8,#f3bcbc);color:#2b1717}.shake-stock-card.low .muted{color:#754747!important}.shake-stock-card.low b{color:#2b1717}
 .shake-grams{font-size:2.6rem;font-weight:950;line-height:1}.shake-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}.shake-controls .btn{min-height:46px;font-weight:900}.shake-add{background:#0aa943!important;color:#fff!important}.shake-remove{background:#e52c2c!important;color:#fff!important}
 @media(max-width:430px){.inventory-category-card{padding:12px;min-height:96px}}
+
+/* 2.9.7.31 — Tema Algaroba unificado: não depender do tema claro/escuro do aparelho */
+:root{color-scheme:dark!important}
+html,body{background:#11130f!important;color:#fff!important}
+body{-webkit-text-fill-color:initial}
+.panel,.table{background:#171a17!important;color:#fff!important}
+.muted,.timer{color:#c7cec9!important}
+input,select,textarea{background:#343735!important;color:#fff!important;border-color:#666!important}
+option{background:#343735!important;color:#fff!important}
+.inventory-category-card{background:#202322!important;color:#fff!important}
+.stock-visual-card,.stock-visual-card.stock-near,.stock-visual-card.stock-low{color:#fff!important}
+.stock-name,.stock-balance,.stock-balance-label,.stock-balance-number,.stock-details,.stock-details b{color:#fff!important;-webkit-text-fill-color:#fff!important}
+.stock-actions .mini{color:#fff!important;-webkit-text-fill-color:#fff!important}
+.stock-plus,.stock-minus{color:#fff!important;-webkit-text-fill-color:#fff!important}
+.shake-stock-card,.shake-stock-card.near,.shake-stock-card.low{background:linear-gradient(135deg,rgba(13,54,31,.88),rgba(24,24,24,.98))!important;color:#fff!important}
+.shake-stock-card .muted,.shake-stock-card.near .muted,.shake-stock-card.low .muted,.shake-stock-card b,.shake-stock-card.near b,.shake-stock-card.low b{color:#fff!important;-webkit-text-fill-color:#fff!important}
+button{color:inherit}
 </style></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -44,7 +61,7 @@
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.30 • LOCAL / DELIVERY OBRIGATÓRIO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.31 • TEMA ALGAROBA UNIFICADO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
