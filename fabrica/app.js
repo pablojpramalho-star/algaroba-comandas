@@ -1,3 +1,4 @@
+import { installInternalFlow } from "./internal-flow.js?v=20261006-flow4";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -1642,5 +1643,12 @@ window.adminEditPresentation=async id=>{
     showToast("Apresentação do produto atualizada.");await loadCatalog();await renderAdmin();
   }catch(e){showToast(e.message)}
 };
+
+const __internalFlow=installInternalFlow({
+  state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtTime,brl,renderFinance
+});
+renderProduction=__internalFlow.renderProduction;
+renderExpedition=__internalFlow.renderExpedition;
+renderFinance=__internalFlow.renderFinance;
 
 boot();
