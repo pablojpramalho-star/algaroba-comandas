@@ -71,6 +71,20 @@ export function installInternalFlow(ctx){
     }catch(e){main.innerHTML=internalShell("producao")+"<div class='empty'>"+esc(e.message)+"</div>"}
   };
 
+  async function afterProductionItem(message){
+    var pedidoId=state.productionOpenOrder;
+    var rows=await rpc("producao_fila",{},true)||[];
+    var current=rows.filter(function(x){return x.pedido_id===pedidoId});
+    if(current.length&&current.every(doneProduction)){
+      await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
+      state.productionOpenOrder=null;
+      showToast("Pedido pronto e enviado para a Expedição.");
+      return renderProduction();
+    }
+    showToast(message);
+    return renderProduction();
+  }
+
   function bindProduction(){
     main.onclick=async function(ev){
       var b=ev.target.closest("[data-prod-action]"); if(!b)return;
@@ -80,7 +94,7 @@ export function installInternalFlow(ctx){
       if(a==="update"){
         var status=b.dataset.status,q=Number(b.dataset.q);
         var obs=status==="indisponivel"?"Estoque indisponível - produto em falta.":null;
-        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);showToast(status==="indisponivel"?"Produto marcado em falta.":"Item conferido.");await renderProduction()}catch(e){showToast(e.message)}
+        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem(status==="indisponivel"?"Produto marcado em falta.":"Item conferido.")}catch(e){showToast(e.message)}
       }
       if(a==="reopen"){
         try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:"em_producao",p_quantidade_faturada:Number(b.dataset.q),p_observacao:"Item reaberto para conferência"},true);showToast("Item reaberto.");await renderProduction()}catch(e){showToast(e.message)}
@@ -93,7 +107,7 @@ export function installInternalFlow(ctx){
         if(!Number.isFinite(q)||q<0||q>max){showToast("Quantidade inválida.");return}
         var status=q<=0?"indisponivel":"separado";
         var obs=q<=0?"Estoque indisponível - produto em falta.":q<max?"Estoque insuficiente - quantidade parcial disponível.":null;
-        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);showToast("Quantidade confirmada.");await renderProduction()}catch(e){showToast(e.message)}
+        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem("Quantidade confirmada.")}catch(e){showToast(e.message)}
       }
       if(a==="finish"){
         try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);state.productionOpenOrder=null;showToast("Produção concluída. Pedido enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
