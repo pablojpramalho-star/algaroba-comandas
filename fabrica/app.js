@@ -1,4 +1,4 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261007-flow7";
+import { installInternalFlow } from "./internal-flow.js?v=20261007-flow8";
 import { installInternalAdmin } from "./internal-admin.js?v=20261007-admin1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
