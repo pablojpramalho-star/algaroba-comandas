@@ -19,6 +19,22 @@
   font-weight:800 !important;
   box-shadow:0 0 0 2px rgba(242,140,40,.18);
 }
+
+.stock-visual-card{border:2px solid #238b45;border-radius:18px;padding:14px;margin:12px 0;background:linear-gradient(135deg,rgba(13,54,31,.78),rgba(24,24,24,.96))}
+.stock-visual-card.stock-near{border-color:#f0a500;background:linear-gradient(135deg,rgba(83,57,0,.72),rgba(24,24,24,.96))}
+.stock-visual-card.stock-low{border-color:#ef4444;background:linear-gradient(135deg,rgba(92,20,20,.72),rgba(24,24,24,.96))}
+.stock-name{font-size:1.28rem;font-weight:900;line-height:1.15;margin-bottom:9px}.stock-main{display:grid;grid-template-columns:minmax(150px,1.15fr) minmax(125px,.85fr);gap:12px;align-items:center}
+.stock-balance{border-radius:14px;padding:10px 14px;background:linear-gradient(135deg,#0f9d3d,#08752e);min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stock-near .stock-balance{background:linear-gradient(135deg,#d99500,#ad7200)}.stock-low .stock-balance{background:linear-gradient(135deg,#d73535,#9f2020)}
+.stock-balance-label{font-size:.78rem;font-weight:900}.stock-balance-number{font-size:3.05rem;font-weight:950;line-height:1}.stock-details{font-size:.95rem;line-height:1.35}
+.stock-alert{margin-top:8px;font-weight:950}.stock-near .stock-alert{color:#ffc12f}.stock-low .stock-alert{color:#ff5a5a}
+.stock-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}.stock-actions .mini{min-height:50px;font-size:1.35rem!important;font-weight:900}.stock-plus{background:#16a34a!important}.stock-minus{background:#dc2626!important}
+@media(max-width:420px){.stock-main{grid-template-columns:1fr}.stock-balance-number{font-size:2.8rem}}
+
+.inventory-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.inventory-category-card{border:1px solid #555;border-radius:16px;padding:16px;background:#202322;text-align:left;color:#fff;min-height:104px}.inventory-category-card b{font-size:1.15rem}.cat-icon{font-size:1.7rem;display:block;margin-bottom:6px}
+.shake-stock-card{border:2px solid #16883d;border-radius:16px;padding:12px;margin:10px 0;background:linear-gradient(135deg,rgba(5,57,25,.75),#191919)}.shake-stock-card.near{border-color:#e6a400;background:linear-gradient(135deg,rgba(84,58,0,.75),#191919)}.shake-stock-card.low{border-color:#ef3434;background:linear-gradient(135deg,rgba(91,14,14,.8),#191919)}
+.shake-grams{font-size:2.6rem;font-weight:950;line-height:1}.shake-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}.shake-controls .btn{min-height:46px;font-weight:900}.shake-add{background:#0aa943!important;color:#fff!important}.shake-remove{background:#e52c2c!important;color:#fff!important}
+@media(max-width:430px){.inventory-category-card{padding:12px;min-height:96px}}
 </style></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -28,7 +44,7 @@
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.14 • FILTROS VISUAIS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.24 • DESCARTÁVEIS + PARA VIAGEM</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -315,10 +331,10 @@ let selectedFillings=[];let fillingContext=null;
 function chooseFillings(name,price){selectedFillings=[];fillingContext={name,price};const opts=catalog['Bases'].slice(4),m=document.getElementById('modal'),mc=document.getElementById('modalContent');mc.innerHTML='';const h=document.createElement('h2');h.textContent='🌽 '+name.replace(' (base)','');const p=document.createElement('p');p.className='muted';p.textContent='Escolha um ou mais recheios. Você também pode adicionar somente a base.';const grid=document.createElement('div');grid.className='choice-grid';opts.forEach((o,j)=>{const btn=document.createElement('button');btn.type='button';btn.className='choice';btn.innerHTML=`${o[0]}<br><small>+ ${brl(o[1])}</small>`;btn.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();toggleFilling(j,btn)});grid.appendChild(btn)});const totalBox=document.createElement('div');totalBox.className='panel';totalBox.style.marginTop='12px';totalBox.innerHTML=`<div class="muted">Total</div><div class="big" id="fillTotal">${brl(price)}</div>`;const actions=document.createElement('div');actions.className='sheet-actions';const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',closeModal);const confirm=document.createElement('button');confirm.type='button';confirm.className='btn primary';confirm.textContent='ADICIONAR À COMANDA';confirm.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();try{confirmFillings()}catch(err){console.error(err);alert('Não foi possível montar o item. Erro: '+err.message)}});actions.append(cancel,confirm);mc.append(h,p,grid,totalBox,actions);m.classList.remove('hide')}
 function toggleFilling(j,btn){const k=selectedFillings.indexOf(j);k>=0?selectedFillings.splice(k,1):selectedFillings.push(j);btn.classList.toggle('selected');const opts=catalog['Bases'].slice(4),total=fillingContext.price+selectedFillings.reduce((a,x)=>a+opts[x][1],0);document.getElementById('fillTotal').textContent=brl(total)}
 function confirmFillings(){if(!fillingContext)return;const opts=catalog['Bases'].slice(4);let finalName=fillingContext.name.replace(' (base)',''),price=fillingContext.price;let comps=[fillingContext.name];selectedFillings.forEach(j=>{finalName+=' + '+opts[j][0];price+=opts[j][1];comps.push(opts[j][0])});pushCart(finalName,price,comps);fillingContext=null;selectedFillings=[];closeModal()}
-function renderCart(){let t=getT();let sent=t.items.map((x,i)=>`<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Já enviado</small></span><span><b>${brl(x.qty*x.price)}</b> <button class='mini danger' onclick='cancelSent(${i})'>Cancelar</button></span></div>`).join('');let pending=cart.map((x,i)=>`<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Aguardando envio</small></span><span><b>${brl(x.qty*x.price)}</b><span class=qtyctl><button class=mini onclick='changeCart(${i},-1)'>−</button><button class=mini onclick='changeCart(${i},1)'>+</button><button class='mini danger' onclick='removeCart(${i})'>×</button></span></span></div>`).join('');document.getElementById('cart').innerHTML=(sent+pending)||'<div class=muted>Nenhum item lançado.</div>';document.getElementById('total').textContent=brl([...t.items,...cart].reduce((a,x)=>a+x.price*x.qty,0))}function changeCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);renderCart()}function removeCart(i){cart.splice(i,1);renderCart()}function cancelSent(i){let t=getT(),it=t.items[i];if(!it)return;let reason=prompt('Motivo do cancelamento de '+it.name+':');if(reason===null||!reason.trim())return alert('Informe o motivo do cancelamento.');reason=reason.trim();let cancelledAt=new Date().toISOString();state.cancellations=state.cancellations||[];state.cancellations.push({at:cancelledAt,table:current==='counter'?'Balcão':'Mesa '+String(current).padStart(2,'0'),item:{...it},reason,operator:state.activeOperator});let remaining=it.qty;t.orders.forEach(o=>{o.items.forEach(oi=>{if(remaining>0&&oi.name===it.name&&!oi.cancelled){let q=Math.min(oi.qty,remaining);if(q===oi.qty){oi.cancelled=true;oi.cancelReason=reason;oi.cancelledAt=cancelledAt;oi.cancelledBy=state.activeOperator;remaining-=q}else{oi.qty-=q;o.items.push({...oi,qty:q,cancelled:true,cancelReason:reason,cancelledAt,cancelledBy:state.activeOperator});remaining-=q}}})});inventoryReturn(it,'cancelamento');t.items.splice(i,1);if(!t.items.length&&!cart.length)t.status='livre';save();renderCart();alert('Item cancelado. Ele continuará visível na Produção em vermelho, com o motivo.')}function sendOrder(){
+function renderCart(){let t=getT();let sent=t.items.map((x,i)=>`<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Já enviado${x.takeaway?' • 🛍️ Para viagem':' • 🍽️ Local'}</small></span><span><b>${brl(x.qty*x.price)}</b> <button class='mini danger' onclick='cancelSent(${i})'>Cancelar</button></span></div>`).join('');let pending=cart.map((x,i)=>`<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Aguardando envio</small><br>${cartTakeawayControl(x,i)}</span><span><b>${brl(x.qty*x.price)}</b><span class=qtyctl><button class=mini onclick='changeCart(${i},-1)'>−</button><button class=mini onclick='changeCart(${i},1)'>+</button><button class='mini danger' onclick='removeCart(${i})'>×</button></span></span></div>`).join('');document.getElementById('cart').innerHTML=(sent+pending)||'<div class=muted>Nenhum item lançado.</div>';document.getElementById('total').textContent=brl([...t.items,...cart].reduce((a,x)=>a+x.price*x.qty,0))}function changeCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);renderCart()}function removeCart(i){cart.splice(i,1);renderCart()}function cancelSent(i){let t=getT(),it=t.items[i];if(!it)return;let reason=prompt('Motivo do cancelamento de '+it.name+':');if(reason===null||!reason.trim())return alert('Informe o motivo do cancelamento.');reason=reason.trim();let cancelledAt=new Date().toISOString();state.cancellations=state.cancellations||[];state.cancellations.push({at:cancelledAt,table:current==='counter'?'Balcão':'Mesa '+String(current).padStart(2,'0'),item:{...it},reason,operator:state.activeOperator});let remaining=it.qty;t.orders.forEach(o=>{o.items.forEach(oi=>{if(remaining>0&&oi.name===it.name&&!oi.cancelled){let q=Math.min(oi.qty,remaining);if(q===oi.qty){oi.cancelled=true;oi.cancelReason=reason;oi.cancelledAt=cancelledAt;oi.cancelledBy=state.activeOperator;remaining-=q}else{oi.qty-=q;o.items.push({...oi,qty:q,cancelled:true,cancelReason:reason,cancelledAt,cancelledBy:state.activeOperator});remaining-=q}}})});inventoryReturn(it,'cancelamento');returnDisposableForItem(it);t.items.splice(i,1);if(!t.items.length&&!cart.length)t.status='livre';save();renderCart();alert('Item cancelado. Ele continuará visível na Produção em vermelho, com o motivo.')}function sendOrder(){
  if(!cart.length)return alert('Adicione algum produto.');
  for(const it of cart){for(const k of (it.stockComponents||[stockKey(it.name)])){let inv=state.inventory.items[k];if(inv&&inv.track!==false&&Number(inv.qty||0)<Number(it.qty||0))return alert('Estoque insuficiente: '+k+'\nDisponível: '+Number(inv.qty||0));}}
- for(const it of cart)inventoryConsume(it);
+ for(const it of cart){let snap=shakeCmvSnapshot(it);if(snap){let dc=disposableCostForItem(it);if(dc){snap.parts.disposables=dc;snap.total+=dc}it.cmvAtSale=snap.total;it.unitCost=snap.total;it.cmvSnapshot=snap}else{let dc=disposableCostForItem(it);if(dc)it.disposableCmvAtSale=dc}inventoryConsume(it);consumeDisposableForItem(it);}
  let t=getT(),order={id:Date.now(),createdAt:Date.now(),time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),operator:state.activeOperator,items:cart.map(x=>({...x})),status:'NOVO'};
  if(current==='counter'){
    let ticket=nextCounterTicket(),items=cart.map(x=>({...x}));
@@ -520,10 +536,33 @@ function renderInternalSummary(){
 }
 
 function internalPersonOptions(){
- let names=new Set(['Pablo','Cláudia','Claudevânia','Márcia']);
- (state.operators||[]).forEach(x=>x&&names.add(x));
- internalPeople().forEach(x=>x&&names.add(x));
- return [...names].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ state.internalAccounts=state.internalAccounts||{withdrawals:[],settlements:[]};
+ state.internalAccounts.people=state.internalAccounts.people||[];
+ let names=new Set(['Pablo Pontes','Márcia Campos','Cláudia']);
+ state.internalAccounts.people.forEach(x=>x&&names.add(normalizeInternalPerson(x)));
+ internalPeople().forEach(x=>x&&names.add(normalizeInternalPerson(x)));
+ return [...names].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
+function normalizeInternalPerson(n){
+ let x=(n||'').trim(),m={
+  'Pablo':'Pablo Pontes','Pablo Pontes':'Pablo Pontes',
+  'Márcia':'Márcia Campos','Marcia':'Márcia Campos','Márcia Campos':'Márcia Campos','Marcia Campos':'Márcia Campos',
+  'Cláudia':'Cláudia','Claudia':'Cláudia','Claudevânia':'Cláudia','Claudevania':'Cláudia'
+ };
+ return m[x]||x;
+}
+function internalDebt(person){
+ person=normalizeInternalPerson(person);
+ let w=(state.internalAccounts?.withdrawals||[]).filter(x=>normalizeInternalPerson(x.person)===person).reduce((a,x)=>a+Number(x.total||0),0);
+ let p=(state.internalAccounts?.settlements||[]).filter(x=>normalizeInternalPerson(x.person)===person).reduce((a,x)=>a+Number(x.value??x.amount??0),0);
+ return Math.max(0,w-p);
+}
+async function addInternalPerson(){
+ if(!adminOnly())return alert('Somente Administrador.');
+ let n=prompt('Nome da pessoa / cliente do fiado:');n=(n||'').trim();if(!n)return;
+ state.internalAccounts=state.internalAccounts||{withdrawals:[],settlements:[]};state.internalAccounts.people=state.internalAccounts.people||[];
+ if(!state.internalAccounts.people.includes(n))state.internalAccounts.people.push(n);
+ await persistAdminSaleEdit();if(activeReportModule==='internal')renderInternalPeopleChooser();
 }
 function internalWithdrawalCounter(id){
  let t=counterOrderById(id);
@@ -551,6 +590,7 @@ async function confirmInternalWithdrawal(){
  let person=(selected==='__other__'?(document.getElementById('internalPersonOther')?.value||''):selected).trim();
  let note=(document.getElementById('internalNote')?.value||'').trim();
  if(!person)return alert('Informe quem fez a retirada.');
+ person=normalizeInternalPerson(person);
  let t=payCtx?.tableId==='counterQueue'?counterOrderById(payCtx.counterId):state.counter;
  if(!t||!t.items?.length)return alert('O pedido de balcão já foi fechado.');
  let liveTotal=t.items.reduce((a,x)=>a+x.price*x.qty,0);
@@ -638,6 +678,20 @@ async function confirmCloseCash(){
  showCashClosureShare(closure);
 }
 
+
+function printableDocument(title,body){
+ return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>
+ body{font-family:Arial,sans-serif;color:#161616;background:#fff;max-width:820px;margin:0 auto;padding:22px}
+ h1{font-size:24px;margin:0 0 3px}h2{font-size:19px;margin:22px 0 8px}h3{font-size:16px;margin:16px 0 6px}
+ .muted{color:#666}.panel{border:1px solid #bbb;border-radius:10px;padding:12px;margin:9px 0}.cart-row,.r{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #ddd;padding:8px 0}.cart-row:last-child,.r:last-child{border-bottom:0}.big{font-size:22px;font-weight:bold}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}button{display:none!important}
+ @media print{body{padding:0}.panel{break-inside:avoid}.grid{display:block}}
+ </style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script></body></html>`;
+}
+function openPrintableReport(title,body){
+ let w=window.open('','_blank');if(!w){alert('Permita pop-ups no navegador para gerar o PDF.');return false}
+ w.document.open();w.document.write(printableDocument(title,body));w.document.close();return true;
+}
+
 function closureReportText(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0);return `ALGAROBA SHAKES GRILLS
 FECHAMENTO DE CAIXA
 Data: ${d.toLocaleDateString('pt-BR')}
@@ -660,9 +714,41 @@ Situação: ${Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA'}`}
 
 function closureReportHTML(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0),st=Math.abs(df)<.005?'CAIXA CERTO':df>0?'SOBRA':'FALTA';let rows=[['Abertura',brl(c.opening||0)],['Vendas',brl(c.sales||0)],['Dinheiro',brl(bp.Dinheiro||0)],['Pix',brl(bp.Pix||0)],['Débito',brl(bp['Débito']||0)],['Crédito',brl(bp['Crédito']||0)],['Entradas',brl(en)],['Saídas/Sangrias',brl(sa)]];return `<!doctype html><html><head><meta charset=utf-8><title>Fechamento Algaroba</title><style>body{font-family:Arial,sans-serif;color:#222;max-width:720px;margin:30px auto;padding:20px}h1{font-size:24px;margin-bottom:2px}.sub{color:#666}.r{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:9px 0}.box{border:2px solid #222;padding:14px;margin-top:20px}.big{font-size:20px;font-weight:bold}@media print{body{margin:0}}</style></head><body><h1>ALGAROBA SHAKES GRILLS</h1><div class=sub>Relatório de Fechamento de Caixa</div><p><b>Data:</b> ${d.toLocaleDateString('pt-BR')}<br><b>Turno:</b> ${new Date(c.openedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}<br><b>Operador:</b> ${esc(c.closedBy||'-')}</p>${rows.map(x=>`<div class=r><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}<div class=box><div class=r><span>Esperado em dinheiro</span><b>${brl(c.expected||0)}</b></div><div class=r><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class="r big"><span>Diferença</span><b>${brl(df)}</b></div><p><b>${st}</b></p></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`}
 
-function showCashClosureShare(c){window.lastCashClosure=c;let df=Number(c.difference||0),st=Math.abs(df)<.005?'✅ CAIXA CERTO':df>0?'⚠️ SOBRA':'⚠️ FALTA';document.getElementById('modalContent').innerHTML=`<h2>✅ Caixa fechado com sucesso</h2><div class=panel><div class=cart-row><span>Operador</span><b>${esc(c.closedBy||'-')}</b></div><div class=cart-row><span>Vendas</span><b>${brl(c.sales||0)}</b></div><div class=cart-row><span>Esperado</span><b>${brl(c.expected||0)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class=cart-row><span>${st}</span><b>${brl(df)}</b></div></div><p class=muted>Envie o fechamento ao administrativo sem acessar a Central de Relatórios.</p><button class="btn primary" style="width:100%;margin:6px 0" onclick=generateClosurePDF()>📄 GERAR PDF</button><button class="btn primary" style="width:100%;margin:6px 0" onclick=shareClosureWhatsApp()>📲 ENVIAR PELO WHATSAPP</button><button class=btn style="width:100%;margin-top:6px" onclick=closeModal()>CONCLUIR</button>`;document.getElementById('modal').classList.remove('hide')}
 
-function generateClosurePDF(){let c=window.lastCashClosure;if(!c)return alert('Fechamento não localizado.');let w=window.open('','_blank');if(!w)return alert('Permita pop-ups no navegador e tente novamente.');w.document.write(closureReportHTML(c));w.document.close()}
+function replenishmentItems(){
+ ensureInventory();ensureShakeFlavorInventory();
+ let catalogRows=inventoryCatalog().filter(p=>!isGenericShakeSize(p)),seen=new Set(catalogRows.map(p=>p.key));
+ for(const n of shakeFlavorNamesFromProducts())if(!seen.has(n))catalogRows.push({key:n,cat:'Shakes',price:0});
+ return catalogRows.map(p=>{
+   let x=state.inventory.items[p.key];if(!x||x.track===false)return null;
+   let shake=isShakeInventoryProduct(p),qty=Number(x.qty||0),min=shake?500:Number(x.min||0);
+   if(shake){
+     if(qty>500)return null;
+     return {name:p.key,cat:'Shakes',qty,min,status:qty<=200?'CRÍTICO':'ATENÇÃO',unit:'g'};
+   }
+   if(min<=0)return null;
+   if(qty>Math.ceil(min*1.25))return null;
+   return {name:p.key,cat:inventoryCategoryName(p.cat),qty,min,status:qty<=min?'BAIXO':'ATENÇÃO',unit:'un'};
+ }).filter(Boolean).sort((a,b)=>(a.status==='CRÍTICO'||a.status==='BAIXO'?-1:1)-(b.status==='CRÍTICO'||b.status==='BAIXO'?-1:1)||a.cat.localeCompare(b.cat,'pt-BR')||a.name.localeCompare(b.name,'pt-BR'));
+}
+function replenishmentReportBody(){
+ let items=replenishmentItems(),groups={};items.forEach(x=>(groups[x.cat]=groups[x.cat]||[]).push(x));
+ return `<h1>ALGAROBA SHAKES GRILLS</h1><div class=muted>Relatório de Reposição de Estoque</div><p><b>Emitido:</b> ${new Date().toLocaleString('pt-BR')}<br><b>Operador:</b> ${esc(state.activeOperator||'-')}</p><div class=panel><b>${items.length} item(ns) precisam de atenção/reposição</b></div>${Object.entries(groups).map(([cat,arr])=>`<h2>${inventoryCategoryIcon(cat)} ${esc(cat)}</h2><div class=panel>${arr.map(x=>`<div class=cart-row><span><b>${esc(x.name)}</b><div class=muted>${x.status}</div></span><span style="text-align:right"><b>${x.qty.toLocaleString('pt-BR')} ${x.unit}</b><div class=muted>Referência: ${x.min.toLocaleString('pt-BR')} ${x.unit}</div></span></div>`).join('')}</div>`).join('')||'<div class=panel>✅ Nenhum produto em alerta de reposição.</div>'}`;
+}
+function replenishmentReportText(){
+ let items=replenishmentItems(),groups={};items.forEach(x=>(groups[x.cat]=groups[x.cat]||[]).push(x));
+ let t=`ALGAROBA SHAKES GRILLS\nRELATÓRIO DE REPOSIÇÃO\n${new Date().toLocaleString('pt-BR')}\n\n`;
+ if(!items.length)return t+'✅ Nenhum produto em alerta de reposição.';
+ for(const [cat,arr] of Object.entries(groups)){t+=`${inventoryCategoryIcon(cat)} ${cat.toUpperCase()}\n`;for(const x of arr)t+=`• ${x.name}: ${x.qty.toLocaleString('pt-BR')} ${x.unit} — ${x.status} (ref. ${x.min.toLocaleString('pt-BR')} ${x.unit})\n`;t+='\n'}
+ return t;
+}
+function generateReplenishmentPDF(){openPrintableReport('Reposição de Estoque - Algaroba',replenishmentReportBody())}
+async function shareReplenishmentWhatsApp(){let t=replenishmentReportText();if(navigator.share){try{await navigator.share({title:'Reposição de Estoque - Algaroba',text:t});return}catch(e){if(e.name==='AbortError')return}}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
+function showReplenishmentPreview(){let items=replenishmentItems();document.getElementById('modalContent').innerHTML=`<h2>📦 Reposição para o próximo dia</h2><div class=panel><div class=muted>Produtos em baixa ou próximos do mínimo</div><div class=big>${items.length}</div></div><div style="max-height:42vh;overflow:auto">${items.map(x=>`<div class=panel><div class=cart-row><span><b>${esc(x.name)}</b><div class=muted>${esc(x.cat)} • ${x.status}</div></span><b>${x.qty.toLocaleString('pt-BR')} ${x.unit}</b></div></div>`).join('')||'<div class=panel>✅ Nenhum item precisa de reposição.</div>'}</div><button class="btn primary" style="width:100%;margin:6px 0" onclick=generateReplenishmentPDF()>📄 GERAR PDF DE REPOSIÇÃO</button><button class="btn primary" style="width:100%;margin:6px 0" onclick=shareReplenishmentWhatsApp()>📲 ENVIAR REPOSIÇÃO PELO WHATSAPP</button><button class=btn style="width:100%;margin-top:6px" onclick='showCashClosureShare(window.lastCashClosure)'>← VOLTAR AO FECHAMENTO</button>`}
+
+function showCashClosureShare(c){window.lastCashClosure=c;let df=Number(c.difference||0),st=Math.abs(df)<.005?'✅ CAIXA CERTO':df>0?'⚠️ SOBRA':'⚠️ FALTA';document.getElementById('modalContent').innerHTML=`<h2>✅ Caixa fechado com sucesso</h2><div class=panel><div class=cart-row><span>Operador</span><b>${esc(c.closedBy||'-')}</b></div><div class=cart-row><span>Vendas</span><b>${brl(c.sales||0)}</b></div><div class=cart-row><span>Esperado</span><b>${brl(c.expected||0)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class=cart-row><span>${st}</span><b>${brl(df)}</b></div></div><p class=muted>Envie o fechamento ao administrativo sem acessar a Central de Relatórios.</p><button class="btn primary" style="width:100%;margin:6px 0" onclick=generateClosurePDF()>📄 GERAR PDF</button><button class="btn primary" style="width:100%;margin:6px 0" onclick=shareClosureWhatsApp()>📲 ENVIAR PELO WHATSAPP</button><button class="btn" style="width:100%;margin:10px 0;border:2px solid #e6a400" onclick=showReplenishmentPreview()>📦 RELATÓRIO DE REPOSIÇÃO / COMPRA</button><button class=btn style="width:100%;margin-top:6px" onclick=closeModal()>CONCLUIR</button>`;document.getElementById('modal').classList.remove('hide')}
+
+function generateClosurePDF(){let c=window.lastCashClosure;if(!c)return alert('Fechamento não localizado.');let html=closureReportHTML(c),body=(html.match(/<body>([\s\S]*?)<script>/i)||[])[1];if(!body)body=`<h1>ALGAROBA SHAKES GRILLS</h1><pre>${esc(closureReportText(c))}</pre>`;openPrintableReport('Fechamento de Caixa - Algaroba',body)}
 
 async function shareClosureWhatsApp(){let c=window.lastCashClosure;if(!c)return alert('Fechamento não localizado.');let t=closureReportText(c);if(navigator.share){try{await navigator.share({title:'Fechamento de Caixa - Algaroba',text:t});return}catch(e){if(e.name==='AbortError')return}}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 function stockKey(name){
@@ -697,17 +783,125 @@ function inventoryCatalog(){
 }
 function ensureInventory(){state.inventory=state.inventory||{items:{},movements:[]};state.inventory.items=state.inventory.items||{};state.inventory.movements=state.inventory.movements||[];for(const p of inventoryCatalog()){if(!state.inventory.items[p.key])state.inventory.items[p.key]={qty:0,cost:0,min:0,track:true,category:p.cat};else state.inventory.items[p.key].category=state.inventory.items[p.key].category||p.cat}}
 function addInvMovement(type,key,delta,reason,before,after,cost){state.inventory.movements.push({at:new Date().toISOString(),type,key,qty:Number(delta||0),before:Number(before||0),after:Number(after||0),unitCost:Number(cost||0),value:Math.abs(Number(delta||0))*Number(cost||0),operator:state.activeOperator,reason:reason||''})}
-function inventoryConsume(it){ensureInventory();for(const k of (it.stockComponents||[stockKey(it.name)])){let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=-Number(it.qty||0);x.qty=before+delta;addInvMovement('saida',k,delta,'Venda / pedido enviado',before,x.qty,x.cost)}}
+function inventoryConsume(it){ensureInventory();
+ let nm=String(it?.name||''),size300=/300\s*ml/i.test(nm),size500=/500\s*ml/i.test(nm);
+ if(!size300&&!size500){
+   let sizeText=[it?.variant,it?.flavor,it?.option,it?.selectedVariant].filter(Boolean).join(' ');
+   size300=/300\s*ml/i.test(sizeText);size500=/500\s*ml/i.test(sizeText);
+ }
+ if(size300||size500){
+   let p=resolveShakeFlavorStock(it);
+   if(p){
+     ensureShakeStockUnit(p);
+     let cfg=shakeCostConfig(),x=state.inventory.items[p.key],grams=(size300?Number(cfg.grams300||90):Number(cfg.grams500||130))*Number(it.qty||1),before=Number(x.qty||0);
+     x.qty=Math.max(0,before-grams);
+     addInvMovement('saida',p.key,-grams,`Venda ${p.key} • Shake ${size300?'300 ml':'500 ml'} • ${grams} g`,before,x.qty,Number(x.cost||0)/1000);
+     return;
+   }
+ }
+ for(const k of (it.stockComponents||[stockKey(it.name)])){let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=-Number(it.qty||0);x.qty=before+delta;addInvMovement('saida',k,delta,'Venda / pedido enviado',before,x.qty,x.cost)}}
 function inventoryReturn(it,reason){ensureInventory();for(const k of (it.stockComponents||[stockKey(it.name)])){let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=Number(it.qty||0);x.qty=before+delta;addInvMovement('retorno',k,delta,reason||'Retorno',before,x.qty,x.cost)}}
 async function saveInventoryNow(){localStorage.setItem('algarobaState',JSON.stringify(state));if(!cloudReady)return;cloudPausePullUntil=Date.now()+5000;let row={record_key:'inventory',data:state.inventory||{items:{},movements:[]},updated_at:new Date().toISOString()};try{setSyncStatus('offline','SALVANDO ESTOQUE…');await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify([row])});cloudSnapshot['inventory']=JSON.stringify(row.data);setSyncStatus('online','ONLINE')}catch(e){cloudLastError=e.message||String(e);setSyncStatus('error','ERRO: TOQUE AQUI');throw e}finally{cloudPausePullUntil=Date.now()+2000}}
-async function editInventory(key){ensureInventory();let x=state.inventory.items[key];let q=prompt('Estoque atual de '+key+':',x.qty);if(q===null)return;let c=prompt('Custo unitário de '+key+' (R$):',x.cost);if(c===null)return;let m=prompt('Estoque mínimo para alerta:',x.min);if(m===null)return;q=parseFloat(String(q).replace(',','.'));c=parseFloat(String(c).replace(',','.'));m=parseFloat(String(m).replace(',','.'));if([q,c,m].some(Number.isNaN))return alert('Informe apenas valores numéricos.');let before=Number(x.qty||0),oldCost=Number(x.cost||0);x.qty=q;x.cost=c;x.min=m;x.track=true;addInvMovement('ajuste',key,q-before,'Cadastro/ajuste manual'+(oldCost!==c?' • custo '+brl(oldCost)+' → '+brl(c):''),before,q,c);localStorage.setItem('algarobaState',JSON.stringify(state));renderInventory();try{await saveInventoryNow();renderInventory();alert('Estoque atualizado e sincronizado: '+key)}catch(e){alert('O estoque foi salvo neste aparelho, mas houve erro ao sincronizar.')}}
-async function inventoryEntryFor(key){ensureInventory();let x=state.inventory.items[key];let q=parseFloat(String(prompt('➕ ENTRADA • '+key+'\nQuantidade recebida:')||'').replace(',','.'));if(!q||q<=0)return;let c=prompt('Custo unitário desta entrada (R$):',x.cost);if(c!==null&&c!==''){let nv=parseFloat(String(c).replace(',','.'));if(!Number.isNaN(nv))x.cost=nv}let before=Number(x.qty||0);x.qty=before+q;addInvMovement('entrada',key,q,'Entrada de estoque',before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Entrada registrada: +'+q+' • '+key)}catch(e){alert('Entrada salva neste aparelho, mas houve erro ao sincronizar.')}}
+async function editInventory(key){ensureInventory();let x=state.inventory.items[key];let q=prompt('Estoque atual de '+key+':',x.qty);if(q===null)return;let c=prompt((String(x.cat||'').toLowerCase().includes('shake')?'Custo POR QUILO do sabor ':'Custo unitário de ')+key+' (R$):',x.cost);if(c===null)return;let m=prompt('Estoque mínimo para alerta:',x.min);if(m===null)return;q=parseFloat(String(q).replace(',','.'));c=parseFloat(String(c).replace(',','.'));m=parseFloat(String(m).replace(',','.'));if([q,c,m].some(Number.isNaN))return alert('Informe apenas valores numéricos.');let before=Number(x.qty||0),oldCost=Number(x.cost||0);x.qty=q;x.cost=c;x.min=m;x.track=true;addInvMovement('ajuste',key,q-before,'Cadastro/ajuste manual'+(oldCost!==c?' • custo '+brl(oldCost)+' → '+brl(c):''),before,q,c);localStorage.setItem('algarobaState',JSON.stringify(state));renderInventory();try{await saveInventoryNow();renderInventory();alert('Estoque atualizado e sincronizado: '+key)}catch(e){alert('O estoque foi salvo neste aparelho, mas houve erro ao sincronizar.')}}
+async function inventoryEntryFor(key){ensureInventory();let x=state.inventory.items[key];let q=parseFloat(String(prompt('➕ ENTRADA • '+key+'\nQuantidade recebida:')||'').replace(',','.'));if(!q||q<=0)return;let c=prompt((String(x.cat||'').toLowerCase().includes('shake')?'Custo POR QUILO desta entrada (R$):':'Custo unitário desta entrada (R$):'),x.cost);if(c!==null&&c!==''){let nv=parseFloat(String(c).replace(',','.'));if(!Number.isNaN(nv))x.cost=nv}let before=Number(x.qty||0);x.qty=before+q;addInvMovement('entrada',key,q,'Entrada de estoque',before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Entrada registrada: +'+q+' • '+key)}catch(e){alert('Entrada salva neste aparelho, mas houve erro ao sincronizar.')}}
 async function inventoryLossFor(key){ensureInventory();let x=state.inventory.items[key],q=parseFloat(String(prompt('➖ PERDA • '+key+'\nQuantidade perdida/descartada:')||'').replace(',','.'));if(!q||q<=0)return;if(q>Number(x.qty||0)&&!confirm('A quantidade informada é maior que o saldo atual. Continuar?'))return;let reason=prompt('Motivo da perda (opcional):')||'Perda/descarte';let before=Number(x.qty||0);x.qty=Math.max(0,before-q);let realDelta=x.qty-before;addInvMovement('perda',key,realDelta,reason,before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Perda registrada: '+Math.abs(realDelta)+' • '+key)}catch(e){alert('Perda salva neste aparelho, mas houve erro ao sincronizar.')}}
 async function inventoryCountFor(key){ensureInventory();let x=state.inventory.items[key],q=prompt('⚖️ INVENTÁRIO • '+key+'\nQuantidade física contada:',x.qty);if(q===null)return;q=parseFloat(String(q).replace(',','.'));if(Number.isNaN(q)||q<0)return alert('Informe uma quantidade válida.');let before=Number(x.qty||0),delta=q-before;if(delta===0)return alert('O saldo já está correto.');x.qty=q;addInvMovement('ajuste',key,delta,'Contagem física de inventário',before,q,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Inventário atualizado: '+key+' • saldo '+q)}catch(e){alert('Ajuste salvo neste aparelho, mas houve erro ao sincronizar.')}}
 async function inventoryEntry(){ensureInventory();let keys=inventoryCatalog().map(x=>x.key);let key=prompt('Digite o nome exato do produto para entrada:\n\n'+keys.slice(0,25).join(' • ')+'\n...');if(!key)return;key=keys.find(k=>k.toLowerCase()===key.trim().toLowerCase());if(!key)return alert('Produto não encontrado. Use o nome exibido na aba Estoque.');let q=parseFloat(String(prompt('Quantidade recebida:')||'').replace(',','.'));if(!q||q<=0)return;let x=state.inventory.items[key],before=Number(x.qty||0);let c=prompt('Custo unitário desta entrada (R$):',x.cost);if(c!==null&&c!==''){let nv=parseFloat(String(c).replace(',','.'));if(!Number.isNaN(nv))x.cost=nv}x.qty=before+q;addInvMovement('entrada',key,q,'Entrada de estoque',before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert('Entrada registrada e sincronizada: +'+q+' '+key)}catch(e){alert('Entrada salva neste aparelho, mas houve erro ao sincronizar.')}}
 async function inventoryAdjustment(){ensureInventory();let key=prompt('Produto a ajustar/perda:');if(!key)return;let real=Object.keys(state.inventory.items).find(k=>k.toLowerCase()===key.trim().toLowerCase());if(!real)return alert('Produto não encontrado.');let d=parseFloat(String(prompt('Quantidade do ajuste. Use negativo para perda (ex.: -3) ou positivo para acréscimo:')||'').replace(',','.'));if(!d||Number.isNaN(d))return;let reason=prompt('Motivo do ajuste/perda:')||'Ajuste manual',x=state.inventory.items[real],before=Number(x.qty||0);x.qty=before+d;addInvMovement(d<0?'perda':'ajuste',real,d,reason,before,x.qty,x.cost);renderInventory();try{await saveInventoryNow();renderInventory();alert((d<0?'Perda':'Ajuste')+' registrado e sincronizado.')}catch(e){alert('Ajuste salvo neste aparelho, mas houve erro ao sincronizar.')}}
 function renderInventoryHistory(){let el=document.getElementById('inventoryHistory');if(!el)return;let type=document.getElementById('invMoveType')?.value||'',search=(document.getElementById('invMoveSearch')?.value||'').trim().toLowerCase();let ms=(state.inventory?.movements||[]).slice().reverse().filter(m=>(!type||m.type===type)&&(!search||String(m.key||'').toLowerCase().includes(search))).slice(0,100);let labels={entrada:'📥 Entrada',saida:'🛒 Venda',perda:'🗑️ Perda',ajuste:'⚖️ Ajuste',retorno:'↩️ Retorno'};el.innerHTML=ms.map(m=>`<div class=cart-row><span><b>${labels[m.type]||m.type} • ${m.key}</b><div class=muted>${new Date(m.at).toLocaleString('pt-BR')} • 👤 ${m.operator||'Não identificado'}<br>${m.reason||''}${m.before!==undefined?` • saldo ${Number(m.before)} → ${Number(m.after)}`:''}</div></span><span style='text-align:right'><b>${Number(m.qty)>0?'+':''}${Number(m.qty||0)}</b>${m.unitCost?`<div class=muted>${brl(m.value||0)}</div>`:''}</span></div>`).join('')||'<div class=muted>Nenhuma movimentação encontrada.</div>'}
-function renderInventory(){ensureInventory();let rows=inventoryCatalog(),low=rows.filter(p=>{let x=state.inventory.items[p.key];return x.track!==false&&Number(x.qty||0)<=Number(x.min||0)}),value=rows.reduce((a,p)=>{let x=state.inventory.items[p.key];return a+Number(x.qty||0)*Number(x.cost||0)},0),loss=(state.inventory.movements||[]).filter(m=>m.type==='perda').reduce((a,m)=>a+Number(m.value||Math.abs(Number(m.qty||0))*Number(m.unitCost||0)),0);let sum=document.getElementById('inventorySummary');if(!sum)return;sum.innerHTML=`<div class=grid><div class=panel><div class=muted>Itens cadastrados</div><div class=big>${rows.length}</div></div><div class=panel><div class=muted>Alertas de estoque</div><div class=big>${low.length}</div></div><div class=panel><div class=muted>Valor estimado em estoque</div><div class=big>${brl(value)}</div></div><div class=panel><div class=muted>Perdas registradas</div><div class=big>${brl(loss)}</div></div></div>`;let groups={};rows.forEach(p=>(groups[p.cat]=groups[p.cat]||[]).push(p));document.getElementById('inventoryList').innerHTML=Object.entries(groups).map(([cat,ps])=>`<h3>${cat}</h3><div class=panel>${ps.map(p=>{let x=state.inventory.items[p.key],alerta=Number(x.qty||0)<=Number(x.min||0);let margin=p.price?((p.price-Number(x.cost||0))/p.price*100):0;return `<div class=cart-row><span><b>${p.key}</b><div class=muted>${alerta?'⚠️ ESTOQUE BAIXO • ':''}Saldo ${Number(x.qty||0)} • mínimo ${Number(x.min||0)}<br>Custo ${brl(Number(x.cost||0))} • Venda ${brl(p.price)} • Margem bruta ${margin.toFixed(1).replace('.',',')}%</div></span><span style='display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end'><button class=mini title='Entrada' aria-label='Entrada' onclick='inventoryEntryFor(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>➕</button><button class=mini title='Perda' aria-label='Perda' onclick='inventoryLossFor(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>➖</button><button class=mini title='Inventário' aria-label='Inventário' onclick='inventoryCountFor(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>⚖️</button><button class=mini title='Cadastro' aria-label='Cadastro' onclick='editInventory(${JSON.stringify(p.key)})' style='font-size:18px;padding:7px 9px'>⚙️</button></span></div>`}).join('')}</div>`).join('');renderInventoryHistory()}
+
+
+const SHAKE_COST_DEFAULTS={iceBagCost:30,iceBagGrams:50000,milkPackCost:28,milkPackGrams:750,cupCost:.30,strawCost:.12,toppingCost:.50,grams300:90,grams500:130,ice300:300,ice500:500,milk300:20,milk500:30};
+function shakeCostConfig(){state.shakeCostConfig=Object.assign({},SHAKE_COST_DEFAULTS,state.shakeCostConfig||{});return state.shakeCostConfig}
+function shakeRecipeCost(flavor,size){let c=shakeCostConfig(),x=state.inventory?.items?.[flavor]||{},kg=Number(x.cost||0),small=Number(size)===300,fg=small?c.grams300:c.grams500,ig=small?c.ice300:c.ice500,mg=small?c.milk300:c.milk500,p={flavor:kg/1000*fg,ice:c.iceBagCost/c.iceBagGrams*ig,milk:c.milkPackCost/c.milkPackGrams*mg,cup:Number(c.cupCost),straw:Number(c.strawCost),topping:Number(c.toppingCost)};return {flavor,size:Number(size),kgCost:kg,flavorGrams:fg,iceGrams:ig,milkGrams:mg,parts:p,total:Object.values(p).reduce((a,v)=>a+Number(v||0),0)}}
+function shakeCmvSnapshot(it){let z=[it?.name,it?.variant,it?.flavor,it?.option,it?.selectedVariant].filter(Boolean).join(' '),size=/300\s*ml/i.test(z)?300:/500\s*ml/i.test(z)?500:0;if(!size)return null;let p=resolveShakeFlavorStock(it);return p?shakeRecipeCost(p.key,size):null}
+async function saveShakeCostConfig(){let ids=['iceBagCost','iceBagGrams','milkPackCost','milkPackGrams','cupCost','strawCost','toppingCost','grams300','grams500','ice300','ice500','milk300','milk500'],c=shakeCostConfig();ids.forEach(id=>{let e=document.getElementById('sc_'+id);if(e)c[id]=Number(e.value||0)});state.shakeCostConfig=c;localStorage.setItem('algarobaState',JSON.stringify(state));try{await saveCloud()}catch(e){}alert('Ficha de custo salva. Novas vendas usarão estes valores.');renderShakeCostSettings()}
+function renderShakeCostSettings(){let b=document.getElementById('shakeCostSettings');if(!b)return;let c=shakeCostConfig(),f=(id,l)=>`<label>${l}<input id=sc_${id} type=number step=.01 value="${c[id]}"></label>`;b.innerHTML=`<div class=panel><h3>🧾 Ficha de custo dos Shakes</h3><div class=muted>O custo do sabor é cadastrado por kg em cada sabor. Estes custos gerais serão congelados nas novas vendas.</div><div class=grid>${f('iceBagCost','Gelo — custo pacote R$')}${f('iceBagGrams','Gelo — peso pacote g')}${f('milkPackCost','Leite — custo pacote R$')}${f('milkPackGrams','Leite — peso pacote g')}${f('cupCost','Copo R$')}${f('strawCost','Canudo R$')}${f('toppingCost','Recheio/cobertura R$')}</div><h4>300 ml</h4><div class=grid>${f('grams300','Sabor g')}${f('ice300','Gelo g')}${f('milk300','Leite g')}</div><h4>500 ml</h4><div class=grid>${f('grams500','Sabor g')}${f('ice500','Gelo g')}${f('milk500','Leite g')}</div><button class="btn primary" style="width:100%" onclick=saveShakeCostConfig()>💾 SALVAR</button></div>`}
+function openShakeCostSettings(){document.getElementById('modalContent').innerHTML=`<h2>🧾 Custos dos Shakes</h2><div id=shakeCostSettings></div><button class=btn style="width:100%" onclick=closeModal()>FECHAR</button>`;renderShakeCostSettings()}
+function itemFrozenCmv(it){let q=Number(it?.qty||1);if(Number.isFinite(Number(it?.cmvAtSale)))return Number(it.cmvAtSale)*q;if(Number.isFinite(Number(it?.unitCost)))return Number(it.unitCost)*q;return Number(it?.disposableCmvAtSale||0)}
+function frozenCmvTotal(h){return (h||[]).reduce((a,v)=>a+(v.items||[]).reduce((b,it)=>b+itemFrozenCmv(it),0),0)}
+function shakeCmvBreakdownHtml(h){let r=[];(h||[]).forEach(v=>(v.items||[]).forEach(it=>{let x=it.cmvSnapshot;if(x){let q=Number(it.qty||1),p=x.parts||{};r.push(`<div class=cart-row><span><b>${esc(x.flavor)} ${x.size} ml × ${q}</b><div class=muted>Sabor ${brl(p.flavor*q)} • Gelo ${brl(p.ice*q)} • Leite ${brl(p.milk*q)} • Copo/canudo ${brl((p.cup+p.straw)*q)} • Cobertura ${brl(p.topping*q)}</div></span><b>${brl(x.total*q)}</b></div>`)}}));return r.length?`<h3>🥤 CMV real dos Shakes</h3><div class=panel>${r.join('')}</div>`:''}
+
+
+const DISPOSABLE_CATALOG=[['Copo descartável 300 ml',50],['Copo descartável 500 ml',50],['Tampa descartável 300 ml',50],['Tampa descartável 500 ml',50],['Embalagem Pastel / Tapioca / Rap10',50],['Guardanapo',200],['Canudo Tubão',100],['Canudo Refrigerante',100]];
+function ensureDisposableInventory(){ensureInventory();for(const [key,min] of DISPOSABLE_CATALOG){let x=state.inventory.items[key];if(!x)state.inventory.items[key]={qty:0,min,cost:0,price:0,track:true,cat:'Descartáveis'};else{x.cat='Descartáveis';if(!Number(x.min))x.min=min}}return DISPOSABLE_CATALOG}
+function disposableStockRows(){return ensureDisposableInventory().map(([key])=>({key,cat:'Descartáveis',price:0}))}
+function isTakeaway(it){return !!it?.takeaway}
+function disposableComponentsForItem(it){let all=[it?.name,it?.variant,it?.flavor,it?.option].filter(Boolean).join(' ').toLowerCase(),n=String(it?.name||'').toLowerCase(),q=Number(it?.qty||1),r=[];if((/shake/.test(all)||/suco/.test(all))&&isTakeaway(it)){let sz=/300\s*ml/.test(all)?300:500;r.push({key:`Copo descartável ${sz} ml`,qty:q},{key:`Tampa descartável ${sz} ml`,qty:q},{key:'Canudo Tubão',qty:q})}if(/pastel|tapioca|rap10|rapid[eé]is|rap\s*10/.test(n))r.push({key:'Embalagem Pastel / Tapioca / Rap10',qty:q});return r}
+function disposableCostForItem(it){ensureDisposableInventory();return disposableComponentsForItem(it).reduce((a,c)=>a+Number(state.inventory.items[c.key]?.cost||0)*c.qty,0)}
+function consumeDisposableForItem(it){ensureDisposableInventory();for(const c of disposableComponentsForItem(it)){let x=state.inventory.items[c.key],before=Number(x.qty||0);x.qty=Math.max(0,before-c.qty);addInvMovement('saida',c.key,-c.qty,`Venda • ${it.name}${isTakeaway(it)?' • Para viagem':''}`,before,x.qty,Number(x.cost||0))}}
+function returnDisposableForItem(it){ensureDisposableInventory();for(const c of disposableComponentsForItem(it)){let x=state.inventory.items[c.key],before=Number(x.qty||0);x.qty=before+c.qty;addInvMovement('retorno',c.key,c.qty,`Cancelamento • ${it.name}`,before,x.qty,Number(x.cost||0))}}
+function toggleTakeaway(i){if(!cart[i])return;cart[i].takeaway=!cart[i].takeaway;renderCart()}
+function cartTakeawayControl(x,i){let eligible=/shake|suco/i.test(String(x.name||''));return eligible?`<button class="mini ${x.takeaway?'primary':''}" onclick="toggleTakeaway(${i})">${x.takeaway?'🛍️ PARA VIAGEM':'🍽️ LOCAL'}</button>`:''}
+
+let inventoryViewCategory=null;
+function inventoryCategoryName(cat){let x=(cat||'').toLowerCase();if(x.includes('esp'))return'Espetos';if(x.includes('beb')||x.includes('água')||x.includes('cerve')||x.includes('refri')||x.includes('suco')||x.includes('café'))return'Bebidas';if(x.includes('shake'))return'Shakes';if(x.includes('base'))return'Bases';if(x.includes('reche'))return'Recheios';if(x.includes('molho'))return'Molhos';if(x.includes('porç')||x.includes('petisco')||x.includes('caldo')||x.includes('sopa'))return'Porções / Caldos';if(x.includes('tapi')||x.includes('pastel')||x.includes('cuscuz')||x.includes('rap'))return'Tapiocas / Pastéis';if(x.includes('descart')||x.includes('embalagem')||x.includes('guardanapo')||x.includes('canudo')||x.includes('tampa'))return'Descartáveis';if(x.includes('limpeza')||x.includes('divers'))return'Limpeza / Diversos';return cat||'Outros'}
+function inventoryCategoryIcon(c){return {'Espetos':'🍢','Bebidas':'🥤','Shakes':'🥤','Bases':'🥣','Recheios':'🧀','Molhos':'🥫','Porções / Caldos':'🍟','Tapiocas / Pastéis':'🥟','Descartáveis':'🥤','Limpeza / Diversos':'🧽'}[c]||'📦'}
+function isGenericShakeSize(p){
+ let k=String(p?.key||'').trim().toLowerCase();
+ return /^shake\s*(300|500)\s*ml$/.test(k)||/^(300|500)\s*ml$/.test(k);
+}
+function isShakeInventoryProduct(p){return !isGenericShakeSize(p)&&(inventoryCategoryName(p.cat)==='Shakes'||/shake/i.test(p.cat||''))}
+function shakeFlavorNamesFromProducts(){
+ let names=new Set();
+ // Read flavors directly from the product catalog/options already used by the ordering UI.
+ try{
+   for(const p of (typeof products!=='undefined'?products:[])){
+     let nm=String(p?.name||'');
+     if(!/shake/i.test(nm))continue;
+     for(const source of [p.variants,p.options,p.flavors,p.sabores]){
+       if(Array.isArray(source))for(const v of source){
+         let n=cleanShakeFlavorName(typeof v==='string'?v:(v?.name||v?.label||v?.value||''));
+         if(n&&!/^(300|500)\s*ml$/i.test(n))names.add(n);
+       }
+     }
+   }
+ }catch(e){}
+ // Known Algaroba flavor catalog, used only to ensure stock rows exist even if variants are rendered dynamically.
+ const known=['Abacaxi','Abacaxi com Hortelã','Açaí','Banana','Banana com Canela','Baunilha aos Quatro Leites','Beijinho','Bombom Supreme','Brigadeiro','Café','Cajá','Capuccino','Cartola','Chiclete','Chiclete com Banana','Chocomalt (Ovomaltine)','Chocomenta','Chocolate','Chocolate Branco','Coco','Coco Queimado','Cupuaçu','Doce de Leite','Flocos','Frutas Tropicais','Goiaba','Graviola','Kiwi','Leite Condensado','Limão','Maracujá','Mega Shake','Mentol','Milho Verde','Morango','Danoninho','Nata Goiaba','Biscoito (Oreo)','Pedacinho do Céu','Pistache','Power Milk (Leite Ninho)','Prestígio','Sensações','Tradicional com Açúcar Mascavo','Tradicional Zero Açúcar','Uva'];
+ known.forEach(n=>names.add(n));
+ return [...names];
+}
+function ensureShakeFlavorInventory(){
+ ensureInventory();
+ let names=shakeFlavorNamesFromProducts();
+ for(const name of names){
+   if(!state.inventory.items[name])state.inventory.items[name]={qty:0,min:500,cost:0,price:0,track:true,cat:'Shakes',stockUnit:'g',gramsMigrated:true};
+   else{
+     let x=state.inventory.items[name];
+     x.cat='Shakes';x.stockUnit='g';x.min=500;x.track=x.track!==false;x.gramsMigrated=true;
+   }
+ }
+ return names;
+}
+
+
+function cleanShakeFlavorName(v){
+ return String(v||'').replace(/shake/ig,' ').replace(/\b(300|500)\s*ml\b/ig,' ').replace(/\bR\$\s*\d+[.,]?\d*/ig,' ').replace(/[•|–—\-]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function resolveShakeFlavorStock(it){
+ let candidates=shakeFlavorNamesFromProducts().map(name=>({key:name,cat:'Shakes'}));
+ let raw=[it?.variant,it?.flavor,it?.sabor,it?.option,it?.selectedVariant,it?.name].filter(Boolean).map(cleanShakeFlavorName);
+ for(const txt of raw){
+   let t=txt.toLowerCase();
+   let exact=candidates.find(p=>String(p.key).toLowerCase()===t); if(exact)return exact;
+ }
+ for(const txt of raw){
+   let t=txt.toLowerCase();
+   let found=candidates.find(p=>t.includes(String(p.key).toLowerCase())||String(p.key).toLowerCase().includes(t));if(found)return found;
+ }
+ return null;
+}
+function ensureShakeStockUnit(p){let x=state.inventory.items[p.key];if(!x)return;if(!x.gramsMigrated){let q=Number(x.qty||0);if(q>0&&q<100)x.qty=q*1000;x.min=500;x.gramsMigrated=true}x.stockUnit='g'}
+function inventoryCategoryHome(rows){rows=rows.filter(p=>!isGenericShakeSize(p));let cats={};rows.forEach(p=>{let c=inventoryCategoryName(p.cat);(cats[c]=cats[c]||[]).push(p)});let order=['Espetos','Bebidas','Shakes','Bases','Recheios','Molhos','Porções / Caldos','Tapiocas / Pastéis','Descartáveis','Limpeza / Diversos'],keys=[...order.filter(x=>cats[x]),...Object.keys(cats).filter(x=>!order.includes(x))];return `<div class=panel><h2>📦 Estoque por categoria</h2><div class=muted>Toque na categoria para visualizar os produtos.</div></div><div class=inventory-category-grid>${keys.map(c=>`<button class=inventory-category-card onclick='openInventoryCategory(${JSON.stringify(c)})'><span class=cat-icon>${inventoryCategoryIcon(c)}</span><b>${esc(c)}</b><div class=muted>📦 ${cats[c].length} produtos ›</div></button>`).join('')}</div>`}
+function openInventoryCategory(c){inventoryViewCategory=c;renderInventory()}function closeInventoryCategory(){inventoryViewCategory=null;renderInventory()}
+function shakeStockAdjust(key,delta){ensureInventory();let x=state.inventory.items[key];if(!x)return;let before=Number(x.qty||0),after=Math.max(0,before+delta);x.qty=after;x.min=500;x.stockUnit='g';x.gramsMigrated=true;addInvMovement(delta>=0?'entrada':'saida',key,delta,delta>=0?'Ajuste rápido shake':'Baixa rápida shake',before,after,Number(x.cost||0)/1000);saveInventoryNow();renderInventory()}
+function shakeStockCard(p){ensureShakeStockUnit(p);let x=state.inventory.items[p.key],q=Number(x.qty||0),low=q<=200,near=q>200&&q<500,status=low?'low':near?'near':'',msg=low?'🔴 ESTOQUE BAIXO':near?'⚠️ PRÓXIMO DO MÍNIMO':'';return `<div class="shake-stock-card ${status}"><div class=cart-row><span><b style="font-size:1.2rem">${esc(p.key)}</b>${msg?`<div class=stock-alert>${msg}</div>`:''}</span><span style="text-align:right"><div class=muted>ESTOQUE ATUAL</div><div class=shake-grams>${Math.round(q)} g</div><div class=muted>(${(q/1000).toLocaleString('pt-BR',{maximumFractionDigits:2})} kg)</div></span></div><div class=muted>Atenção: 500 g • Crítico: 200 g • <b>Custo do sabor/kg: ${brl(Number(x.cost||0))}</b></div><div class=panel style='margin:8px 0;padding:8px'><div class=cart-row><span>CMV atual 300 ml</span><b>${brl(shakeRecipeCost(p.key,300).total)}</b></div><div class=cart-row><span>CMV atual 500 ml</span><b>${brl(shakeRecipeCost(p.key,500).total)}</b></div></div><div class=shake-controls><button class="btn shake-add" onclick='shakeStockAdjust(${JSON.stringify(p.key)},1000)'>＋ 1 kg</button><button class="btn shake-add" onclick='shakeStockAdjust(${JSON.stringify(p.key)},500)'>＋ 500 g</button><button class=btn onclick='shakeStockAdjust(${JSON.stringify(p.key)},100)'>＋ 100 g</button><button class=btn onclick='shakeStockAdjust(${JSON.stringify(p.key)},50)'>＋ 50 g</button><button class="btn shake-remove" onclick='shakeStockAdjust(${JSON.stringify(p.key)},-90)'>− 90 g (300 ml)</button><button class="btn shake-remove" onclick='shakeStockAdjust(${JSON.stringify(p.key)},-130)'>− 130 g (500 ml)</button></div><button class=btn style="width:100%;margin-top:7px" onclick='editInventory(${JSON.stringify(p.key)})'>⚙️ Cadastro / custo</button></div>`}
+
+function renderInventory(){ensureInventory();ensureDisposableInventory();let flavorNames=ensureShakeFlavorInventory();let rows=inventoryCatalog().filter(p=>!isGenericShakeSize(p));for(const d of disposableStockRows())if(!rows.some(p=>p.key===d.key))rows.push(d);let existing=new Set(rows.map(p=>p.key));for(const name of flavorNames)if(!existing.has(name))rows.push({key:name,cat:'Shakes',price:0});rows.filter(isShakeInventoryProduct).forEach(ensureShakeStockUnit);let low=rows.filter(p=>{let x=state.inventory.items[p.key];return x.track!==false&&Number(x.qty||0)<=Number(x.min||0)}),value=rows.reduce((a,p)=>{let x=state.inventory.items[p.key],q=Number(x.qty||0),c=Number(x.cost||0);return a+(isShakeInventoryProduct(p)?q/1000*c:q*c)},0),loss=(state.inventory.movements||[]).filter(m=>m.type==='perda').reduce((a,m)=>a+Number(m.value||0),0),sum=document.getElementById('inventorySummary'),list=document.getElementById('inventoryList');if(!sum||!list)return;sum.innerHTML=`<div class=grid><div class=panel><div class=muted>Itens cadastrados</div><div class=big>${rows.length}</div></div><div class=panel><div class=muted>Alertas de estoque</div><div class=big>${low.length}</div></div><div class=panel><div class=muted>Valor estimado em estoque</div><div class=big>${brl(value)}</div></div><div class=panel><div class=muted>Perdas registradas</div><div class=big>${brl(loss)}</div></div></div>`;if(!inventoryViewCategory){list.innerHTML=inventoryCategoryHome(rows);renderInventoryHistory();return}let filtered=rows.filter(p=>inventoryCategoryName(p.cat)===inventoryViewCategory),head=`<button class=btn onclick=closeInventoryCategory()>← CATEGORIAS</button><div class=panel><h2>${inventoryCategoryIcon(inventoryViewCategory)} ${esc(inventoryViewCategory)}</h2><div class=muted>${filtered.length} produtos</div></div>`;if(inventoryViewCategory==='Shakes'){
+   filtered.sort((a,b)=>a.key.localeCompare(b.key,'pt-BR'));
+   list.innerHTML=head+`<button class="btn primary" style="width:100%;margin-bottom:10px" onclick=openShakeCostSettings()>🧾 FICHA DE CUSTO DOS SHAKES</button><input id=shakeStockSearch placeholder="🔎 Buscar sabor..." oninput=filterShakeStockCards()><div id=shakeStockCards>${filtered.map(shakeStockCard).join('')}</div>`;renderInventoryHistory();return}list.innerHTML=head+filtered.map(p=>{let x=state.inventory.items[p.key],qty=Number(x.qty||0),min=Number(x.min||0),lo=min>0&&qty<=min,near=min>0&&qty>min&&qty<=Math.ceil(min*1.25),status=lo?'stock-low':near?'stock-near':'',msg=lo?'⚠️ ESTOQUE BAIXO — abaixo/igual ao mínimo':near?'⚠️ ATENÇÃO — próximo do mínimo':'',margin=p.price?((p.price-Number(x.cost||0))/p.price*100):0;return `<div class="stock-visual-card ${status}"><div class=stock-name>${esc(p.key)}</div><div class=stock-main><div><div class=stock-balance><span class=stock-balance-label>📦 ESTOQUE ATUAL</span><span class=stock-balance-number>${qty}</span></div>${msg?`<div class=stock-alert>${msg}</div>`:''}</div><div class=stock-details><div>Mínimo: <b>${min}</b></div><div>Custo: ${brl(Number(x.cost||0))}</div><div>Venda: ${brl(p.price)}</div><div>Margem bruta: <b>${margin.toFixed(1).replace('.',',')}%</b></div></div></div><div class=stock-actions><button class="mini stock-plus" onclick='inventoryEntryFor(${JSON.stringify(p.key)})'>＋</button><button class="mini stock-minus" onclick='inventoryLossFor(${JSON.stringify(p.key)})'>−</button><button class=mini onclick='inventoryCountFor(${JSON.stringify(p.key)})'>⚖️</button><button class=mini onclick='editInventory(${JSON.stringify(p.key)})'>⚙️</button></div></div>`}).join('');renderInventoryHistory()}
+function filterShakeStockCards(){let q=(document.getElementById('shakeStockSearch')?.value||'').toLowerCase();document.querySelectorAll('#shakeStockCards .shake-stock-card').forEach(el=>el.style.display=el.innerText.toLowerCase().includes(q)?'':'none')}
 
 function hourBand(value){
   const d=new Date(value);
@@ -756,7 +950,7 @@ async function confirmAdminConvertSale(){
  state.internalAccounts.withdrawals.push({id:Date.now(),at:new Date().toISOString(),person,note:'Correção administrativa • '+reason,ticket:x.ticket||null,total:Number(x.total||0),operator:state.activeOperator,items:(x.items||[]).map(a=>({...a})),correctedSaleAt:x.closedAt});
  x.voided=true;x.voidType='internal';x.voidReason=reason;x.voidedAt=new Date().toISOString();x.voidedBy=state.activeOperator;x.correctedToInternal=person;
  state.revenue=Math.max(0,Number(state.revenue||0)-Number(x.total||0));
- await persistAdminSaleEdit();closeModal();renderReports();renderCash();
+ await persistAdminSaleEdit();closeModal();if(activeReportModule)generateModuleReport();else renderReports();renderCash();
  alert(`${brl(Number(x.total||0))} retirado das vendas e lançado na Conta Interna de ${person}.`);
 }
 function adminVoidSale(i){
@@ -772,7 +966,7 @@ async function confirmAdminVoidSale(){
  else{ensureInventory();for(const it of (x.items||[]))for(const k of (it.stockComponents||[stockKey(it.name)])){let inv=state.inventory.items[k];if(!inv||inv.track===false)continue;let q=Number(it.qty||0),before=Number(inv.qty||0);state.inventory.movements.push({at:new Date().toISOString(),type:'perda',key:k,qty:-q,before,after:before,unitCost:Number(inv.cost||0),value:q*Number(inv.cost||0),operator:state.activeOperator,reason:'Venda anulada • '+reason,reference:histSaleLabel(x)})}}
  x.voided=true;x.voidType=mode==='return'?'test':'loss';x.voidReason=reason;x.voidedAt=new Date().toISOString();x.voidedBy=state.activeOperator;x.adminAudit=x.adminAudit||[];x.adminAudit.push({at:x.voidedAt,operator:state.activeOperator,action:'ANULOU VENDA',reason,mode:x.voidType});
  state.revenue=Math.max(0,Number(state.revenue||0)-Number(x.total||0));
- await persistAdminSaleEdit();closeModal();renderReports();renderCash();alert('Venda anulada. O registro foi mantido no histórico administrativo.');
+ await persistAdminSaleEdit();closeModal();if(activeReportModule)generateModuleReport();else renderReports();renderCash();alert('Venda anulada. O registro foi mantido no histórico administrativo.');
 }
 
 function adminUndoVoidSale(i){
@@ -801,7 +995,7 @@ async function confirmAdminUndoVoidSale(){
  x.voided=false;x.restoredAt=new Date().toISOString();x.restoredBy=state.activeOperator;x.restoreReason=reason;
  delete x.voidType;delete x.voidReason;delete x.voidedAt;delete x.voidedBy;
  state.revenue=Number(state.revenue||0)+Number(x.total||0);
- await persistAdminSaleEdit();closeModal();renderReports();renderCash();
+ await persistAdminSaleEdit();closeModal();if(activeReportModule)generateModuleReport();else renderReports();renderCash();
  alert('Venda restaurada com sucesso e voltou a contar no faturamento.');
 }
 
@@ -816,6 +1010,8 @@ async function persistAdminSaleEdit(){
 
 
 let activeReportModule=null;
+let reportUiState={module:null,start:null,end:null,selectedPeriod:'today'};
+let selectedAdminSales=new Set();
 function reportModuleCards(){
  return [
   ['sales','💰','Vendas','Comandas, faturamento e pagamentos'],
@@ -829,7 +1025,7 @@ function reportModuleCards(){
  ];
 }
 function renderReportHome(){
- activeReportModule=null;
+ activeReportModule=null;reportUiState={module:null,start:null,end:null,selectedPeriod:'today'};selectedAdminSales.clear();
  let home=document.getElementById('reportHome'),mod=document.getElementById('reportModule'),pr=document.getElementById('printReport');
  if(mod)mod.classList.add('hide');if(pr)pr.classList.add('hide');
  home.classList.remove('hide');
@@ -839,16 +1035,21 @@ function reportFilterHtml(k){
  let cash=k==='cash';
  return `<div class=panel><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><button class=btn onclick=renderReportHome()>← RELATÓRIOS</button><b>${cash?'Escolha o dia/período':'Escolha o período'}</b></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><button class="btn report-filter-btn" data-period="today" onclick="setReportQuick('today')">Hoje</button><button class="btn report-filter-btn" data-period="yesterday" onclick="setReportQuick('yesterday')">Ontem</button><button class="btn report-filter-btn" data-period="week" onclick="setReportQuick('week')">Esta semana</button><button class="btn report-filter-btn" data-period="15days" onclick="setReportQuick('15days')">Últimos 15 dias</button><button class="btn report-filter-btn" data-period="month" onclick="setReportQuick('month')">Este mês</button><button class="btn report-filter-btn" data-period="custom" onclick="setReportQuick('custom')">Informar período</button></div><div id=moduleCustomDates class=hide style="margin-top:10px"><div class=grid><label>Data inicial<input type=date id=modStart></label><label>Data final<input type=date id=modEnd></label></div></div><button class="btn primary" style="width:100%;margin-top:12px" onclick=generateModuleReport()>🔍 GERAR RELATÓRIO</button></div>`;
 }
-function openReportModule(k){
- activeReportModule=k;
+function openReportModule(k,restoring=false){
+ activeReportModule=k;reportUiState.module=k;
  document.getElementById('reportHome').classList.add('hide');
  let mod=document.getElementById('reportModule');mod.classList.remove('hide');
  let meta=reportModuleCards().find(x=>x[0]===k);
+ if(k==='internal'){
+   mod.innerHTML=`<h2>${meta[1]} ${meta[2]}</h2><div id=internalPeopleChooser></div><div id=internalPersonReport class=hide></div><div id=moduleResult></div>`;
+   renderInternalPeopleChooser();return;
+ }
  mod.innerHTML=`<h2>${meta[1]} ${meta[2]}</h2>${reportFilterHtml(k)}<div id=moduleResult></div>`;
- setReportQuick(k==='cash'?'today':'today',false);
+ if(restoring)restoreReportFilters();else setReportQuick('today',false);
 }
 function isoLocalDate(d){let z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)}
 function setReportQuick(k,generate=false){
+ reportUiState.selectedPeriod=k;
  document.querySelectorAll('.report-filter-btn').forEach(btn=>btn.classList.toggle('report-filter-active',btn.dataset.period===k));
  let now=new Date(),a=new Date(now),b=new Date(now);a.setHours(0,0,0,0);b.setHours(23,59,59,999);
  if(k==='yesterday'){a.setDate(a.getDate()-1);b=new Date(a);b.setHours(23,59,59,999)}
@@ -856,13 +1057,14 @@ function setReportQuick(k,generate=false){
  if(k==='15days')a.setDate(a.getDate()-14);
  if(k==='month')a=new Date(now.getFullYear(),now.getMonth(),1);
  let custom=document.getElementById('moduleCustomDates');
- if(k==='custom'){custom?.classList.remove('hide');let s=document.getElementById('modStart'),e=document.getElementById('modEnd');if(s&&!s.value)s.value=isoLocalDate(a);if(e&&!e.value)e.value=isoLocalDate(b);return}
+ if(k==='custom'){custom?.classList.remove('hide');let s=document.getElementById('modStart'),e=document.getElementById('modEnd');if(s&&!s.value)s.value=reportUiState.start||isoLocalDate(a);if(e&&!e.value)e.value=reportUiState.end||isoLocalDate(b);reportUiState.start=s?.value||null;reportUiState.end=e?.value||null;return}
  custom?.classList.add('hide');
- let s=document.getElementById('modStart'),e=document.getElementById('modEnd');if(s)s.value=isoLocalDate(a);if(e)e.value=isoLocalDate(b);
+ let s=document.getElementById('modStart'),e=document.getElementById('modEnd');if(s)s.value=isoLocalDate(a);if(e)e.value=isoLocalDate(b);reportUiState.start=isoLocalDate(a);reportUiState.end=isoLocalDate(b);
  if(generate)generateModuleReport();
 }
+function restoreReportFilters(){let s=document.getElementById('modStart'),e=document.getElementById('modEnd');if(s&&reportUiState.start)s.value=reportUiState.start;if(e&&reportUiState.end)e.value=reportUiState.end;let k=reportUiState.selectedPeriod||'today';document.querySelectorAll('.report-filter-btn').forEach(btn=>btn.classList.toggle('report-filter-active',btn.dataset.period===k));document.getElementById('moduleCustomDates')?.classList.toggle('hide',k!=='custom')}
 function moduleDates(){
- let sv=document.getElementById('modStart')?.value,ev=document.getElementById('modEnd')?.value;
+ let sv=document.getElementById('modStart')?.value,ev=document.getElementById('modEnd')?.value;if(sv)reportUiState.start=sv;if(ev)reportUiState.end=ev;
  let a=sv?new Date(sv+'T00:00:00'):new Date(),b=ev?new Date(ev+'T23:59:59.999'):new Date();
  return [a,b];
 }
@@ -870,11 +1072,12 @@ function modulePeriodTitle(a,b){return `${a.toLocaleDateString('pt-BR')} a ${b.t
 function moduleSales(a,b){return (state.history||[]).filter(v=>!v.voided).filter(v=>{let d=new Date(v.closedAt);return d>=a&&d<=b})}
 function modulePrintButton(){return `<button class="btn primary" style="width:100%;margin:12px 0" onclick=printCurrentModule()>📄 GERAR PDF</button>`}
 function generateModuleReport(){
+ if(activeReportModule==='internal'&&window.internalStatementPerson){generateInternalPersonReport();return}
  let [a,b]=moduleDates(),k=activeReportModule,res=document.getElementById('moduleResult');if(!res)return;
  let h=moduleSales(a,b),total=h.reduce((q,x)=>q+Number(x.total||0),0),html='';
  if(k==='sales'){
    let pay={};h.forEach(v=>(v.payments||[{method:v.payment,value:v.total}]).forEach(p=>pay[p.method]=(pay[p.method]||0)+Number(p.value||0)));
-   html=`<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Comandas</div><div class=big>${h.length}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(h.length?total/h.length:0)}</div></div></div><h3>Formas de pagamento</h3><div class=panel>${Object.entries(pay).map(([x,v])=>`<div class=cart-row><span>${x}</span><b>${brl(v)}</b></div>`).join('')||'Sem vendas.'}</div>${adminOnly()?`<h3>Vendas por comanda</h3>${h.slice().reverse().map(x=>{let i=(state.history||[]).indexOf(x);return `<div class=panel><div class=cart-row><span><b>${esc(histSaleLabel(x))}</b><div class=muted>${new Date(x.closedAt).toLocaleString('pt-BR')} • ${esc(x.operator||'')}</div></span><b>${brl(x.total||0)}</b></div><div>${(x.items||[]).map(it=>`${it.qty}× ${esc(it.name)}`).join(' • ')}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class=btn onclick="adminViewSale(${i})">VISUALIZAR</button><button class=btn onclick="adminConvertSale(${i})">👤 CORRIGIR</button><button class="btn danger" onclick="adminVoidSale(${i})">🚫 ANULAR</button></div></div>`}).join('')}`:''}`;
+   html=`<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Comandas</div><div class=big>${h.length}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(h.length?total/h.length:0)}</div></div></div><h3>Formas de pagamento</h3><div class=panel>${Object.entries(pay).map(([x,v])=>`<div class=cart-row><span>${x}</span><b>${brl(v)}</b></div>`).join('')||'Sem vendas.'}</div>${adminOnly()?`<h3>Vendas por comanda</h3><div class=panel><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class=btn onclick="toggleAllSalesInPeriod()">☑️ SELECIONAR TODAS</button><button id=bulkVoidBtn class="btn danger" onclick=openBulkVoidSales() disabled>🚫 ANULAR SELECIONADAS</button><b id=bulkSaleSummary>0 selecionadas</b></div></div>${h.slice().reverse().map(x=>{let i=(state.history||[]).indexOf(x);return `<div class=panel><div class=cart-row><span style="display:flex;gap:10px;align-items:flex-start"><input type=checkbox class=admin-sale-check data-index="${i}" ${selectedAdminSales.has(i)?'checked':''} onchange="toggleAdminSaleSelection(${i},this.checked)" style="width:22px;height:22px"><span><b>${esc(histSaleLabel(x))}</b><div class=muted>${new Date(x.closedAt).toLocaleString('pt-BR')} • ${esc(x.operator||'')}</div></span></span><b>${brl(x.total||0)}</b></div><div>${(x.items||[]).map(it=>`${it.qty}× ${esc(it.name)}`).join(' • ')}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class=btn onclick="adminViewSale(${i})">VISUALIZAR</button><button class=btn onclick="adminConvertSale(${i})">👤 CORRIGIR</button><button class="btn danger" onclick="adminVoidSale(${i})">🚫 ANULAR</button></div></div>`}).join('')}`:''}`;
  }else if(k==='cash'){
    let cs=(state.cash?.closures||[]).filter(c=>{let d=new Date(c.closedAt||0);return d>=a&&d<=b});
    html=cs.slice().reverse().map(c=>`<div class=panel><h3>${new Date(c.closedAt).toLocaleString('pt-BR')}</h3><div class=cart-row><span>Abriu</span><b>${esc(c.openedBy||'-')}</b></div><div class=cart-row><span>Fechou</span><b>${esc(c.closedBy||'-')}</b></div><div class=cart-row><span>Abertura</span><b>${brl(c.opening||0)}</b></div><div class=cart-row><span>Vendas</span><b>${brl(c.sales||0)}</b></div>${c.byPayment?Object.entries(c.byPayment).map(([x,v])=>`<div class=cart-row><span>${x}</span><b>${brl(v)}</b></div>`).join(''):''}<div class=cart-row><span>Esperado</span><b>${brl(c.expected||0)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class=cart-row><span>Diferença</span><b>${brl(c.difference||0)}</b></div></div>`).join('')||'<div class=panel>Sem fechamento de caixa no período.</div>';
@@ -882,12 +1085,11 @@ function generateModuleReport(){
    let inv=state.inventory?.items||{},moves=(state.inventory?.movements||[]).filter(m=>{let d=new Date(m.at||m.date||0);return d>=a&&d<=b});
    html=`<h3>Estoque atual</h3><div class=panel>${Object.entries(inv).filter(([_,x])=>x&&typeof x==='object').map(([key,x])=>`<div class=cart-row><span>${esc(x.name||key)}</span><b>${Number(x.qty||0)} un</b></div>`).join('')}</div><h3>Movimentações do período</h3>${moves.slice().reverse().map(m=>`<div class=panel><b>${esc(m.type||'movimentação')} • ${esc(m.key||m.product||m.name||'')}</b><div class=muted>${m.at?new Date(m.at).toLocaleString('pt-BR'):''} • ${esc(m.operator||'')}</div><div>${m.qty??m.quantity??''} ${m.reason?'• '+esc(m.reason):''}</div></div>`).join('')||'<div class=panel>Sem movimentações.</div>'}`;
  }else if(k==='margin'){
-   html=`<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div></div>${marginReport(h)}<div class=muted>Lucro bruto = faturamento − CMV. Despesas operacionais não descontadas.</div>`;
+   let frozen=frozenCmvTotal(h);html=`<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>CMV congelado disponível</div><div class=big>${brl(frozen)}</div></div></div>${marginReport(h)}${shakeCmvBreakdownHtml(h)}<div class=muted>Os novos shakes preservam o custo dos ingredientes no momento da venda. Lucro bruto = faturamento − CMV.</div>`;
  }else if(k==='products'){
    let p=performanceData(h);html=`<h3>🏆 Produtos</h3><div class=panel>${perfRows(p.items,100)}</div><h3>Categorias</h3>${categoryRows(p.cats)}<h3>🥤 Sabores de shake</h3><div class=panel>${perfRows(p.flavors,100)}</div>`;
  }else if(k==='internal'){
-   let w=(state.internalAccounts?.withdrawals||[]).filter(x=>{let d=new Date(x.at);return d>=a&&d<=b}),st=(state.internalAccounts?.settlements||[]).filter(x=>{let d=new Date(x.at);return d>=a&&d<=b});
-   html=`<h3>Saldos atuais</h3>${internalPeople().map(p=>`<div class=panel><div class=cart-row><b>${esc(p)}</b><b>${brl(internalBalance(p))}</b></div></div>`).join('')||'<div class=panel>Sem contas internas.</div>'}<h3>Retiradas no período</h3>${w.slice().reverse().map(x=>`<div class=panel><b>${esc(x.person)} • ${brl(x.total||0)}</b><div class=muted>${new Date(x.at).toLocaleString('pt-BR')} • ${esc(x.operator||'')}</div><div>${esc(x.note||'')}</div></div>`).join('')||'<div class=panel>Sem retiradas.</div>'}<h3>Acertos no período</h3>${st.slice().reverse().map(x=>`<div class=panel><b>${esc(x.person)} • ${brl(x.value||x.amount||0)}</b><div class=muted>${new Date(x.at).toLocaleString('pt-BR')} • ${esc(x.method||'')}</div></div>`).join('')||'<div class=panel>Sem acertos.</div>'}`;
+   html='';
  }else if(k==='cancel'){
    let rows=(state.history||[]).filter(x=>x.voided&&x.voidedAt&&new Date(x.voidedAt)>=a&&new Date(x.voidedAt)<=b);
    html=rows.slice().reverse().map(x=>{let i=(state.history||[]).indexOf(x);return `<div class=panel><div class=cart-row><span><b>🚫 ${esc(histSaleLabel(x))}</b><div class=muted>${new Date(x.voidedAt).toLocaleString('pt-BR')} • ${esc(x.voidedBy||'')}</div></span><b>${brl(x.total||0)}</b></div><div>${esc(x.voidReason||'')}</div>${adminOnly()&&x.voidType!=='internal'?`<button class=btn style="margin-top:8px" onclick="adminUndoVoidSale(${i})">↩️ DESFAZER ANULAÇÃO</button>`:''}</div>`}).join('')||'<div class=panel>Nenhuma venda anulada no período.</div>';
@@ -902,15 +1104,88 @@ function generateModuleReport(){
    generateFilteredReport();html=document.getElementById('report').innerHTML;document.getElementById('printReport').classList.add('hide');
    holder.querySelectorAll('#repPeriod,#repStart,#repEnd,.repOpt').forEach(x=>x.remove());
  }
- res.innerHTML=`<div class=panel><b>${modulePeriodTitle(a,b)}</b></div>${html}${modulePrintButton()}`;
+ res.innerHTML=`<div class=panel><b>${modulePeriodTitle(a,b)}</b></div>${html}${modulePrintButton()}`;updateBulkSaleSummary();
 }
+function toggleAdminSaleSelection(i,on){if(on)selectedAdminSales.add(i);else selectedAdminSales.delete(i);updateBulkSaleSummary()}
+function currentPeriodSaleIndexes(){let [a,b]=moduleDates();return (state.history||[]).map((x,i)=>({x,i})).filter(({x})=>!x.voided&&new Date(x.closedAt)>=a&&new Date(x.closedAt)<=b).map(o=>o.i)}
+function toggleAllSalesInPeriod(){let ids=currentPeriodSaleIndexes(),all=ids.length&&ids.every(i=>selectedAdminSales.has(i));ids.forEach(i=>all?selectedAdminSales.delete(i):selectedAdminSales.add(i));generateModuleReport()}
+function updateBulkSaleSummary(){let btn=document.getElementById('bulkVoidBtn'),lab=document.getElementById('bulkSaleSummary');if(!btn||!lab)return;let valid=[...selectedAdminSales].filter(i=>state.history?.[i]&&!state.history[i].voided),total=valid.reduce((a,i)=>a+Number(state.history[i].total||0),0);lab.textContent=`${valid.length} selecionada${valid.length===1?'':'s'} • ${brl(total)}`;btn.disabled=!valid.length}
+function openBulkVoidSales(){if(!adminOnly())return alert('Somente Administrador.');let ids=[...selectedAdminSales].filter(i=>state.history?.[i]&&!state.history[i].voided);if(!ids.length)return alert('Selecione pelo menos uma venda.');let total=ids.reduce((a,i)=>a+Number(state.history[i].total||0),0);window.bulkSaleIds=ids;document.getElementById('modalContent').innerHTML=`<h2>🚫 Anular vendas selecionadas</h2><div class=panel style="border:2px solid #b71c1c"><div class=big>${ids.length} vendas</div><b>Total: ${brl(total)}</b><div class=muted>Os registros permanecerão no histórico para auditoria.</div></div><label>Motivo</label><input id=bulkVoidReason placeholder="Ex.: vendas de teste"><label>Estoque</label><select id=bulkVoidMode><option value="return">DEVOLVER AO ESTOQUE — testes / produtos não saíram</option><option value="loss">MANTER BAIXA COMO PERDA — produtos foram produzidos/consumidos</option></select><div class=sheet-actions><button class=btn onclick=closeModal()>Voltar</button><button class="btn danger" onclick=confirmBulkVoidSales()>ANULAR ${ids.length} VENDAS</button></div>`;document.getElementById('modal').classList.remove('hide')}
+async function confirmBulkVoidSales(){if(!adminOnly())return;let ids=(window.bulkSaleIds||[]).filter(i=>state.history?.[i]&&!state.history[i].voided),reason=(document.getElementById('bulkVoidReason')?.value||'').trim(),mode=document.getElementById('bulkVoidMode')?.value;if(!reason)return alert('Informe o motivo.');for(const i of ids){let x=state.history[i];if(mode==='return')(x.items||[]).forEach(it=>inventoryReturn(it,'Anulação administrativa em lote • '+reason));else{ensureInventory();for(const it of (x.items||[]))for(const k of (it.stockComponents||[stockKey(it.name)])){let inv=state.inventory.items[k];if(!inv||inv.track===false)continue;let q=Number(it.qty||0),before=Number(inv.qty||0);state.inventory.movements.push({at:new Date().toISOString(),type:'perda',key:k,qty:-q,before,after:before,unitCost:Number(inv.cost||0),value:q*Number(inv.cost||0),operator:state.activeOperator,reason:'Venda anulada em lote • '+reason,reference:histSaleLabel(x)})}}x.voided=true;x.voidType=mode==='return'?'test':'loss';x.voidReason=reason;x.voidedAt=new Date().toISOString();x.voidedBy=state.activeOperator;x.adminAudit=x.adminAudit||[];x.adminAudit.push({at:x.voidedAt,operator:state.activeOperator,action:'ANULOU VENDA EM LOTE',reason,mode:x.voidType});state.revenue=Math.max(0,Number(state.revenue||0)-Number(x.total||0))}await persistAdminSaleEdit();selectedAdminSales.clear();closeModal();generateModuleReport();renderCash();alert(`${ids.length} venda${ids.length===1?'':'s'} anulada${ids.length===1?'':'s'} com sucesso.`)}
+
+
+
+function renderInternalPeopleChooser(){
+ let box=document.getElementById('internalPeopleChooser');if(!box)return;
+ let people=internalPersonOptions();
+ box.innerHTML=`<div class=panel><button class=btn onclick=renderReportHome()>← RELATÓRIOS</button><h3>👤 Escolha a pessoa</h3><div class=muted>Primeiro selecione a conta. Depois escolha o período do extrato.</div></div>${people.map(p=>`<button class=panel style="width:100%;text-align:left;cursor:pointer" onclick='selectInternalPerson(${JSON.stringify(p)})'><div class=cart-row><span><b>${esc(p)}</b><div class=muted>Toque para consultar</div></span><span style="text-align:right"><div class=muted>Débito atual</div><b>${brl(internalDebt(p))}</b></span></div></button>`).join('')}${adminOnly()?'<button class="btn primary" style="width:100%;margin-top:10px" onclick=addInternalPerson()>➕ ADICIONAR PESSOA / FIADO</button>':''}`;
+}
+function selectInternalPerson(person){
+ person=normalizeInternalPerson(person);window.internalStatementPerson=person;
+ document.getElementById('internalPeopleChooser')?.classList.add('hide');
+ let box=document.getElementById('internalPersonReport');box?.classList.remove('hide');
+ if(!box)return;
+ box.innerHTML=`<div class=panel><button class=btn onclick=backToInternalPeople()>← PESSOAS</button><h2 style="margin-bottom:4px">👤 ${esc(person)}</h2><div class=muted>Débito atual</div><div class=big>${brl(internalDebt(person))}</div></div>${reportFilterHtml('internal')}<div id=internalStatementResult></div>`;
+ setReportQuick('today',false);
+ let old=document.getElementById('moduleResult');if(old)old.innerHTML='';
+}
+function backToInternalPeople(){
+ window.internalStatementPerson=null;
+ document.getElementById('internalPersonReport')?.classList.add('hide');
+ document.getElementById('internalPeopleChooser')?.classList.remove('hide');
+ renderInternalPeopleChooser();
+}
+function generateInternalPersonReport(){
+ let person=window.internalStatementPerson;if(!person)return;
+ openInternalStatement(person);
+}
+
+function internalPeriodData(person){
+ person=normalizeInternalPerson(person);let [a,b]=moduleDates();
+ let w=(state.internalAccounts?.withdrawals||[]).filter(x=>normalizeInternalPerson(x.person)===person&&new Date(x.at)>=a&&new Date(x.at)<=b);
+ let st=(state.internalAccounts?.settlements||[]).filter(x=>normalizeInternalPerson(x.person)===person&&new Date(x.at)>=a&&new Date(x.at)<=b);
+ return {w,st,a,b};
+}
+function openInternalStatement(person){
+ person=normalizeInternalPerson(person);window.internalStatementPerson=person;
+ let res=document.getElementById('internalStatementResult')||document.getElementById('moduleResult'),{w,st,a,b}=internalPeriodData(person),prod={};
+ w.forEach(x=>(x.items||[]).forEach(it=>{let n=it.name||'Item';prod[n]=(prod[n]||0)+Number(it.qty||0)}));
+ let consumed=w.reduce((q,x)=>q+Number(x.total||0),0),paid=st.reduce((q,x)=>q+Number(x.value??x.amount??0),0);
+ res.innerHTML=`<div class=panel><div class=cart-row><span><b>Extrato do período</b><div class=muted>${modulePeriodTitle(a,b)}</div></span><span style="text-align:right"><div class=muted>Débito atual geral</div><b>${brl(internalDebt(person))}</b></span></div><button class="btn primary" style="margin-top:10px" onclick='openInternalSettlementV2(${JSON.stringify(person)})'>💵 DAR BAIXA / ACERTAR DÉBITO</button></div><div class=grid><div class=panel><div class=muted>Consumo no período</div><div class=big>${brl(consumed)}</div></div><div class=panel><div class=muted>Acertos no período</div><div class=big>${brl(paid)}</div></div></div><h3>Produtos consumidos</h3><div class=panel>${Object.entries(prod).sort((a,b)=>b[1]-a[1]).map(([n,q])=>`<div class=cart-row><span>${esc(n)}</span><b>${q} un</b></div>`).join('')||'Nenhum consumo no período.'}</div><h3>Retiradas / Compras</h3>${w.slice().reverse().map(x=>`<div class=panel><div class=cart-row><b>${new Date(x.at).toLocaleString('pt-BR')}</b><b>${brl(x.total||0)}</b></div><div>${(x.items||[]).map(it=>`${it.qty}× ${esc(it.name)} — ${brl(Number(it.price||0)*Number(it.qty||0))}`).join('<br>')}</div>${x.note?`<div class=muted>${esc(x.note)}</div>`:''}</div>`).join('')||'<div class=panel>Sem retiradas no período.</div>'}<h3>Acertos realizados</h3>${st.slice().reverse().map(x=>`<div class=panel><div class=cart-row><b>${new Date(x.at).toLocaleString('pt-BR')}</b><b>${brl(x.value??x.amount??0)}</b></div><div>${esc(x.method||'')}</div>${x.note?`<div class=muted>${esc(x.note)}</div>`:''}</div>`).join('')||'<div class=panel>Sem acertos no período.</div>'}<button class="btn primary" style="width:100%;margin:12px 0" onclick=printInternalStatement()>📄 GERAR PDF DO EXTRATO</button>`;
+}
+function openInternalSettlementV2(person){
+ person=normalizeInternalPerson(person);let debt=internalDebt(person);if(debt<=0)return alert('Esta conta não possui débito.');
+ document.getElementById('modalContent').innerHTML=`<h2>💵 Acertar débito</h2><div class=panel><b>${esc(person)}</b><div class=muted>Débito atual</div><div class=big>${brl(debt)}</div></div><label>Valor da baixa</label><input id=intSettleValue type=number min=0.01 step=.01 value="${debt.toFixed(2)}"><label>Forma de acerto</label><select id=intSettleMethod><option>Desconto em pró-labore</option><option>Vale / Desconto em salário</option><option>Dinheiro</option><option>Pix</option><option>Débito</option><option>Crédito</option></select><label>Observação</label><input id=intSettleNote placeholder="Ex.: fechamento da quinzena"><div class=muted>Somente pagamentos reais em Dinheiro/Pix/Débito/Crédito representam recebimento financeiro. Desconto em salário ou pró-labore apenas reduz o débito interno.</div><div class=sheet-actions><button class=btn onclick=closeModal()>Voltar</button><button class="btn primary" onclick='confirmInternalSettlementV2(${JSON.stringify(person)})'>CONFIRMAR BAIXA</button></div>`;
+ document.getElementById('modal').classList.remove('hide');
+}
+async function confirmInternalSettlementV2(person){
+ person=normalizeInternalPerson(person);let debt=internalDebt(person),v=Number(document.getElementById('intSettleValue')?.value),method=document.getElementById('intSettleMethod')?.value,note=(document.getElementById('intSettleNote')?.value||'').trim();
+ if(!v||v<=0||v>debt+.001)return alert('Informe um valor válido, até o débito atual.');
+ let financial=['Dinheiro','Pix','Débito','Crédito'].includes(method);
+ if(financial&&!state.cash.open)return alert('Abra o caixa antes de registrar um recebimento financeiro.');
+ state.internalAccounts.settlements=state.internalAccounts.settlements||[];
+ state.internalAccounts.settlements.push({id:Date.now(),at:new Date().toISOString(),person,value:v,method,note,operator:state.activeOperator});
+ if(financial){
+   state.cash.movements=state.cash.movements||[];
+   state.cash.movements.push({id:Date.now()+1,at:new Date().toISOString(),type:'entrada',value:v,method,reason:`Acerto conta interna • ${person}`,operator:state.activeOperator});
+ }
+ await persistAdminSaleEdit();closeModal();openInternalStatement(person);renderCash();
+ alert(`Baixa de ${brl(v)} registrada. Débito atual: ${brl(internalDebt(person))}.`);
+}
+function printInternalStatement(){
+ let person=window.internalStatementPerson,res=document.getElementById('internalStatementResult')||document.getElementById('moduleResult');if(!person||!res)return;
+ let p=document.getElementById('printReport'),r=document.getElementById('report');
+ r.innerHTML=`<div class=panel><h2>Algaroba Shakes Grills</h2><h3>Extrato de Débito Interno — ${esc(person)}</h3><div>Débito atual: <b>${brl(internalDebt(person))}</b></div><div class=muted>Emitido em ${new Date().toLocaleString('pt-BR')}</div></div>`+res.innerHTML.replace(/<button[\s\S]*?<\/button>/g,'');
+ openPrintableReport(`Extrato Interno - ${person}`,r.innerHTML);
+}
+
 function printCurrentModule(){
  let res=document.getElementById('moduleResult');if(!res)return;
  let p=document.getElementById('printReport'),r=document.getElementById('report');r.innerHTML=`<div class=panel><h2>Algaroba Shakes Grills</h2><b>${activeReportModule?.toUpperCase()||'RELATÓRIO'}</b><div class=muted>Emitido em ${new Date().toLocaleString('pt-BR')}</div></div>`+res.innerHTML.replace(/<button[\s\S]*?<\/button>/g,'');
- p.classList.remove('hide');setTimeout(()=>{window.print();p.classList.add('hide')},120);
+ openPrintableReport('Relatório Algaroba',r.innerHTML);
 }
 
-function renderReports(){renderReportHome()}
+function renderReports(){if(reportUiState.module){openReportModule(reportUiState.module,true);setTimeout(()=>{restoreReportFilters();generateModuleReport()},0)}else renderReportHome()}
 
 function reportItemBaseName(name){return String(name||'').split(' • Obs:')[0].trim()}
 function reportCategory(name){let base=reportItemBaseName(name);for(const [cat,arr] of Object.entries(catalog||{})){if((arr||[]).some(p=>p[0]===base))return cat}if(base.startsWith('Shake '))return 'Shakes';return 'Outros'}
@@ -929,7 +1204,7 @@ function reportPeriodChange(){let custom=document.getElementById('repPeriod').va
 function reportPreset(k){document.querySelectorAll('.repOpt').forEach(x=>x.checked=false);let m={daily:['summary','payments','hours','products','margin','cash'],stock:['stock','moves'],margin:['summary','margin','categories','products'],full:['summary','payments','hours','products','categories','margin','stock','moves','cash','operators']};(m[k]||[]).forEach(v=>{let x=document.querySelector('.repOpt[value="'+v+'"]');if(x)x.checked=true});generateFilteredReport()}
 function repOn(v){let x=document.querySelector('.repOpt[value="'+v+'"]');return !!(x&&x.checked)}
 function generateFilteredReport(){let [a,b]=reportDates(),h=(state.history||[]).filter(v=>!v.voided).filter(v=>{let d=new Date(v.closedAt);return d>=a&&d<=b}),total=h.reduce((s,x)=>s+Number(x.total||0),0),count=h.length,ticket=count?total/count:0,byPay={},byHour={},byOp={};h.forEach(v=>{(v.payments||[{method:v.payment,value:v.total}]).forEach(p=>byPay[p.method]=(byPay[p.method]||0)+Number(p.value||0));let band=hourBand(v.closedAt);if(!byHour[band])byHour[band]={total:0,count:0};byHour[band].total+=Number(v.total||0);byHour[band].count++;let op=v.operator||'Não identificado';byOp[op]=(byOp[op]||0)+Number(v.total||0)});let perf=performanceData(h),parts=[];let period=document.getElementById('repPeriod').selectedOptions[0].text;parts.push(`<div class=panel><h2>Algaroba Shakes Grills</h2><b>Relatório Gerencial • ${period}</b><div class=muted>Emitido em ${new Date().toLocaleString('pt-BR')}</div></div>`);let rc=(state.cancellations||[]).filter(c=>{let d=new Date(c.at||0);return d>=a&&d<=b}),rct=rc.filter(c=>c.type==='comanda_total'),rcv=rct.reduce((q,c)=>q+Number(c.total||0),0),rcl=rct.filter(c=>c.produced).reduce((q,c)=>q+(c.items||[]).reduce((z,i)=>z+Number(i.cost||reportUnitCost(i)||0)*Number(i.qty||0),0),0);if(repOn('summary'))parts.push(`<h3>🚫 Cancelamentos e Perdas</h3><div class=grid><div class=panel><div class=muted>Comandas canceladas</div><div class=big>${rct.length}</div></div><div class=panel><div class=muted>Valor não faturado</div><div class=big>${brl(rcv)}</div></div><div class=panel><div class=muted>Custo estimado das perdas produzidas</div><div class=big>${brl(rcl)}</div></div></div>${rct.slice().reverse().slice(0,50).map(c=>`<div class=panel><b>${esc(c.table||'Comanda')} • ${brl(c.total||0)}</b><div class=muted>${new Date(c.at).toLocaleString('pt-BR')} • ${esc(c.operator||'')}</div><div>${c.produced?'🔥 Produzida / perda':'↩️ Não produzida / estoque devolvido'} • ${esc(c.reason||'')}</div></div>`).join('')}`);if(repOn('summary')){let iw=(state.internalAccounts?.withdrawals||[]).filter(x=>{let d=new Date(x.at);return d>=a&&d<=b}),iv=iw.reduce((q,x)=>q+Number(x.total||0),0),ip=internalPeople().reduce((q,p)=>q+internalBalance(p),0);parts.push(`<h3>Contas Internas</h3><div class=grid><div class=panel><div class=muted>Retiradas no período</div><div class=big>${brl(iv)}</div></div><div class=panel><div class=muted>Saldo interno pendente atual</div><div class=big>${brl(ip)}</div></div></div>`)}if(repOn('summary'))parts.push(`<h3>Resumo</h3><div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Vendas</div><div class=big>${count}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(ticket)}</div></div></div>`);if(repOn('margin'))parts.push(`<h3>💹 CMV & Margem</h3>${marginReport(h)}<div class=muted>Lucro bruto = faturamento − CMV. Despesas operacionais não descontadas.</div>`);if(repOn('payments'))parts.push(`<h3>Formas de pagamento</h3><div class=panel>${Object.entries(byPay).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join('')||'<div class=muted>Sem vendas no período.</div>'}</div>`);if(repOn('hours')){let bands=['07:00–12:00','12:01–17:00','17:01–23:59','Outros horários'];parts.push(`<h3>Vendas por faixa de horário</h3>${bands.map(k=>{let x=byHour[k]||{total:0,count:0};return `<div class=panel><div class=cart-row><b>${k}</b><b>${brl(x.total)}</b></div><div class=muted>${x.count} venda(s) • Ticket ${brl(x.count?x.total/x.count:0)}</div></div>`}).join('')}`)}if(repOn('products'))parts.push(`<h3>🏆 Produtos</h3><div class=panel>${perfRows(perf.items,50)}</div>`);if(repOn('categories'))parts.push(`<h3>📦 Categorias</h3>${categoryRows(perf.cats)}`);if(repOn('operators'))parts.push(`<h3>Operadores</h3><div class=panel>${Object.entries(byOp).map(([k,v])=>`<div class=cart-row><span>${k}</span><b>${brl(v)}</b></div>`).join('')||'<div class=muted>Sem vendas.</div>'}</div>`);if(repOn('stock')){let inv=state.inventory?.items||{};let rows=Object.entries(inv).filter(([k,x])=>x&&typeof x==='object').map(([k,x])=>`<div class=cart-row><span>${x.name||k}</span><span><b>${Number(x.qty||0)}</b> un • ${brl(Number(x.cost||0))}</span></div>`).join('');parts.push(`<h3>📦 Estoque atual</h3><div class=panel>${rows||'<div class=muted>Sem estoque cadastrado.</div>'}</div>`)}if(repOn('moves')){let moves=(state.inventory?.movements||[]).filter(m=>{let d=new Date(m.at||m.date||0);return d>=a&&d<=b}).slice().reverse();parts.push(`<h3>Movimentações de estoque</h3>${moves.slice(0,200).map(m=>`<div class=panel><b>${m.type||'movimentação'} • ${m.key||m.product||m.name||''}</b><div class=muted>${m.at?new Date(m.at).toLocaleString('pt-BR'):''} • ${m.operator||''}</div><div>Quantidade: ${m.qty??m.quantity??''} ${m.reason?'• '+m.reason:''}</div></div>`).join('')||'<div class=muted>Sem movimentações no período.</div>'}`)}if(repOn('cash')){let cs=(state.cash?.closures||[]).filter(c=>{let d=new Date(c.closedAt||0);return d>=a&&d<=b});parts.push(`<h3>💰 Fechamentos de caixa</h3>${cs.slice().reverse().map(c=>`<div class=panel><b>${new Date(c.closedAt).toLocaleString('pt-BR')}</b><div>Vendas: ${brl(c.sales||0)} • Esperado: ${brl(c.expected||0)} • Contado: ${brl(c.counted||0)} • Diferença: ${brl(c.difference||0)}</div></div>`).join('')||'<div class=muted>Sem fechamentos no período.</div>'}`)}document.getElementById('report').innerHTML="<div class='panel' style='border:2px solid #2e7d32'><div class='muted'>Pré-visualização gerada</div><b>Confira abaixo o relatório antes de gerar o PDF.</b></div>"+parts.join('');setTimeout(()=>{let el=document.getElementById('printReport');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'});},50);}
-function printFilteredReport(){generateFilteredReport();setTimeout(()=>window.print(),120)}
+function printFilteredReport(){generateFilteredReport();setTimeout(()=>{let body=document.getElementById('report')?.innerHTML||'<h2>Relatório sem conteúdo</h2>';openPrintableReport('Relatório Gerencial - Algaroba',body)},80)}
 window.addEventListener('storage',e=>{if(e.key==='algarobaState'&&e.newValue){if(userIsEditing())return;try{state=JSON.parse(e.newValue);renderOperator();renderTables();if(!document.getElementById('cozinha').classList.contains('hide'))renderKitchen();if(!document.getElementById('caixa').classList.contains('hide'))renderCash();/* Relatórios preservam posição durante sincronização */}catch(err){console.error(err)}}});
 function back(){let target=canView('mesas')?'mesas':((roleViews[authProfile?.perfil]||[])[0]||'mesas');view(target,document.querySelector('.tabs button[data-view="'+target+'"]'))}
 ensureInventory();renderOperator();renderTables();applyDeviceMode();initAuth();
