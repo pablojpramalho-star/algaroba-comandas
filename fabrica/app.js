@@ -1,4 +1,4 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261007-flow6";
+import { installInternalFlow } from "./internal-flow.js?v=20261007-flow7";
 import { installInternalAdmin } from "./internal-admin.js?v=20261007-admin1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
@@ -1197,8 +1197,7 @@ window.prodUpdate=async(id,pedidoId,status,q)=>{
     await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);
     const rows=await rpc("producao_fila",{},true)||[];
     const orderItems=rows.filter(x=>x.pedido_id===pedidoId);
-    const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));    if(allDone){
-      await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
+    const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));    if(allDone){      await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
       showToast("Pedido pronto e enviado para a Expedição.");    }else{
       state.productionOpenOrder=pedidoId;
