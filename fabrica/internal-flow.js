@@ -83,7 +83,7 @@ export function installInternalFlow(ctx){
     if(current.length&&current.every(doneProduction)){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
-      showToast("Pedido pronto e enviado para a Expedição.");
+      showToast("Pedido pronto e enviado para a Conferência.");
       return renderProduction();
     }
     showToast(message);
@@ -115,7 +115,7 @@ export function installInternalFlow(ctx){
         try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem("Quantidade confirmada.")}catch(e){showToast(e.message)}
       }
       if(a==="finish"){
-        try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);state.productionOpenOrder=null;showToast("Produção concluída. Pedido enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
+        try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);state.productionOpenOrder=null;showToast("Produção concluída. Pedido enviado para a Conferência.");await renderProduction()}catch(e){showToast(e.message)}
       }
     };
   }
