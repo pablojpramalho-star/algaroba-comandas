@@ -461,3 +461,19 @@ html,body{background:#efe7d7!important;color-scheme:light}
 
 .catalog-inline-link{display:inline-flex;align-items:center;margin-top:8px;padding:7px 10px;border:1px solid #decbaa;border-radius:999px;background:#fff8e7;color:#1a5138;text-decoration:none;font-size:10px;font-weight:850}
 .catalog-inline-link:active{transform:translateY(1px)}
+
+.auth-forgot-link{
+  display:block;
+  width:100%;
+  margin:10px 0 2px;
+  padding:7px 4px;
+  border:0;
+  background:transparent;
+  color:#0b6542;
+  font-size:12px;
+  font-weight:850;
+  text-align:center;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.auth-forgot-link:active{opacity:.7}
