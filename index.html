@@ -44,7 +44,7 @@
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.26 • RELATÓRIO DE ESTOQUE POR SEÇÃO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.27 • RELATÓRIO DE ESTOQUE POR SEÇÃO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -1072,17 +1072,31 @@ function modulePeriodTitle(a,b){return `${a.toLocaleDateString('pt-BR')} a ${b.t
 function moduleSales(a,b){return (state.history||[]).filter(v=>!v.voided).filter(v=>{let d=new Date(v.closedAt);return d>=a&&d<=b})}
 function modulePrintButton(){return `<button class="btn primary" style="width:100%;margin:12px 0" onclick=printCurrentModule()>📄 GERAR PDF</button>`}
 function reportStockSection(key,x){
- let k=String(key||''),cat=String(x?.cat||x?.category||'');
+ let k=String(key||''),cat=String(x?.cat||x?.category||''),kl=k.trim().toLowerCase();
+ // Itens abaixo são apenas botões/seletores de venda. Não representam estoque físico.
  if(isGenericShakeSize({key:k}))return null;
- if(cat.toLowerCase().includes('shake')||shakeFlavorNamesFromProducts().some(n=>n.toLowerCase()===k.toLowerCase()))return 'Shakes';
- if(/^Suco 400 ml/i.test(k)||cat.toLowerCase().includes('suco'))return 'Sucos';
- if(/KS 290 ml|Refrigerante 1 L/i.test(k))return 'Refrigerantes';
+ if(['ks 290 ml','refrigerante 1 l','suco 400 ml'].includes(kl))return null;
+
+ // Shakes: estoque físico é por sabor e sempre em gramas.
+ if(cat.toLowerCase().includes('shake')||shakeFlavorNamesFromProducts().some(n=>n.toLowerCase()===kl))return 'Shakes';
+
+ // Bebidas: somente as variações/sabores reais entram no estoque.
+ if(/^Suco 400 ml\s*•/i.test(k)||cat.toLowerCase().includes('suco'))return 'Sucos';
+ if(/^(KS 290 ml|Refrigerante 1 L)\s*•/i.test(k))return 'Refrigerantes';
  if(/Brahma|Skol|Original|Budweiser|Heineken|Corona/i.test(k))return 'Cervejas';
  if(/Água/i.test(k))return 'Águas';
  if(/Café/i.test(k))return 'Cafés';
+
+ // Bases e recheios ficam separados para facilitar a gestão.
+ const baseNames=['pastel (base)','tapioca (base)','cuscuz (base)','rap10 (base)'];
+ if(baseNames.includes(kl))return 'Bases';
+ if(cat.toLowerCase().includes('base'))return 'Recheios de Base';
+
  let c=inventoryCategoryName(cat);
+ if(c==='Recheios')return 'Recheios de Base';
  return c==='Bebidas'?'Outras Bebidas':c;
 }
+function reportStockIcon(sec){return {'Espetos':'🍢','Shakes':'🥤','Sucos':'🧃','Refrigerantes':'🥤','Cervejas':'🍺','Águas':'💧','Cafés':'☕','Bases':'🫓','Recheios de Base':'🧀','Molhos':'🥫','Porções / Caldos':'🍟','Tapiocas / Pastéis':'🥟','Descartáveis':'🥤'}[sec]||inventoryCategoryIcon(sec)}
 function reportStockUnit(key,x){
  let sec=reportStockSection(key,x),q=Number(x?.qty||0);
  if(sec==='Shakes')return `${q.toLocaleString('pt-BR')} g <small class=muted>(${(q/1000).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:3})} kg)</small>`;
@@ -1096,8 +1110,8 @@ function reportStockHtml(){
    let sec=reportStockSection(key,x);if(!sec)continue;
    (groups[sec]||(groups[sec]=[])).push([key,x]);
  }
- const order=['Espetos','Shakes','Sucos','Refrigerantes','Cervejas','Águas','Cafés','Bases','Recheios','Molhos','Porções / Caldos','Tapiocas / Pastéis','Descartáveis','Outras Bebidas','Limpeza / Diversos','Outros'];
- return Object.entries(groups).sort((a,b)=>{let ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);return (ia<0?999:ia)-(ib<0?999:ib)||a[0].localeCompare(b[0],'pt-BR')}).map(([sec,rows])=>`<h3>${inventoryCategoryIcon(sec)} ${esc(sec)}</h3><div class=panel>${rows.sort((a,b)=>a[0].localeCompare(b[0],'pt-BR')).map(([key,x])=>`<div class=cart-row><span>${esc(x.name||key)}</span><b>${reportStockUnit(key,x)}</b></div>`).join('')}</div>`).join('')||'<div class=panel>Sem estoque cadastrado.</div>';
+ const order=['Espetos','Shakes','Sucos','Refrigerantes','Cervejas','Águas','Cafés','Bases','Recheios de Base','Molhos','Porções / Caldos','Tapiocas / Pastéis','Descartáveis','Outras Bebidas','Limpeza / Diversos','Outros'];
+ return Object.entries(groups).sort((a,b)=>{let ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);return (ia<0?999:ia)-(ib<0?999:ib)||a[0].localeCompare(b[0],'pt-BR')}).map(([sec,rows])=>`<h3>${reportStockIcon(sec)} ${esc(sec)}</h3><div class=panel>${rows.sort((a,b)=>a[0].localeCompare(b[0],'pt-BR')).map(([key,x])=>`<div class=cart-row><span>${esc(x.name||key)}</span><b>${reportStockUnit(key,x)}</b></div>`).join('')}</div>`).join('')||'<div class=panel>Sem estoque cadastrado.</div>';
 }
 function reportMovementQty(m){
  let key=String(m?.key||m?.product||m?.name||''),x=state.inventory?.items?.[key],sec=reportStockSection(key,x||{}),q=Number(m?.qty??m?.quantity??0);
