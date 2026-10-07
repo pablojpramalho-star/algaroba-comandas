@@ -1,4 +1,5 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261006-flow5";
+import { installInternalFlow } from "./internal-flow.js?v=20261007-flow6";
+import { installInternalAdmin } from "./internal-admin.js?v=20261007-admin1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -23,6 +24,7 @@ const state={
   productionOpenOrder:null,
   expeditionOpenOrder:null
 };
+let renderConference,renderRoute,renderReports,renderTestClient;
 
 function showToast(message){
   toastEl.textContent=message;toastEl.style.display="block";
@@ -983,22 +985,23 @@ function roleDisplay(role){
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","administrativo","producao","financeiro","caixa","estoque","expedicao"];
-  if(role==="vendas")return ["administrativo"];
-  if(role==="financeiro")return ["financeiro","caixa"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","producao","conferencia","expedicao","rota","caixa","estoque","relatorios"];
+  if(role==="vendas")return ["dashboard","relatorios"];
+  if(role==="financeiro")return ["caixa","relatorios"];
   if(role==="producao")return ["producao"];
-  if(role==="expedicao")return ["expedicao"];
+  if(role==="expedicao")return ["conferencia","expedicao","rota"];
   return [];
 }
 function internalModuleMeta(key){
   return ({
-    dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo da fábrica"},
-    administrativo:{label:"Administrativo",icon:"▤",desc:"Pedidos e clientes"},
-    producao:{label:"Produção",icon:"◫",desc:"Fila de fabricação"},
-    financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
-    caixa:{label:"Caixa",icon:"▣",desc:"Abertura e movimentos"},
+    dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo do dia"},
+    producao:{label:"Produção",icon:"◫",desc:"Produzir e separar"},
+    conferencia:{label:"Conferência",icon:"✓",desc:"Segunda checagem"},
+    expedicao:{label:"Expedição",icon:"▤",desc:"Pedidos prontos"},
+    rota:{label:"Rota",icon:"⇢",desc:"Entregas em campo"},
+    caixa:{label:"Caixa",icon:"▣",desc:"Recebimentos"},
     estoque:{label:"Estoque",icon:"▦",desc:"Produtos e insumos"},
-    expedicao:{label:"Expedição",icon:"⇢",desc:"Rotas e entregas"}
+    relatorios:{label:"Relatórios",icon:"≡",desc:"Vendas e gestão"}
   })[key]||{label:key,icon:"•",desc:""};
 }
 function internalShell(active){
@@ -1036,12 +1039,13 @@ function renderInternal(){
   localStorage.setItem("algaroba_internal_module",state.internalModule);
 
   if(state.internalModule==="dashboard")return renderAdmin();
-  if(state.internalModule==="administrativo")return renderAdministrative();
   if(state.internalModule==="producao")return renderProduction();
-  if(state.internalModule==="financeiro")return renderFinance();
+  if(state.internalModule==="conferencia")return renderConference();
+  if(state.internalModule==="expedicao")return renderExpedition();
+  if(state.internalModule==="rota")return renderRoute();
   if(state.internalModule==="caixa")return renderCash();
   if(state.internalModule==="estoque")return renderStock();
-  if(state.internalModule==="expedicao")return renderExpedition();
+  if(state.internalModule==="relatorios")return renderReports();
   state.internalModule=allowed[0];return renderInternal();
 }
 async function renderAdministrative(){
@@ -1197,8 +1201,7 @@ window.prodUpdate=async(id,pedidoId,status,q)=>{
     if(allDone){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
-      showToast("Pedido pronto e enviado para a Expedição.");
-    }else{
+      showToast("Pedido pronto e enviado para a Expedição.");    }else{
       state.productionOpenOrder=pedidoId;
       showToast(status==="indisponivel"?"Produto marcado em falta.":"Item concluído.");
     }
@@ -1560,8 +1563,9 @@ async function renderAdmin(){
         <span><b>${ready}</b> Prontos</span>
         <span><b>${released}</b> Liberados</span>
       </section>
+      ${["administrador","gerente"].includes(state.role)?`<button class="test-lab-entry" type="button" onclick="window.openTestClient()"><div><span>AMBIENTE DE TESTE</span><b>Entrar como Cliente Teste Algaroba</b><small>Faça um pedido e acompanhe todo o fluxo sem misturar com dados reais.</small></div><strong>Testar →</strong></button>`:""}
       <section class="today-orders-card">
-        <div class="today-orders-head"><div><strong>Pedidos de hoje</strong><small>${today.length} pedidos</small></div><button type="button" onclick="window.openInternalModule('administrativo')">Ver todos →</button></div>
+        <div class="today-orders-head"><div><strong>Pedidos de hoje</strong><small>${today.length} pedidos</small></div><button type="button" onclick="window.openInternalModule('relatorios')">Relatórios →</button></div>
         <div class="today-orders-scroll">
           ${today.length?today.map(x=>`<article class="today-order">
             <div><b>${esc(x.cliente_nome)}</b><small>${esc(x.numero)} • ${fmtDateTime(x.data_pedido)}</small></div>
@@ -1645,10 +1649,20 @@ window.adminEditPresentation=async id=>{
 };
 
 const __internalFlow=installInternalFlow({
-  state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtTime,brl,renderFinance
+  state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtTime,brl,renderFinance,renderInternal
 });
 renderProduction=__internalFlow.renderProduction;
+renderConference=__internalFlow.renderConference;
 renderExpedition=__internalFlow.renderExpedition;
+renderRoute=__internalFlow.renderRoute;
 renderFinance=__internalFlow.renderFinance;
+
+const __internalAdmin=installInternalAdmin({
+  state,main,rpc,internalShell,loading,esc,showToast,brl,fmtDate,fmtDateTime,loadCatalog,statusClass,
+  renderDashboard:renderAdmin,renderInternal
+});
+renderTestClient=__internalAdmin.renderTestClient;
+renderReports=__internalAdmin.renderReports;
+window.openTestClient=()=>renderTestClient();
 
 boot();
