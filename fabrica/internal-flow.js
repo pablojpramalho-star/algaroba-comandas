@@ -1,4 +1,6 @@
-(function(){
+export function installInternalFlow(ctx){
+  const {state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtTime,brl}=ctx;
+  let renderProduction,renderExpedition,renderFinance;
   if(!("productionOpenOrder" in state)) state.productionOpenOrder=null;
   if(!("expeditionOpenOrder" in state)) state.expeditionOpenOrder=null;
   if(!("deliveryOpenOrder" in state)) state.deliveryOpenOrder=null;
@@ -282,7 +284,7 @@
     };
   }
 
-  var baseFinance=renderFinance;
+  var baseFinance=ctx.renderFinance;
   renderFinance=async function(){
     await baseFinance();
     try{
@@ -308,4 +310,5 @@
       };
     }catch(e){console.warn("Alertas da entrega:",e.message)}
   };
-})();
+  return {renderProduction:renderProduction,renderExpedition:renderExpedition,renderFinance:renderFinance};
+}
