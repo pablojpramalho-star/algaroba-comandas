@@ -208,6 +208,7 @@ function captureAuthCallback(){
     return {error:decodeURIComponent(error.replace(/\+/g," "))};
   }
   const accessToken=params.get("access_token"),refreshToken=params.get("refresh_token");
+  const authType=params.get("type")||null;
   if(!accessToken||!refreshToken)return null;
   state.session={
     access_token:accessToken,
@@ -219,7 +220,7 @@ function captureAuthCallback(){
   localStorage.setItem("algaroba_session",JSON.stringify(state.session));
   localStorage.removeItem("algaroba_pending_email");
   history.replaceState(null,"",window.location.pathname+window.location.search);
-  return {confirmed:true};
+  return {confirmed:true,recovery:authType==="recovery",type:authType};
 }
 
 async function boot(){
@@ -231,7 +232,10 @@ async function boot(){
   if(!navigator.onLine)$("#offlineBanner").classList.remove("hidden");
   if(state.session)await loadIdentity();
   await loadCatalog();setClientNavigation();
-  if(requestedView==="interno"){
+  if(authCallback?.recovery){
+    go("reset-password");
+  }
+  else if(requestedView==="interno"){
     if(state.session&&!state.role)await tryBootstrapFirstAdmin();
     if(state.session&&state.role&&state.role!=="cliente")go("internal");
     else if(state.session&&state.role==="cliente"){showToast("Este acesso é exclusivo para a equipe Algaroba.");go("home")}
@@ -248,12 +252,13 @@ async function boot(){
   else if(requestedView==="conta")go("account");
   else go("home");
   if(requestedView)history.replaceState(null,"",window.location.pathname);
-  if(authCallback?.confirmed)setTimeout(()=>showToast("E-mail confirmado. Complete seu cadastro."),120);
+  if(authCallback?.recovery)setTimeout(()=>showToast("Link confirmado. Crie sua nova senha."),120);
+  else if(authCallback?.confirmed)setTimeout(()=>showToast("E-mail confirmado. Complete seu cadastro."),120);
   else if(authCallback?.error)setTimeout(()=>showToast(authCallback.error),120);
 }
 async function go(view){
   window.scrollTo({top:0,behavior:"smooth"});
-  if(state.session&&state.role&&state.role!=="cliente"&&view!=="login"&&view!=="internal")view="internal";
+  if(state.session&&state.role&&state.role!=="cliente"&&!["login","internal","reset-password"].includes(view))view="internal";
   nav(view);
   if(view==="home")renderHome();
   else if(view==="catalog")renderCatalog();
@@ -265,6 +270,8 @@ async function go(view){
   else if(view==="info")await renderInfo();
   else if(view==="account")await renderAccount();
   else if(view==="login")renderLogin();
+  else if(view==="forgot-password")renderForgotPassword();
+  else if(view==="reset-password")renderResetPassword();
   else if(view==="signup")renderSignup();
   else if(view==="complete-profile")renderCompleteProfile();
   else if(view==="address-setup")renderAddressSetup();
@@ -636,6 +643,7 @@ function renderLogin(){
       <div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div>
       <button id="loginSubmit" class="button" style="width:100%" type="submit">Entrar</button>
     </form>
+    <button class="auth-forgot-link" type="button" onclick="window.openForgotPassword()">Esqueci minha senha</button>
     ${internalAccess?`
       <div class="notice green" style="margin-top:13px"><b>Acesso interno</b><br>Use o e-mail e a senha cadastrados para sua função na Algaroba.</div>
       <div class="auth-divider"><span>primeiro acesso</span></div>
@@ -646,6 +654,105 @@ function renderLogin(){
       <div class="notice green" style="margin-top:13px">Você pode consultar o catálogo sem login. A conta só é necessária para enviar o pedido.</div>`}
   </div>`;
 }
+
+function renderForgotPassword(){
+  if(state.session){go(state.role==="cliente"?"account":"internal");return}
+  main.innerHTML=`<div class="login-card">
+    <button class="auth-back" type="button" data-go="login">← Voltar para entrar</button>
+    <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+    <h2>Recuperar senha</h2>
+    <p class="small" style="text-align:center">Digite o e-mail usado no seu cadastro. Enviaremos um link seguro para criar uma nova senha.</p>
+    <form onsubmit="window.sendPasswordRecovery(event)">
+      <div class="field"><label>E-mail</label><input id="recoveryEmail" type="email" autocomplete="email" required></div>
+      <button id="recoverySubmit" class="button orange" style="width:100%" type="submit">Enviar link de recuperação</button>
+    </form>
+    <div class="notice green" style="margin-top:13px">Por segurança, a tela sempre mostrará a mesma confirmação, mesmo se o e-mail não estiver cadastrado.</div>
+  </div>`;
+}
+
+window.openForgotPassword=()=>{
+  const typed=$("#email")?.value?.trim();
+  if(typed)sessionStorage.setItem("algaroba_recovery_email",typed);
+  go("forgot-password");
+  setTimeout(()=>{
+    const input=$("#recoveryEmail");
+    const saved=sessionStorage.getItem("algaroba_recovery_email");
+    if(input&&saved)input.value=saved;
+  },0);
+};
+
+window.sendPasswordRecovery=async e=>{
+  e.preventDefault();
+  const email=$("#recoveryEmail").value.trim();
+  const btn=$("#recoverySubmit");
+  btn.disabled=true;btn.textContent="Enviando...";
+  try{
+    const r=await fetch(SUPABASE_URL+"/auth/v1/recover?redirect_to="+encodeURIComponent(AUTH_REDIRECT_URL),{
+      method:"POST",
+      headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({email})
+    });
+    let data={};try{data=await r.json()}catch{}
+    if(!r.ok)throw new Error(data.error_description||data.msg||data.message||"Não foi possível enviar o e-mail de recuperação.");
+    sessionStorage.removeItem("algaroba_recovery_email");
+    main.innerHTML=`<div class="login-card auth-success">
+      <div class="success-icon">✉️</div>
+      <h2>Confira seu e-mail</h2>
+      <p>Se existir uma conta vinculada a <b>${esc(email)}</b>, enviamos um link para redefinir a senha.</p>
+      <p class="small">Abra o e-mail, toque no link de recuperação e você voltará automaticamente para a Algaroba para criar uma nova senha.</p>
+      <button class="button" style="width:100%" data-go="login">Voltar para entrar</button>
+    </div>`;
+  }catch(err){
+    showToast(err.message);
+    btn.disabled=false;btn.textContent="Enviar link de recuperação";
+  }
+};
+
+function renderResetPassword(){
+  if(!state.session){
+    main.innerHTML=`<div class="login-card">
+      <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+      <h2>Link inválido ou expirado</h2>
+      <p class="small" style="text-align:center">Solicite um novo link de recuperação para continuar.</p>
+      <button class="button orange" style="width:100%" onclick="go('forgot-password')">Solicitar novo link</button>
+    </div>`;
+    return;
+  }
+  main.innerHTML=`<div class="login-card">
+    <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+    <h2>Criar nova senha</h2>
+    <p class="small" style="text-align:center">Escolha uma nova senha para sua conta Algaroba.</p>
+    <form onsubmit="window.updateRecoveredPassword(event)">
+      <div class="field"><label>Nova senha</label><input id="newPassword" type="password" minlength="6" autocomplete="new-password" required></div>
+      <div class="field"><label>Repita a nova senha</label><input id="newPassword2" type="password" minlength="6" autocomplete="new-password" required></div>
+      <button id="newPasswordSubmit" class="button orange" style="width:100%" type="submit">Salvar nova senha</button>
+    </form>
+  </div>`;
+}
+
+window.updateRecoveredPassword=async e=>{
+  e.preventDefault();
+  const p1=$("#newPassword").value,p2=$("#newPassword2").value;
+  if(p1!==p2){showToast("As senhas não são iguais.");return}
+  if(p1.length<6){showToast("A senha precisa ter pelo menos 6 caracteres.");return}
+  const btn=$("#newPasswordSubmit");btn.disabled=true;btn.textContent="Salvando...";
+  try{
+    await request("/auth/v1/user",{method:"PUT",body:{password:p1}});
+    try{await fetch(SUPABASE_URL+"/auth/v1/logout",{method:"POST",headers:authHeaders()})}catch{}
+    localStorage.removeItem("algaroba_session");
+    state.session=null;state.role=null;state.profile=null;
+    await loadCatalog();setClientNavigation();
+    main.innerHTML=`<div class="login-card auth-success">
+      <div class="success-icon">✓</div>
+      <h2>Senha alterada</h2>
+      <p>Sua nova senha foi salva com sucesso.</p>
+      <button class="button" style="width:100%" data-go="login">Entrar com a nova senha</button>
+    </div>`;
+  }catch(err){
+    showToast(err.message);
+    btn.disabled=false;btn.textContent="Salvar nova senha";
+  }
+};
 
 function renderSignup(){
   if(state.session){go(state.role?(state.role==="cliente"?"account":"internal"):"complete-profile");return}
