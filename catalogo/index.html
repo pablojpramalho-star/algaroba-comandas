@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#073B29">
+  <meta name="description" content="Catálogo institucional Algaroba — sabores, linhas, xaropes, coberturas, grãos, farináceos e condições comerciais.">
+  <link rel="icon" href="../algaroba-icon.svg" type="image/svg+xml">
+  <title>Catálogo Algaroba</title>
+  <style>
+    :root{
+      --green:#073B29;--green2:#0B432F;--green3:#2F6A47;
+      --cream:#FFF8E8;--cream2:#FBF1DC;--beige:#EBD8B5;
+      --brown:#5A2F1E;--orange:#F05A0A;--ink:#17372A;--muted:#746D60;
+      --white:#fff;--shadow:0 14px 34px rgba(27,42,33,.12);
+      --radius:24px;--radius-sm:16px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:
+      radial-gradient(circle at 10% 0%,rgba(235,216,181,.45),transparent 26rem),
+      linear-gradient(180deg,#fffaf0 0%,#f8eedb 100%);
+      color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    a{color:inherit;text-decoration:none}
+    button,input{font:inherit}
+    img{max-width:100%;display:block}
+    .wrap{width:min(1120px,calc(100% - 28px));margin:auto}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(7,59,41,.96);backdrop-filter:blur(14px);
+      color:var(--cream);border-bottom:1px solid rgba(255,255,255,.09)}
+    .topbar .wrap{height:74px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand img{width:46px;height:46px;border-radius:50%;background:var(--cream);padding:6px}
+    .brand strong{font:700 28px/1 Georgia,serif;display:block;letter-spacing:-.5px}
+    .brand small{font-size:9px;letter-spacing:2px;opacity:.72;display:block;margin-top:4px;white-space:nowrap}
+    .share{border:1px solid rgba(255,255,255,.25);color:var(--cream);background:rgba(255,255,255,.08);
+      border-radius:999px;padding:11px 14px;font-weight:800;cursor:pointer}
+    .hero{padding:38px 0 22px}
+    .hero-card{position:relative;overflow:hidden;background:
+      radial-gradient(circle at 88% 24%,rgba(255,255,255,.12),transparent 12rem),
+      linear-gradient(135deg,#063524,#0b4b34 62%,#5a2f1e);
+      color:var(--cream);border-radius:32px;box-shadow:var(--shadow);padding:34px;min-height:320px}
+    .hero-card:after{content:"";position:absolute;right:-70px;bottom:-90px;width:280px;height:280px;
+      border-radius:50%;border:55px solid rgba(235,216,181,.09)}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:900;letter-spacing:1.7px;color:#e8c58d}
+    .eyebrow:before{content:"";width:28px;height:2px;background:#e8c58d;border-radius:2px}
+    .hero h1{font:700 clamp(42px,8vw,74px)/.95 Georgia,serif;letter-spacing:-2px;margin:18px 0 16px;max-width:760px}
+    .hero p{max-width:720px;font-size:17px;line-height:1.65;margin:0;color:#f7eedf}
+    .hero-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+    .stat{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:12px 15px}
+    .stat b{display:block;font:700 24px/1 Georgia,serif}
+    .stat span{display:block;font-size:11px;margin-top:4px;opacity:.82}
+    .quicknav{display:flex;gap:9px;overflow-x:auto;padding:18px 0 6px;scrollbar-width:none}
+    .quicknav::-webkit-scrollbar{display:none}
+    .quicknav a{flex:0 0 auto;background:var(--cream);border:1px solid #dfcda8;border-radius:999px;padding:11px 15px;
+      font-size:13px;font-weight:800;box-shadow:0 5px 16px rgba(70,48,23,.06)}
+    .quicknav a:hover{background:#fff}
+    .section{padding:30px 0}
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:16px}
+    .section-head h2{font:700 clamp(30px,5vw,46px)/1 Georgia,serif;margin:0;color:var(--green)}
+    .section-head p{margin:8px 0 0;color:var(--muted);line-height:1.55}
+    .searchbox{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ddc89e;border-radius:18px;padding:14px 16px;
+      box-shadow:0 8px 22px rgba(74,55,28,.06);margin-bottom:14px}
+    .searchbox svg{width:22px;fill:none;stroke:var(--green3);stroke-width:2}
+    .searchbox input{width:100%;border:0;outline:none;background:transparent;color:var(--ink);font-size:16px}
+    .filters{display:flex;gap:9px;overflow:auto;padding:2px 0 12px;scrollbar-width:none}
+    .filters::-webkit-scrollbar{display:none}
+    .filters button{flex:0 0 auto;border:1px solid #d9c69f;background:#f7edda;color:#53685c;border-radius:999px;padding:10px 14px;font-weight:800;cursor:pointer}
+    .filters button.active{background:var(--green);border-color:var(--green);color:#fff}
+    .legend{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 18px}
+    .legend span{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+    .badge{display:inline-grid;place-items:center;width:29px;height:29px;border-radius:50%;color:#fff;font-weight:900;font-size:12px;flex:none}
+    .tradicional{background:#2f6a47}.zero{background:#2d7f72}.classic{background:#8f4b22}.intense{background:#9c1717}.raiz{background:#7b5f28}
+    .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .card{display:grid;grid-template-columns:78px 1fr auto;gap:13px;align-items:center;background:rgba(255,255,255,.84);
+      border:1px solid #ddc89e;border-radius:20px;padding:12px;box-shadow:0 8px 20px rgba(74,55,28,.05)}
+    .thumb{height:78px;border-radius:16px;position:relative;overflow:hidden;background:linear-gradient(150deg,#f4e5c5,#d5a66d)}
+    .thumb:before{content:"";position:absolute;left:50%;bottom:10px;translate:-50% 0;width:34px;height:45px;border-radius:8px 8px 13px 13px;
+      background:linear-gradient(180deg,#fff8e8,#d59c70 70%,#6d3a24);box-shadow:inset 0 0 0 1px rgba(90,47,30,.15)}
+    .thumb:after{content:"";position:absolute;width:34px;height:8px;border-radius:50%;left:50%;bottom:51px;translate:-50% 0;background:#f3e4cb;
+      box-shadow:0 -8px 0 -2px rgba(255,255,255,.8)}
+    .thumb.intense-bg{background:linear-gradient(150deg,#f7d4d0,#8b281f)}
+    .thumb.classic-bg{background:linear-gradient(150deg,#ffe3a1,#d7762d)}
+    .thumb.tradicional-bg{background:linear-gradient(150deg,#d9ebc8,#528563)}
+    .thumb.zero-bg{background:linear-gradient(150deg,#d3eee9,#4b9489)}
+    .thumb.raiz-bg{background:linear-gradient(150deg,#ead7a7,#8c6c2e)}
+    .card strong{display:block;font:700 20px/1.15 Georgia,serif;color:var(--green);margin-bottom:5px}
+    .card small{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+    .price{font-size:12px;font-weight:850;color:var(--green3);line-height:1.45}
+    .empty,.loading{grid-column:1/-1;background:#fff;border:1px dashed #d8c59e;border-radius:18px;padding:18px;color:var(--muted)}
+    .subgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .simple-card{background:#fff;border:1px solid #dfcda8;border-radius:22px;padding:18px;box-shadow:0 9px 24px rgba(70,48,23,.05)}
+    .simple-card .icon{width:48px;height:48px;border-radius:15px;background:#e9f0e8;display:grid;place-items:center;color:var(--green);font-size:22px;margin-bottom:12px}
+    .simple-card h3{font:700 24px/1.1 Georgia,serif;color:var(--green);margin:0 0 8px}
+    .simple-card p{margin:0;color:var(--muted);line-height:1.55;font-size:14px}
+    .simple-card .product-price{margin-top:10px;font-size:13px;font-weight:900;color:var(--green3)}
+    .commercial{background:var(--green);color:var(--cream);border-radius:30px;padding:28px;box-shadow:var(--shadow)}
+    .commercial h2{color:var(--cream)}
+    .commercial .section-head p{color:#dbe7df}
+    .model-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .model{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);border-radius:22px;padding:20px}
+    .model b{font:700 26px/1 Georgia,serif;display:block;margin-bottom:9px}
+    .model p{margin:0;color:#e7efe9;line-height:1.55;font-size:14px}
+    .model.featured{background:#fff4dd;color:var(--green)}
+    .model.featured p{color:#5f665f}
+    .discount{display:inline-block;margin-top:12px;background:var(--orange);color:#fff;font-weight:900;border-radius:999px;padding:8px 11px;font-size:12px}
+    .benefits{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px}
+    .benefit{border:1px solid rgba(255,255,255,.13);border-radius:18px;padding:16px;background:rgba(255,255,255,.06)}
+    .benefit strong{display:block;margin-bottom:5px}
+    .benefit span{font-size:12px;color:#dce7df;line-height:1.5}
+    .story{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:stretch}
+    .story-copy,.story-values{background:#fff;border:1px solid #dfcda8;border-radius:28px;padding:26px;box-shadow:0 10px 25px rgba(70,48,23,.05)}
+    .story-copy h2{font:700 40px/1 Georgia,serif;color:var(--green);margin:0 0 16px}
+    .story-copy p{color:#5f665f;line-height:1.75;margin:0 0 12px}
+    .timeline{border-left:2px solid #d6c091;padding-left:18px;margin-top:18px}
+    .timeline div{margin:0 0 14px}
+    .timeline b{color:var(--green);display:block}
+    .timeline small{color:var(--muted);line-height:1.5}
+    .value{padding:15px 0;border-bottom:1px solid #eee0c3}
+    .value:last-child{border-bottom:0}
+    .value b{display:block;color:var(--green);margin-bottom:4px}
+    .value span{color:var(--muted);font-size:13px;line-height:1.5}
+    .notice{background:#fff7e8;border:1px solid #e4cda3;border-radius:18px;padding:15px 16px;margin-top:16px;color:#665c4b;font-size:12px;line-height:1.55}
+    footer{margin-top:32px;background:#052c20;color:#dbe7df;padding:28px 0 calc(28px + env(safe-area-inset-bottom))}
+    footer .wrap{display:flex;justify-content:space-between;gap:20px;align-items:center}
+    footer strong{font:700 28px/1 Georgia,serif;color:#fff4dd}
+    footer p{font-size:12px;margin:6px 0 0;opacity:.8}
+    footer a{font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:10px 13px}
+    @media(max-width:820px){
+      .product-grid,.subgrid,.model-grid,.benefits,.story{grid-template-columns:1fr}
+      .hero-card{padding:26px;min-height:auto}
+      .card{grid-template-columns:66px 1fr auto}.thumb{height:66px}
+      .topbar .wrap{height:68px}.brand strong{font-size:24px}.brand small{letter-spacing:1.4px}
+      .share{font-size:12px;padding:9px 11px}
+      .section{padding:23px 0}.commercial{padding:22px}
+      footer .wrap{align-items:flex-start;flex-direction:column}
+    }
+    @media(max-width:460px){
+      .wrap{width:min(100% - 20px,1120px)}
+      .hero{padding-top:18px}.hero-card{border-radius:24px}
+      .hero h1{font-size:44px}.hero p{font-size:15px}
+      .card strong{font-size:18px}
+      .card{padding:10px;gap:10px}
+      .badge{width:27px;height:27px}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#inicio" aria-label="Catálogo Algaroba">
+        <img src="../algaroba-icon.svg" alt="">
+        <span><strong>Algaroba</strong><small>NATURAL COMO NOSSA TERRA</small></span>
+      </a>
+      <button class="share" id="shareBtn" type="button">Compartilhar</button>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <div class="wrap">
+      <section class="hero">
+        <div class="hero-card">
+          <span class="eyebrow">CATÁLOGO INSTITUCIONAL</span>
+          <h1>Um mundo de sabores em um só lugar.</h1>
+          <p>Conheça a linha completa Algaroba: shakes, Tradicional Raiz, xaropes, coberturas, grãos, farináceos e composto lácteo. Um catálogo feito para consultar, apresentar e compartilhar.</p>
+          <div class="hero-stats">
+            <div class="stat"><b>46</b><span>sabores + Tradicional Raiz</span></div>
+            <div class="stat"><b>5</b><span>famílias de produtos</span></div>
+            <div class="stat"><b>2020</b><span>início da nossa história</span></div>
+          </div>
+        </div>
+        <nav class="quicknav" aria-label="Atalhos">
+          <a href="#sabores">Sabores</a><a href="#xaropes">Xaropes</a><a href="#coberturas">Coberturas</a>
+          <a href="#graos">Grãos e farináceos</a><a href="#lacteo">Composto lácteo</a>
+          <a href="#como-comprar">Como comprar</a><a href="#parcerias">Parcerias</a><a href="#historia">Nossa história</a>
+        </nav>
+      </section>
+
+      <section class="section" id="sabores">
+        <div class="section-head">
+          <div><h2>Nossos sabores</h2><p>Todos em ordem alfabética, com identificação clara da linha.</p></div>
+        </div>
+        <label class="searchbox">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+          <input id="search" type="search" placeholder="Buscar sabor ou produto" autocomplete="off">
+        </label>
+        <div class="filters" id="filters">
+          <button class="active" data-line="all">Todos</button>
+          <button data-line="Tradicional">Tradicional</button>
+          <button data-line="Zero">Zero</button>
+          <button data-line="Classic">Classic</button>
+          <button data-line="Intense">Intense</button>
+          <button data-line="Raiz">Raiz</button>
+        </div>
+        <div class="legend">
+          <span><b class="badge tradicional">T</b>Tradicional</span>
+          <span><b class="badge zero">Z</b>Zero</span>
+          <span><b class="badge classic">C</b>Classic</span>
+          <span><b class="badge intense">I</b>Intense</span>
+          <span><b class="badge raiz">R</b>Raiz</span>
+        </div>
+        <div class="product-grid" id="shakes"><div class="loading">Carregando sabores...</div></div>
+      </section>
+
+      <section class="section" id="xaropes">
+        <div class="section-head"><div><h2>Xaropes</h2><p>Complementos desenvolvidos para ampliar o mix e personalizar o preparo.</p></div></div>
+        <div class="subgrid" id="syrups"><div class="loading">Carregando produtos...</div></div>
+      </section>
+
+      <section class="section" id="coberturas">
+        <div class="section-head"><div><h2>Coberturas</h2><p>Sabores para finalizar, decorar e agregar valor ao produto servido.</p></div></div>
+        <div class="subgrid" id="covers"><div class="loading">Carregando produtos...</div></div>
+      </section>
+
+      <section class="section" id="graos">
+        <div class="section-head"><div><h2>Grãos e farináceos</h2><p>Complementos para textura, acabamento e novas combinações.</p></div></div>
+        <div class="subgrid" id="grains"><div class="loading">Carregando produtos...</div></div>
+      </section>
+
+      <section class="section" id="lacteo">
+        <div class="section-head"><div><h2>Composto lácteo</h2><p>Produto complementar para apoiar diferentes receitas e operações.</p></div></div>
+        <div class="subgrid" id="lacteos"><div class="loading">Carregando produto...</div></div>
+      </section>
+
+      <section class="section commercial" id="como-comprar">
+        <div class="section-head"><div><h2>Como trabalhamos</h2><p>Condições pensadas para quem compra para consumo, operação ou revenda.</p></div></div>
+        <div class="model-grid">
+          <article class="model"><b>Varejo</b><p>Compra em pequenas quantidades, com os valores de varejo apresentados no catálogo. Ideal para conhecer produtos, testar sabores e repor pontualmente.</p></article>
+          <article class="model"><b>Atacado</b><p>Condição comercial para compras a partir de 6 unidades, com preços de atacado indicados nos produtos e atendimento voltado para reposição recorrente.</p></article>
+          <article class="model featured"><b>Revenda</b><p>Para compras de maior volume, trabalhamos com condição especial para fortalecer parceiros e facilitar a formação de estoque.</p><span class="discount">Pedidos a partir de R$ 2.000: 10% de desconto</span></article>
+        </div>
+        <div class="benefits" id="parcerias">
+          <div class="benefit"><strong>Mix amplo</strong><span>Diversidade de sabores e complementos em um único fornecedor.</span></div>
+          <div class="benefit"><strong>Parceria comercial</strong><span>Condições pensadas para clientes recorrentes e pontos de revenda.</span></div>
+          <div class="benefit"><strong>Entregas programadas</strong><span>Rotas organizadas por região para tornar o abastecimento mais previsível.</span></div>
+          <div class="benefit"><strong>Material de apoio</strong><span>Catálogos e peças de divulgação que ajudam o parceiro a apresentar o produto.</span></div>
+        </div>
+        <div class="notice">As condições comerciais podem variar conforme produto, quantidade, forma de pagamento, disponibilidade e rota. Valores exibidos neste catálogo são carregados da tabela vigente da Algaroba.</div>
+      </section>
+
+      <section class="section" id="historia">
+        <div class="story">
+          <article class="story-copy">
+            <span class="eyebrow" style="color:#9b6b2e">NOSSA HISTÓRIA</span>
+            <h2>Algaroba: raiz, sabor e crescimento.</h2>
+            <p>A Algaroba nasceu em 2020 com uma proposta simples: desenvolver produtos acessíveis, versáteis e cheios de identidade, valorizando uma linguagem que conversa com a nossa terra e com quem empreende.</p>
+            <p>Com o tempo, o portfólio cresceu, a marca ganhou identidade própria e a operação passou a atender diferentes perfis de clientes — do consumidor final ao comércio e à revenda.</p>
+            <div class="timeline">
+              <div><b>2020</b><small>Início da Algaroba e dos primeiros passos da marca.</small></div>
+              <div><b>2022</b><small>Consolidação da identidade visual e fortalecimento do posicionamento.</small></div>
+              <div><b>Hoje</b><small>Um portfólio com dezenas de sabores, complementos e soluções para consumo, food service e revenda.</small></div>
+            </div>
+          </article>
+          <aside class="story-values">
+            <div class="value"><b>Natural como nossa terra</b><span>Uma identidade que carrega origem, proximidade e personalidade.</span></div>
+            <div class="value"><b>Qualidade com simplicidade</b><span>Produtos organizados para facilitar escolha, preparo e reposição.</span></div>
+            <div class="value"><b>Cliente no centro</b><span>Atendimento próximo e construção de relações comerciais duradouras.</span></div>
+            <div class="value"><b>Visão de futuro</b><span>Tecnologia, catálogo digital e organização para crescer sem perder a essência.</span></div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div><strong>Algaroba</strong><p>Catálogo institucional • consulta e apresentação comercial</p></div>
+      <a href="#inicio">Voltar ao início ↑</a>
+    </div>
+  </footer>
+
+  <script>
+    const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
+    const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
+    const $=s=>document.querySelector(s);
+    const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const brl=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    const collator=new Intl.Collator("pt-BR",{sensitivity:"base"});
+    let catalog=[],query="",line="all";
+
+    const lineMap={
+      Tradicional:{code:"T",cls:"tradicional",label:"Linha Tradicional"},
+      Zero:{code:"Z",cls:"zero",label:"Linha Zero"},
+      Classic:{code:"C",cls:"classic",label:"Linha Classic"},
+      Intense:{code:"I",cls:"intense",label:"Linha Intense"},
+      Raiz:{code:"R",cls:"raiz",label:"Linha Raiz"}
+    };
+    function norm(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+    function measure(p){
+      const n=Number(p.peso_volume); if(!n)return"";
+      if(p.unidade==="kg")return (n===1?"1 kg":(n*1000)+" g");
+      if(p.unidade==="L")return (n===1?"1 L":n.toLocaleString("pt-BR")+" L");
+      return n.toLocaleString("pt-BR")+" "+(p.unidade||"");
+    }
+    function priceText(group){
+      const variants=[...group.variants].sort((a,b)=>Number(a.peso_volume)-Number(b.peso_volume));
+      return variants.map(p=>`${measure(p)} • Atacado ${brl(p.preco_atacado)} • Varejo ${brl(p.preco_varejo)}`).join(" | ");
+    }
+    function shakeGroups(){
+      const map=new Map();
+      catalog.filter(p=>p.categoria==="Shakes").forEach(p=>{
+        const key=(p.linha||"")+"|"+(p.sabor||p.produto);
+        if(!map.has(key))map.set(key,{line:p.linha,name:p.sabor||p.produto,variants:[]});
+        map.get(key).variants.push(p);
+      });
+      return [...map.values()].sort((a,b)=>collator.compare(a.name,b.name));
+    }
+    function renderShakes(){
+      const groups=shakeGroups().filter(g=>{
+        const matchesLine=line==="all"||g.line===line;
+        const matchesSearch=!query||norm(g.name+" "+g.line).includes(norm(query));
+        return matchesLine&&matchesSearch;
+      });
+      $("#shakes").innerHTML=groups.map(g=>{
+        const info=lineMap[g.line]||{code:"•",cls:"classic",label:g.line||""};
+        return `<article class="card">
+          <span class="thumb ${info.cls}-bg" aria-hidden="true"></span>
+          <div><strong>${esc(g.name)}</strong><small>${esc(info.label)}</small><div class="price">${esc(priceText(g))}</div></div>
+          <b class="badge ${info.cls}" title="${esc(info.label)}">${info.code}</b>
+        </article>`;
+      }).join("")||'<div class="empty">Nenhum sabor encontrado.</div>';
+    }
+    function simpleProducts(items,target,icon){
+      $(target).innerHTML=items.sort((a,b)=>collator.compare(a.sabor||a.produto,b.sabor||b.produto)).map(p=>`
+        <article class="simple-card">
+          <div class="icon" aria-hidden="true">${icon}</div>
+          <h3>${esc(p.sabor||p.produto)}</h3>
+          <p>${esc(p.produto)} • ${esc(measure(p))}</p>
+          <div class="product-price">Atacado ${brl(p.preco_atacado)} • Varejo ${brl(p.preco_varejo)}</div>
+        </article>`).join("")||'<div class="empty">Nenhum produto cadastrado nesta seção.</div>';
+    }
+    function renderOther(){
+      const allGraos=catalog.filter(p=>p.categoria==="Grãos e Farináceos");
+      const lacteos=allGraos.filter(p=>norm(p.produto+" "+p.sabor).includes("lacteo"));
+      const graos=allGraos.filter(p=>!norm(p.produto+" "+p.sabor).includes("lacteo"));
+      simpleProducts(catalog.filter(p=>p.categoria==="Xaropes"),"#syrups","◌");
+      simpleProducts(catalog.filter(p=>p.categoria==="Coberturas"),"#covers","⌁");
+      simpleProducts(graos,"#grains","✦");
+      simpleProducts(lacteos,"#lacteos","◉");
+    }
+    async function loadCatalog(){
+      try{
+        const r=await fetch(SUPABASE_URL+"/rest/v1/rpc/catalogo_publico",{
+          method:"POST",headers:{"apikey":PUBLISHABLE_KEY,"Content-Type":"application/json"},body:"{}"
+        });
+        if(!r.ok)throw new Error("Não foi possível carregar o catálogo.");
+        catalog=await r.json();
+        renderShakes();renderOther();
+      }catch(e){
+        ["#shakes","#syrups","#covers","#grains","#lacteos"].forEach(id=>$(id).innerHTML='<div class="empty">'+esc(e.message)+'</div>');
+      }
+    }
+    $("#search").addEventListener("input",e=>{query=e.target.value.trim();renderShakes()});
+    $("#filters").addEventListener("click",e=>{
+      const b=e.target.closest("[data-line]");if(!b)return;
+      line=b.dataset.line;
+      $("#filters").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));
+      renderShakes();
+    });
+    $("#shareBtn").addEventListener("click",async()=>{
+      const data={title:"Catálogo Algaroba",text:"Conheça o catálogo Algaroba",url:location.href};
+      try{
+        if(navigator.share)await navigator.share(data);
+        else{await navigator.clipboard.writeText(location.href);$("#shareBtn").textContent="Link copiado";setTimeout(()=>$("#shareBtn").textContent="Compartilhar",1800)}
+      }catch(_){}
+    });
+    loadCatalog();
+  </script>
+</body>
+</html>
