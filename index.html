@@ -63,7 +63,8 @@ button{color:inherit}
 .replenishment-cash{border:2px solid #d99500!important;background:#242015!important}.close-replenishment-reminder{border:2px solid #d99500!important;background:#242015!important}
 .confirm-replenishment{display:flex;align-items:flex-start;gap:9px;margin-top:12px;font-weight:800;color:#fff}.confirm-replenishment input{width:22px;height:22px;margin:0;flex:0 0 auto;accent-color:#ef7d21}
 
-/* 2.9.7.35 — destaque visual do período selecionado nos relatórios.
+/* 2.9.7.36 — impressão/PDF compatível com PWA sem sair do aplicativo.
+   2.9.7.35 — destaque visual do período selecionado nos relatórios.
    Mantido no fim do CSS para prevalecer sobre a padronização global dos botões. */
 .report-filter-btn.report-filter-active{
   background:#ef7d21!important;
@@ -82,7 +83,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.35 • FILTRO VISUAL DOS RELATÓRIOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.36 • PDF COMPATÍVEL COM PWA</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -729,8 +730,20 @@ function printableDocument(title,body){
  </style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script></body></html>`;
 }
 function openPrintableReport(title,body){
- let w=window.open('','_blank');if(!w){alert('Permita pop-ups no navegador para gerar o PDF.');return false}
- w.document.open();w.document.write(printableDocument(title,body));w.document.close();return true;
+ // Imprime dentro do próprio PWA, sem abrir nova aba/janela.
+ // Isso evita que iPhone/Android saiam do aplicativo ao gerar PDF.
+ const old=document.getElementById('algarobaPrintFrame');if(old)old.remove();
+ const frame=document.createElement('iframe');
+ frame.id='algarobaPrintFrame';frame.setAttribute('aria-hidden','true');
+ frame.style.position='fixed';frame.style.right='0';frame.style.bottom='0';frame.style.width='1px';frame.style.height='1px';frame.style.border='0';frame.style.opacity='0';frame.style.pointerEvents='none';
+ document.body.appendChild(frame);
+ const doc=frame.contentWindow.document;
+ // Remove o auto-print do documento auxiliar; o PWA controla a impressão abaixo.
+ const html=printableDocument(title,body).replace(/<script>window\.onload=\(\)=>setTimeout\(\(\)=>window\.print\(\),500\)<\\\/script>/,'');
+ doc.open();doc.write(html);doc.close();
+ const doPrint=()=>{try{frame.contentWindow.focus();frame.contentWindow.print();setTimeout(()=>{if(frame.isConnected)frame.remove()},1500)}catch(e){console.error('PDF/print',e);if(frame.isConnected)frame.remove();alert('Não foi possível abrir a impressão neste aparelho. Tente novamente pelo navegador.')}};
+ if(doc.readyState==='complete')setTimeout(doPrint,250);else frame.onload=()=>setTimeout(doPrint,250);
+ return true;
 }
 
 function closureReportText(c){let bp=c.byPayment||{},m=c.movements||[],en=m.filter(x=>x.type==='entrada').reduce((a,x)=>a+Number(x.value||0),0),sa=m.filter(x=>x.type!=='entrada').reduce((a,x)=>a+Number(x.value||0),0),d=new Date(c.closedAt),df=Number(c.difference||0);return `ALGAROBA SHAKES GRILLS
