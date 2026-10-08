@@ -715,7 +715,7 @@ function printableDocument(title,body){
  h1{font-size:24px;margin:0 0 3px}h2{font-size:19px;margin:22px 0 8px}h3{font-size:16px;margin:16px 0 6px}
  .muted{color:#666}.panel{border:1px solid #bbb;border-radius:10px;padding:12px;margin:9px 0}.cart-row,.r{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #ddd;padding:8px 0}.cart-row:last-child,.r:last-child{border-bottom:0}.big{font-size:22px;font-weight:bold}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}button{display:none!important}
  @media print{body{padding:0}.panel{break-inside:avoid}.grid{display:block}}
- </style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script><script>if ('serviceWorker' in navigator) { window.addEventListener('load', function(){ navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW',e);}); }); }</script></body></html>`;
+ </style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script></body></html>`;
 }
 function openPrintableReport(title,body){
  let w=window.open('','_blank');if(!w){alert('Permita pop-ups no navegador para gerar o PDF.');return false}
@@ -1322,5 +1322,18 @@ function printFilteredReport(){generateFilteredReport();setTimeout(()=>{let body
 window.addEventListener('storage',e=>{if(e.key==='algarobaState'&&e.newValue){if(userIsEditing())return;try{state=JSON.parse(e.newValue);renderOperator();renderTables();if(!document.getElementById('cozinha').classList.contains('hide'))renderKitchen();if(!document.getElementById('caixa').classList.contains('hide'))renderCash();/* Relatórios preservam posição durante sincronização */}catch(err){console.error(err)}}});
 function back(){let target=canView('mesas')?'mesas':((roleViews[authProfile?.perfil]||[])[0]||'mesas');view(target,document.querySelector('.tabs button[data-view="'+target+'"]'))}
 ensureInventory();renderOperator();renderTables();applyDeviceMode();initAuth();
+
+// PWA: registra o Service Worker somente no aplicativo principal.
+// O login/Supabase continua sempre pela rede; o SW cuida apenas do shell local.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
+      await reg.update().catch(()=>{});
+    } catch (e) {
+      console.warn('Service Worker não registrado:', e);
+    }
+  });
+}
 
 </script></body></html>
