@@ -1,5 +1,5 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261007-flow8";
-import { installInternalAdmin } from "./internal-admin.js?v=20261007-admin1";
+import { installInternalFlow } from "./internal-flow.js?v=20261008-flow9";
+import { installInternalAdmin } from "./internal-admin.js?v=20261008-admin2";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -22,7 +22,8 @@ const state={
   internalModule:localStorage.getItem("algaroba_internal_module")||null,
   adminOrders:[],adminQuery:"",
   productionOpenOrder:null,
-  expeditionOpenOrder:null
+  expeditionOpenOrder:null,
+  operationStage:localStorage.getItem("algaroba_operation_stage")||null
 };
 let renderConference,renderRoute,renderReports,renderTestClient;
 
@@ -1092,28 +1093,50 @@ function roleDisplay(role){
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","producao","conferencia","expedicao","rota","caixa","estoque","relatorios"];
-  if(role==="vendas")return ["dashboard","relatorios"];
-  if(role==="financeiro")return ["caixa","relatorios"];
-  if(role==="producao")return ["producao"];
-  if(role==="expedicao")return ["conferencia","expedicao","rota"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","vendas","operacao","financeiro","caixa","estoque","relatorios"];
+  if(role==="vendas")return ["vendas"];
+  if(role==="financeiro")return ["financeiro","caixa","relatorios"];
+  if(role==="producao")return ["operacao"];
+  if(role==="expedicao")return ["operacao"];
   return [];
 }
 function internalModuleMeta(key){
   return ({
     dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo do dia"},
-    producao:{label:"Produção",icon:"◫",desc:"Produzir e separar"},
-    conferencia:{label:"Conferência",icon:"✓",desc:"Segunda checagem"},
-    expedicao:{label:"Expedição",icon:"▤",desc:"Pedidos prontos"},
-    rota:{label:"Rota",icon:"⇢",desc:"Entregas em campo"},
+    vendas:{label:"Vendas",icon:"▤",desc:"Pedidos e clientes"},
+    operacao:{label:"Operação",icon:"◫",desc:"Produção à entrega"},
+    financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
     caixa:{label:"Caixa",icon:"▣",desc:"Recebimentos"},
     estoque:{label:"Estoque",icon:"▦",desc:"Produtos e insumos"},
-    relatorios:{label:"Relatórios",icon:"≡",desc:"Vendas e gestão"}
+    relatorios:{label:"Relatórios",icon:"≡",desc:"Gestão e histórico"}
   })[key]||{label:key,icon:"•",desc:""};
+}
+function operationStagesForRole(role){
+  if(["administrador","gerente"].includes(role))return ["producao","conferencia","expedicao","rota"];
+  if(role==="producao")return ["producao"];
+  if(role==="expedicao")return ["conferencia","expedicao","rota"];
+  return [];
+}
+function operationStageMeta(key){
+  return ({
+    producao:{label:"Produção",icon:"◫",desc:"Produzir / separar"},
+    conferencia:{label:"Expedição",icon:"✓",desc:"2ª conferência"},
+    expedicao:{label:"Prontos",icon:"▤",desc:"Aguardando saída"},
+    rota:{label:"Rota",icon:"⇢",desc:"Entrega ao cliente"}
+  })[key]||{label:key,icon:"•",desc:""};
+}
+function operationNav(active,role){
+  const stages=operationStagesForRole(role);
+  if(!stages.length)return "";
+  return `<nav class="operation-nav" aria-label="Etapas da operação">
+    ${stages.map(key=>{const m=operationStageMeta(key);return `<button type="button" class="${active===key?"active":""}" onclick="window.openOperationStage('${key}')"><b>${m.icon}</b><span>${m.label}</span><small>${m.desc}</small></button>`}).join("")}
+  </nav>`;
 }
 function internalShell(active){
   const safeRole=typeof state.role==="string"?state.role:"administrador";
   const modules=internalModulesForRole(safeRole);
+  const operationStage=["producao","conferencia","expedicao","rota"].includes(active)?active:null;
+  const topActive=operationStage?"operacao":active;
   return `
     <section class="internal-shell-head">
       <div class="internal-brand">
@@ -1126,8 +1149,9 @@ function internalShell(active){
       </div>
     </section>
     <nav class="internal-nav" aria-label="Módulos internos">
-      ${modules.map(key=>{const m=internalModuleMeta(key);return `<button type="button" class="${active===key?"active":""}" onclick="window.openInternalModule('${key}')"><b>${m.icon}</b><span>${m.label}</span><small>${m.desc}</small></button>`}).join("")}
+      ${modules.map(key=>{const m=internalModuleMeta(key);return `<button type="button" class="${topActive===key?"active":""}" onclick="window.openInternalModule('${key}')"><b>${m.icon}</b><span>${m.label}</span><small>${m.desc}</small></button>`}).join("")}
     </nav>
+    ${operationStage?operationNav(operationStage,safeRole):""}
   `;
 }
 window.openInternalModule=key=>{
@@ -1136,7 +1160,26 @@ window.openInternalModule=key=>{
   localStorage.setItem("algaroba_internal_module",key);
   renderInternal();
 };
+window.openOperationStage=key=>{
+  const stages=operationStagesForRole(state.role);
+  if(!stages.includes(key)){showToast("Seu perfil não tem acesso a esta etapa.");return}
+  state.internalModule="operacao";
+  state.operationStage=key;
+  localStorage.setItem("algaroba_internal_module","operacao");
+  localStorage.setItem("algaroba_operation_stage",key);
+  renderInternal();
+};
 window.refreshInternal=()=>renderInternal();
+function renderOperation(){
+  const stages=operationStagesForRole(state.role);
+  if(!stages.length){main.innerHTML=internalShell("operacao")+'<div class="empty">Seu perfil não possui acesso operacional.</div>';return}
+  if(!stages.includes(state.operationStage))state.operationStage=stages[0];
+  localStorage.setItem("algaroba_operation_stage",state.operationStage);
+  if(state.operationStage==="producao")return renderProduction();
+  if(state.operationStage==="conferencia")return renderConference();
+  if(state.operationStage==="expedicao")return renderExpedition();
+  if(state.operationStage==="rota")return renderRoute();
+}
 function renderInternal(){
   if(!state.session||!state.role){state.returnView="internal";go("login");return}
   setClientNavigation();
@@ -1146,10 +1189,9 @@ function renderInternal(){
   localStorage.setItem("algaroba_internal_module",state.internalModule);
 
   if(state.internalModule==="dashboard")return renderAdmin();
-  if(state.internalModule==="producao")return renderProduction();
-  if(state.internalModule==="conferencia")return renderConference();
-  if(state.internalModule==="expedicao")return renderExpedition();
-  if(state.internalModule==="rota")return renderRoute();
+  if(state.internalModule==="vendas")return renderAdministrative();
+  if(state.internalModule==="operacao")return renderOperation();
+  if(state.internalModule==="financeiro")return renderFinance();
   if(state.internalModule==="caixa")return renderCash();
   if(state.internalModule==="estoque")return renderStock();
   if(state.internalModule==="relatorios")return renderReports();
@@ -1166,9 +1208,9 @@ async function renderAdministrative(){
     state.adminOrders=rows||[];
     const open=state.adminOrders.filter(x=>!["entregue","cancelado","devolvido"].includes(x.status)).length;
     main.innerHTML=`
-      ${internalShell("administrativo")}
+      ${internalShell("vendas")}
       <section class="internal-title">
-        <div><span class="internal-eyebrow">CENTRAL ADMINISTRATIVA</span><h1>Pedidos e atendimento</h1><p>Acompanhe o pedido desde a entrada até a entrega.</p></div>
+        <div><span class="internal-eyebrow">VENDAS / ADMINISTRATIVO</span><h1>Pedidos e clientes</h1><p>Entrada de pedidos, atendimento, balcão/vendedor e histórico do cliente.</p></div>
       </section>
       <div class="internal-kpis">
         <button onclick="window.adminSetFilter('')" class="internal-kpi"><span>Hoje</span><b>${f.pedidos_hoje||0}</b><small>${brl(f.total_pedidos_hoje||0)}</small></button>
@@ -1205,7 +1247,7 @@ async function renderAdministrative(){
       </div>
     `;
     renderAdministrativeRows();
-  }catch(e){main.innerHTML=internalShell("administrativo")+'<div class="empty">'+esc(e.message)+'</div>'}
+  }catch(e){main.innerHTML=internalShell("vendas")+'<div class="empty">'+esc(e.message)+'</div>'}
 }
 function renderAdministrativeRows(){
   const box=document.querySelector("#adminOrdersList");if(!box)return;
