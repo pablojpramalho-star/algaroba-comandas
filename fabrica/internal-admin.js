@@ -50,7 +50,7 @@ export function installInternalAdmin(ctx){
       if(a==="back"){state.testLastOrder=null;state.internalModule="dashboard";return ctx.renderDashboard()}
       if(a==="qty"){testQty(b.dataset.id,Number(b.dataset.delta));return renderTestClient()}
       if(a==="pdf"){if(window.downloadPdf)window.downloadPdf(b.dataset.id);return}
-      if(a==="production"){state.internalModule="producao";localStorage.setItem("algaroba_internal_module","producao");return ctx.renderInternal()}
+      if(a==="production"){state.internalModule="operacao";state.operationStage="producao";localStorage.setItem("algaroba_internal_module","operacao");localStorage.setItem("algaroba_operation_stage","producao");return ctx.renderInternal()}
       if(a==="submit"){
         var items=testItems();if(!items.length){showToast("Adicione produtos ao pedido.");return}
         try{
