@@ -62,6 +62,17 @@ button{color:inherit}
 .operatorbar select{background:#343735!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
 .replenishment-cash{border:2px solid #d99500!important;background:#242015!important}.close-replenishment-reminder{border:2px solid #d99500!important;background:#242015!important}
 .confirm-replenishment{display:flex;align-items:flex-start;gap:9px;margin-top:12px;font-weight:800;color:#fff}.confirm-replenishment input{width:22px;height:22px;margin:0;flex:0 0 auto;accent-color:#ef7d21}
+
+/* 2.9.7.35 — destaque visual do período selecionado nos relatórios.
+   Mantido no fim do CSS para prevalecer sobre a padronização global dos botões. */
+.report-filter-btn.report-filter-active{
+  background:#ef7d21!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  border:2px solid #f5c34c!important;
+  box-shadow:0 0 0 3px rgba(245,195,76,.24),0 3px 10px rgba(0,0,0,.22)!important;
+  transform:translateY(-1px);
+}
 </style><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -71,7 +82,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.34 • INSUMOS + PRODUÇÃO DO CAFÉ</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.35 • FILTRO VISUAL DOS RELATÓRIOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
