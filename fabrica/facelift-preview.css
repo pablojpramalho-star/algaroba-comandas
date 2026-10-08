@@ -1,0 +1,131 @@
+/* Facelift Preview v1 — somente apresentação visual */
+:root{
+  --fl-green:#073b29;
+  --fl-green-2:#0b4b34;
+  --fl-cream:#fff8e8;
+  --fl-beige:#ead8b6;
+  --fl-orange:#ef5b0c;
+  --fl-ink:#17372a;
+  --fl-shadow:0 16px 38px rgba(37,44,38,.12);
+}
+.facelift-preview{
+  background:
+    radial-gradient(circle at 100% 0,rgba(99,133,81,.10),transparent 24rem),
+    linear-gradient(180deg,#fffaf0 0%,#f6ecd8 100%)!important;
+}
+.preview-ribbon{
+  position:sticky;top:79px;z-index:35;text-align:center;
+  padding:7px 10px;background:#e9d7b4;color:#5a4a31;
+  border-bottom:1px solid #d8bf94;font-size:10px;font-weight:900;letter-spacing:.12em;
+}
+.facelift-preview .topbar{
+  min-height:80px!important;padding:10px 16px!important;
+  background:linear-gradient(135deg,#063524,#0b4b34)!important;
+  border:0!important;box-shadow:0 7px 22px rgba(7,59,41,.18)!important;
+}
+.facelift-preview .brand-logo{
+  width:54px!important;height:54px!important;background:#f8edda!important;
+  border:1px solid rgba(255,255,255,.35)!important;padding:5px!important;
+}
+.facelift-preview .brand-copy strong{
+  font-size:26px!important;letter-spacing:-.03em!important;
+}
+.facelift-preview .brand-copy small{
+  color:#e3cda5!important;font-size:8px!important;letter-spacing:.18em!important;
+}
+.facelift-preview .top-button{
+  min-width:42px;min-height:42px;justify-content:center;
+  background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.18)!important;
+  box-shadow:none!important;border-radius:15px!important;
+}
+.facelift-preview .main{padding-top:14px!important}
+.facelift-preview .mock-home-inner{
+  min-height:610px!important;border-radius:30px!important;overflow:hidden!important;
+  border:1px solid #dfc79d!important;
+  background:
+    radial-gradient(circle at 93% 10%,rgba(96,136,76,.30),transparent 30%),
+    linear-gradient(180deg,#fff7e7 0%,#efddbd 100%)!important;
+  box-shadow:var(--fl-shadow)!important;
+}
+.facelift-preview .mock-home-brand{padding:24px 22px 0!important}
+.facelift-preview .mock-home-brand img{width:64px!important;height:64px!important}
+.facelift-preview .mock-home-brand strong{font-size:34px!important;letter-spacing:-.035em!important}
+.facelift-preview .mock-home-copy{
+  left:22px!important;top:155px!important;width:48%!important;
+}
+.facelift-preview .mock-home-copy h1{
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:34px!important;line-height:.98!important;letter-spacing:-.03em!important;
+}
+.facelift-preview .mock-home-copy p{font-size:13px!important;line-height:1.55!important}
+.facelift-preview .mock-shake{
+  right:16px!important;top:180px!important;width:49%!important;height:300px!important;
+  border-radius:30px!important;border:1px solid #d7ba8d!important;
+  box-shadow:0 18px 40px rgba(65,39,20,.22)!important;
+}
+.facelift-preview .mock-home-actions{
+  left:18px!important;right:18px!important;bottom:18px!important;gap:10px!important;
+}
+.facelift-preview .mock-primary,
+.facelift-preview .button.orange,
+.facelift-preview .mock-checkout,
+.facelift-preview .group-draft-button{
+  background:linear-gradient(135deg,#ff6a13,#ed4b00)!important;
+  box-shadow:0 12px 25px rgba(237,75,0,.22)!important;
+}
+.facelift-preview .mock-secondary,
+.facelift-preview .button.ghost{
+  background:#fffaf0!important;border-color:#d8c29b!important;color:var(--fl-green)!important;
+}
+.facelift-preview .mock-category-card,
+.facelift-preview .mock-product-card,
+.facelift-preview .panel,
+.facelift-preview .login-card,
+.facelift-preview .account-card,
+.facelift-preview .delivery-card,
+.facelift-preview .info-highlight,
+.facelift-preview .info-line-card{
+  background:#fffaf1!important;border-color:#dfcba8!important;
+  box-shadow:0 8px 24px rgba(55,45,29,.07)!important;
+}
+.facelift-preview .mock-category-card{border-radius:22px!important}
+.facelift-preview .mock-product-card{border-radius:18px!important}
+.facelift-preview .section-head h2,
+.facelift-preview .account-card h2,
+.facelift-preview .login-card h2{
+  font-family:Georgia,"Times New Roman",serif!important;
+  letter-spacing:-.02em!important;color:var(--fl-green)!important;
+}
+.facelift-preview .catalog-group-head{
+  border-radius:18px!important;background:linear-gradient(135deg,#073b29,#0b4b34)!important;
+  box-shadow:0 9px 22px rgba(7,59,41,.16)!important;
+}
+.facelift-preview .catalog-search{
+  border-radius:16px!important;background:#fffdf7!important;
+}
+.facelift-preview .bottom-nav{
+  width:min(calc(100% - 16px),744px)!important;bottom:8px!important;
+  border:1px solid rgba(255,255,255,.08)!important;border-radius:22px!important;
+  background:rgba(7,59,41,.98)!important;
+  box-shadow:0 12px 30px rgba(7,59,41,.24)!important;
+  overflow:hidden!important;
+}
+.facelift-preview .bottom-nav button{
+  min-height:52px;border-radius:15px!important;color:#c8d4cc!important;
+}
+.facelift-preview .bottom-nav button.active{
+  background:rgba(255,255,255,.08)!important;color:#ffd29a!important;
+}
+.facelift-preview .cart-count{
+  background:var(--fl-orange)!important;box-shadow:0 0 0 2px var(--fl-green)!important;
+}
+@media(max-width:520px){
+  .preview-ribbon{top:74px}
+  .facelift-preview .topbar{min-height:74px!important;padding:9px 12px!important}
+  .facelift-preview .brand-logo{width:48px!important;height:48px!important}
+  .facelift-preview .brand-copy strong{font-size:23px!important}
+  .facelift-preview .mock-home-inner{min-height:590px!important;border-radius:24px!important}
+  .facelift-preview .mock-home-copy{top:142px!important;width:51%!important}
+  .facelift-preview .mock-home-copy h1{font-size:30px!important}
+  .facelift-preview .mock-shake{top:171px!important;width:46%!important;height:270px!important}
+}
