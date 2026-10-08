@@ -1,5 +1,5 @@
 export function installInternalFlow(ctx){
-  const {state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtTime,brl}=ctx;
+  const {state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtDateTime,fmtTime,brl}=ctx;
   let renderProduction,renderConference,renderExpedition,renderRoute,renderFinance;
   if(!("productionOpenOrder" in state)) state.productionOpenOrder=null;
   if(!("expeditionOpenOrder" in state)) state.expeditionOpenOrder=null;
