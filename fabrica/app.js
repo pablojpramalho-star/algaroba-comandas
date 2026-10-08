@@ -1,4 +1,4 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261008-flow9";
+import { installInternalFlow } from "./internal-flow.js?v=20261008-flow10";
 import { installInternalAdmin } from "./internal-admin.js?v=20261008-admin2";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
@@ -1815,7 +1815,7 @@ window.adminEditPresentation=async id=>{
 };
 
 const __internalFlow=installInternalFlow({
-  state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtTime,brl,renderFinance,renderInternal
+  state,main,rpc,table,internalShell,loading,esc,showToast,localDateISO,fmtDate,fmtDateTime,fmtTime,brl,renderFinance,renderInternal
 });
 renderProduction=__internalFlow.renderProduction;
 renderConference=__internalFlow.renderConference;
