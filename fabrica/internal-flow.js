@@ -83,7 +83,7 @@ export function installInternalFlow(ctx){
     if(current.length&&current.every(doneProduction)){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
-      showToast("Pedido pronto e enviado para a Conferência.");
+      showToast("Pedido pronto e enviado para a Expedição.");
       return renderProduction();
     }
     showToast(message);
@@ -115,7 +115,7 @@ export function installInternalFlow(ctx){
         try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem("Quantidade confirmada.")}catch(e){showToast(e.message)}
       }
       if(a==="finish"){
-        try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);state.productionOpenOrder=null;showToast("Produção concluída. Pedido enviado para a Conferência.");await renderProduction()}catch(e){showToast(e.message)}
+        try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);state.productionOpenOrder=null;showToast("Produção concluída. Pedido enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
       }
     };
   }
@@ -137,7 +137,7 @@ export function installInternalFlow(ctx){
           var it=groups[pid],checked=it.filter(function(x){return x.expedicao_conferido}).length;
           return "<button class='order-work-card' data-conf-action='open' data-id='"+pid+"'><div><span>"+esc(it[0].numero)+"</span><strong>"+esc(it[0].cliente_nome)+"</strong><small>"+(it[0].modalidade_entrega==="retirada_fabrica"?"Retirada na fábrica":esc(it[0].rota_nome||"Rota"))+" • "+checked+"/"+it.length+" conferidos</small></div><div class='order-work-progress'><b>"+checked+"/"+it.length+"</b><i><em style='width:"+percent(checked,it.length)+"%'></em></i></div><strong class='order-work-arrow'>›</strong></button>";
         }).join("");
-        main.innerHTML=internalShell("conferencia")+"<div class='internal-title'><div><span class='internal-eyebrow'>CONFERÊNCIA</span><h1>Conferência dos pedidos</h1><p>Segunda checagem item por item depois da Produção.</p></div></div><section class='order-work-list'>"+(cards||"<div class='empty'>Nenhum pedido aguardando conferência.</div>")+"</section>";
+        main.innerHTML=internalShell("conferencia")+"<div class='internal-title'><div><span class='internal-eyebrow'>EXPEDIÇÃO</span><h1>Conferência para expedição</h1><p>Segunda checagem item por item depois da Produção.</p></div></div><section class='order-work-list'>"+(cards||"<div class='empty'>Nenhum pedido aguardando conferência.</div>")+"</section>";
         bindConference();return;
       }
 
@@ -145,7 +145,7 @@ export function installInternalFlow(ctx){
       var items=it.map(function(x){
         return "<article class='work-item "+(x.expedicao_conferido?"done":"")+"'><div class='work-item-check'>"+(x.expedicao_conferido?"✓":"")+"</div><div class='work-item-copy'><strong>"+esc(x.produto)+"</strong><small>"+Number(x.quantidade).toLocaleString("pt-BR")+" un.</small><span class='"+(x.expedicao_conferido?"done-label":"pending-label")+"'>"+(x.expedicao_conferido?"Conferido":"A conferir")+"</span></div><div class='work-item-actions'><button class='"+(x.expedicao_conferido?"work-undo":"work-ready")+"' data-conf-action='check' data-id='"+x.item_id+"' data-current='"+(x.expedicao_conferido?"1":"0")+"'>"+(x.expedicao_conferido?"↶":"✓ Conferir")+"</button></div></article>";
       }).join("");
-      main.innerHTML=internalShell("conferencia")+"<section class='work-order-head expedition'><button class='work-back' data-conf-action='back'>← Pedidos</button><div><span>CONFERÊNCIA</span><h1>"+esc(it[0].numero)+"</h1><p>"+esc(it[0].cliente_nome)+" • "+checked+"/"+it.length+" itens</p></div><strong>"+percent(checked,it.length)+"%</strong></section><div class='dispatch-destination'><b>"+(it[0].modalidade_entrega==="retirada_fabrica"?"Retirada na fábrica":esc(it[0].rota_nome||"Rota"))+"</b><span>"+esc(it[0].endereco||"")+"</span></div><section class='work-items'>"+items+"</section><button class='work-finish "+(all?"ready":"")+"' "+(all?"":"disabled")+" data-conf-action='finish' data-id='"+state.conferenceOpenOrder+"'>"+(all?(it[0].modalidade_entrega==="retirada_fabrica"?"Concluir • pronto para retirada →":"Concluir • enviar à Expedição →"):"Confira todos os itens")+"</button>";
+      main.innerHTML=internalShell("conferencia")+"<section class='work-order-head expedition'><button class='work-back' data-conf-action='back'>← Pedidos</button><div><span>EXPEDIÇÃO</span><h1>"+esc(it[0].numero)+"</h1><p>"+esc(it[0].cliente_nome)+" • "+checked+"/"+it.length+" itens</p></div><strong>"+percent(checked,it.length)+"%</strong></section><div class='dispatch-destination'><b>"+(it[0].modalidade_entrega==="retirada_fabrica"?"Retirada na fábrica":esc(it[0].rota_nome||"Rota"))+"</b><span>"+esc(it[0].endereco||"")+"</span></div><section class='work-items'>"+items+"</section><button class='work-finish "+(all?"ready":"")+"' "+(all?"":"disabled")+" data-conf-action='finish' data-id='"+state.conferenceOpenOrder+"'>"+(all?(it[0].modalidade_entrega==="retirada_fabrica"?"Concluir • pronto para retirada →":"Concluir • enviar à Expedição →"):"Confira todos os itens")+"</button>";
       bindConference();
     }catch(e){main.innerHTML=internalShell("conferencia")+"<div class='empty'>"+esc(e.message)+"</div>"}
   };
@@ -163,7 +163,7 @@ export function installInternalFlow(ctx){
         try{
           var s=await rpc("expedicao_finalizar_conferencia",{p_pedido_id:id},true);
           state.conferenceOpenOrder=null;
-          showToast(s==="pronto_retirada"?"Conferência concluída. Pedido pronto para retirada.":"Conferência concluída. Pedido enviado para Expedição.");
+          showToast(s==="pronto_retirada"?"Expedição concluída. Pedido pronto para retirada.":"Expedição concluída. Pedido pronto para a rota.");
           await renderConference();
         }catch(e){showToast(e.message)}
       }
@@ -183,8 +183,8 @@ export function installInternalFlow(ctx){
         var x=groups[pid][0],route=x.modalidade_entrega==="rota";
         return "<article class='dispatch-stage-card'><div><span>"+esc(x.numero)+"</span><strong>"+esc(x.cliente_nome)+"</strong><small>"+(route?esc(x.rota_nome||"Rota"):"Retirada na fábrica")+"</small></div><div class='dispatch-stage-status'><b>✓ "+(route?"Pronto para rota":"Pronto para retirada")+"</b><small>"+(x.liberado_financeiro?"Financeiro liberado":"Pagamento será tratado conforme a forma escolhida/na entrega")+"</small></div>"+(route?"<button data-dispatch-route='1'>Abrir Rota →</button>":"<button disabled>Disponível para retirada</button>")+"</article>";
       }).join("");
-      main.innerHTML=internalShell("expedicao")+"<div class='internal-title'><div><span class='internal-eyebrow'>EXPEDIÇÃO</span><h1>Pedidos prontos</h1><p>Pedidos já conferidos e separados, aguardando retirada ou carregamento na rota.</p></div></div><section class='dispatch-stage-list'>"+(cards||"<div class='empty'>Nenhum pedido pronto na Expedição.</div>")+"</section>";
-      main.onclick=function(ev){if(ev.target.closest("[data-dispatch-route]")){state.internalModule="rota";localStorage.setItem("algaroba_internal_module","rota");ctx.renderInternal()}};
+      main.innerHTML=internalShell("expedicao")+"<div class='internal-title'><div><span class='internal-eyebrow'>PRONTOS</span><h1>Pedidos prontos para saída</h1><p>Pedidos já conferidos e separados, aguardando retirada ou carregamento na rota.</p></div></div><section class='dispatch-stage-list'>"+(cards||"<div class='empty'>Nenhum pedido pronto na Expedição.</div>")+"</section>";
+      main.onclick=function(ev){if(ev.target.closest("[data-dispatch-route]")){state.internalModule="operacao";state.operationStage="rota";localStorage.setItem("algaroba_internal_module","operacao");localStorage.setItem("algaroba_operation_stage","rota");ctx.renderInternal()}};
     }catch(e){main.innerHTML=internalShell("expedicao")+"<div class='empty'>"+esc(e.message)+"</div>"}
   };
 
