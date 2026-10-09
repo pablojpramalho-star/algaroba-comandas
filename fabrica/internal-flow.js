@@ -264,7 +264,7 @@ export function installInternalFlow(ctx){
         try{
           var result=await rpc("entrega_finalizar_cliente",{p_pedido_id:id,p_tipo_conferencia:state.routeDeliveryMode,p_referencia:state.routeDeliveryReference,p_pagamento_metodo:method,p_ficou_em_aberto:open,p_observacao:null},true);
           state.routeOpenOrder=null;state.routeDeliveryMode=null;state.routeDeliveryReference=null;state.routeDeliveryPayment=null;
-          showToast(result==="entregue_em_aberto"?"Entrega concluída com saldo em aberto. Financeiro e cliente foram notificados.":"Entrega concluída. Cliente notificado.");
+          showToast(result==="entregue_em_aberto"?"Entrega concluída com saldo em aberto. Alertas gerados para Financeiro e cliente.":"Entrega concluída. Notificação gerada para o cliente.");
           await renderRoute();
         }catch(e){showToast(e.message)}
       }
@@ -273,7 +273,7 @@ export function installInternalFlow(ctx){
         if(!vehicle){showToast("Selecione carro ou moto.");return}
         if(raw===""){showToast("Odômetro inicial é obrigatório.");return}
         var km=Number(raw.replace(",","."));if(!Number.isFinite(km)||km<0){showToast("Odômetro inicial inválido.");return}
-        try{await rpc("expedicao_iniciar_rota",{p_rota_id:rid,p_data:b.dataset.date,p_motorista:driver,p_veiculo:vehicle,p_odometro_inicio:km},true);showToast("Rota iniciada. Clientes notificados.");await renderRoute()}catch(e){showToast(e.message)}
+        try{await rpc("expedicao_iniciar_rota",{p_rota_id:rid,p_data:b.dataset.date,p_motorista:driver,p_veiculo:vehicle,p_odometro_inicio:km},true);showToast("Rota iniciada. Notificações geradas.");await renderRoute()}catch(e){showToast(e.message)}
       }
       if(a==="finish-route"){
         var rid2=b.dataset.route,safe2=rid2.replaceAll("-"),raw2=document.getElementById("routeKmEnd-"+safe2).value;
@@ -306,7 +306,7 @@ export function installInternalFlow(ctx){
         var max=Number(b.dataset.value),raw=prompt("Valor recebido:",String(max).replace(".",","));if(raw===null)return;
         var value=Number(raw.replace(",","."));
         if(!Number.isFinite(value)||value<=0||value>max){showToast("Valor inválido.");return}
-        try{await rpc("financeiro_receber_pendencia_entrega",{p_pedido_id:b.dataset.finDelivery,p_metodo:method,p_valor:value,p_observacao:null},true);showToast("Recebimento registrado. Cliente notificado.");await renderFinance()}catch(e){showToast(e.message)}
+        try{await rpc("financeiro_receber_pendencia_entrega",{p_pedido_id:b.dataset.finDelivery,p_metodo:method,p_valor:value,p_observacao:null},true);showToast("Recebimento registrado. Notificação gerada para o cliente.");await renderFinance()}catch(e){showToast(e.message)}
       };
     }catch(e){console.warn("Alertas da entrega:",e.message)}
   };
