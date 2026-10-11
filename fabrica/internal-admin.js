@@ -12,8 +12,40 @@ export function installInternalAdmin(ctx){
     }).filter(Boolean);
   }
   function testQty(id,delta){
-    var next=Math.max(0,Number(state.testCart[id]||0)+delta);
+    return testSetQty(id,Number(state.testCart[id]||0)+delta);
+  }
+  function testSetQty(id,value){
+    var next=parseInt(String(value==null?"":value).replace(/\D/g,""),10);
+    if(!Number.isFinite(next))next=0;
+    next=Math.max(0,Math.min(9999,next));
     if(next)state.testCart[id]=next;else delete state.testCart[id];
+    return next;
+  }
+  function testTotals(){
+    var items=testItems(),units=items.reduce(function(s,x){return s+x.q},0);
+    var mode=state.testDeliveryMode||"rota";
+    var estimated=items.reduce(function(s,x){
+      var wholesale=mode==="retirada_fabrica"||units>=6;
+      return s+x.q*Number(wholesale?x.p.preco_atacado:x.p.preco_varejo);
+    },0);
+    return {items:items,units:units,estimated:estimated};
+  }
+  function updateTestSaleUI(id){
+    if(id){
+      var input=document.querySelector("[data-test-qty-input='"+id+"']");
+      if(input&&document.activeElement!==input)input.value=Number(state.testCart[id]||0);
+      var minus=document.querySelector("[data-test-action='qty'][data-id='"+id+"'][data-delta='-1']");
+      if(minus)minus.disabled=!Number(state.testCart[id]||0);
+    }
+    var t=testTotals();
+    var unitsEl=document.querySelector("[data-test-summary='units']");
+    var productsEl=document.querySelector("[data-test-summary='products']");
+    var totalEl=document.querySelector("[data-test-summary='total']");
+    var submit=document.querySelector("[data-test-action='submit']");
+    if(unitsEl)unitsEl.textContent=t.units+" unidades";
+    if(productsEl)productsEl.textContent=t.items.length+" produtos diferentes";
+    if(totalEl)totalEl.textContent=brl(t.estimated);
+    if(submit)submit.disabled=!t.units;
   }
 
   async function renderTestClient(){
@@ -23,12 +55,11 @@ export function installInternalAdmin(ctx){
       var data=await Promise.all([rpc("admin_teste_cliente_info",{},true),rpc("admin_teste_notificacoes",{},true)]);
       var info=Array.isArray(data[0])?data[0][0]:data[0],notifications=data[1]||[];
       var products=(state.catalog||[]).filter(function(p){return p.categoria==="Shakes"&&p.disponibilidade_catalogo!=="em_falta"}).sort(function(a,b){return productName(a).localeCompare(productName(b),"pt-BR")});
-      var items=testItems(),units=items.reduce(function(s,x){return s+x.q},0);
+      var totals=testTotals(),items=totals.items,units=totals.units,estimated=totals.estimated;
       var mode=state.testDeliveryMode||"rota";
-      var estimated=items.reduce(function(s,x){var wholesale=mode==="retirada_fabrica"||units>=6;return s+x.q*Number(wholesale?x.p.preco_atacado:x.p.preco_varejo)},0);
       var productsHtml=products.map(function(p){
         var q=Number(state.testCart[p.produto_id]||0);
-        return "<article class='test-product' data-search='"+esc((productName(p)+" "+(p.linha||"")).toLowerCase())+"'><div><strong>"+esc(productName(p))+"</strong><small>"+esc(p.linha||p.categoria)+" • 1 kg</small><span>Atacado "+brl(p.preco_atacado)+" • Varejo "+brl(p.preco_varejo)+"</span></div><div class='test-product-qty'><button type='button' data-test-action='qty' data-id='"+p.produto_id+"' data-delta='-1'>−</button><b>"+q+"</b><button type='button' data-test-action='qty' data-id='"+p.produto_id+"' data-delta='1'>＋</button></div></article>";
+        return "<article class='test-product' data-search='"+esc((productName(p)+" "+(p.linha||"")).toLowerCase())+"'><div><strong>"+esc(productName(p))+"</strong><small>"+esc(p.linha||p.categoria)+" • 1 kg</small><span>Atacado "+brl(p.preco_atacado)+" • Varejo "+brl(p.preco_varejo)+"</span></div><div class='test-product-qty sale-qty-fast'><div class='sale-qty-main'><button type='button' data-test-action='qty' data-id='"+p.produto_id+"' data-delta='-1' "+(q?"":"disabled")+">−</button><input type='number' min='0' max='9999' inputmode='numeric' value='"+q+"' data-test-qty-input='"+p.produto_id+"' aria-label='Quantidade de "+esc(productName(p))+"'><button type='button' data-test-action='qty' data-id='"+p.produto_id+"' data-delta='1'>＋</button></div><div class='sale-qty-jumps'><button type='button' data-test-action='qty' data-id='"+p.produto_id+"' data-delta='5'>+5</button><button type='button' data-test-action='qty' data-id='"+p.produto_id+"' data-delta='10'>+10</button></div></div></article>";
       }).join("");
       var last=state.testLastOrder?"<section class='test-success'><div><span>ÚLTIMO PEDIDO</span><h2>"+esc(state.testLastOrder.numero)+"</h2><p>"+brl(state.testLastOrder.total)+" • "+esc(state.testLastOrder.modalidade_entrega)+"</p></div><div class='test-success-actions'><button type='button' data-test-action='pdf' data-id='"+state.testLastOrder.pedido_id+"'>PDF inicial</button><button type='button' data-test-action='production'>Abrir Produção →</button></div></section>":"";
       var notifHtml=notifications.length?notifications.slice(0,20).map(function(n){return "<article><div><b>"+esc(n.titulo)+"</b><small>"+esc(n.numero||"")+" • "+fmtDateTime(n.created_at)+" • "+esc(n.canal)+"</small><p>"+esc(n.mensagem)+"</p></div><span>"+esc(n.tipo)+"</span></article>"}).join(""):"<div class='empty compact'>Nenhuma notificação de teste ainda.</div>";
@@ -36,7 +67,7 @@ export function installInternalAdmin(ctx){
         "<section class='test-info-strip'><div><span>Cliente</span><b>"+esc(info&&info.cliente_nome||"Cliente Teste Algaroba")+"</b></div><div><span>Rota</span><b>"+esc(info&&info.rota_nome||"Rota Teste Interna")+"</b></div><div><span>Pedidos criados</span><b>"+Number(info&&info.pedidos_teste||0)+"</b></div></section>"+last+
         "<section class='test-order-box'><div class='test-order-title'><div><h2>Fazer pedido como cliente</h2><p>Use os mesmos produtos e preços do catálogo real. Produtos de estoque físico ficam bloqueados para não alterar o saldo real.</p></div><label>Recebimento<select id='testDeliveryMode'><option value='rota' "+(mode==="rota"?"selected":"")+">Rota Teste Interna</option><option value='retirada_fabrica' "+(mode==="retirada_fabrica"?"selected":"")+">Retirada na fábrica</option></select></label></div>"+
         "<label class='internal-search test-search'><span>⌕</span><input id='testProductSearch' type='search' placeholder='Buscar sabor'></label><div class='test-product-list'>"+productsHtml+"</div>"+
-        "<div class='test-cart-summary'><div><span>"+units+" unidades</span><small>"+items.length+" produtos diferentes</small></div><b>"+brl(estimated)+"</b></div><button class='test-submit' type='button' data-test-action='submit' "+(units?"":"disabled")+">Enviar pedido de teste →</button></section>"+
+        "<div class='test-cart-summary'><div><span data-test-summary='units'>"+units+" unidades</span><small data-test-summary='products'>"+items.length+" produtos diferentes</small></div><b data-test-summary='total'>"+brl(estimated)+"</b></div><button class='test-submit' type='button' data-test-action='submit' "+(units?"":"disabled")+">Finalizar venda →</button></section>"+
         "<section class='test-notifications'><div class='section-head'><div><h2>O que o sistema notificou</h2><p>Mensagens geradas pelo fluxo do cliente de teste.</p></div></div>"+notifHtml+"</section>"+
         "<button class='test-clean' type='button' data-test-action='clean'>Limpar todos os pedidos de teste</button>";
       bindTestClient();
@@ -48,7 +79,7 @@ export function installInternalAdmin(ctx){
       var b=ev.target.closest("[data-test-action]");if(!b)return;
       var a=b.dataset.testAction;
       if(a==="back"){state.testLastOrder=null;state.internalModule="dashboard";return ctx.renderDashboard()}
-      if(a==="qty"){testQty(b.dataset.id,Number(b.dataset.delta));return renderTestClient()}
+      if(a==="qty"){testQty(b.dataset.id,Number(b.dataset.delta));updateTestSaleUI(b.dataset.id);return}
       if(a==="pdf"){if(window.downloadPdf)window.downloadPdf(b.dataset.id);return}
       if(a==="production"){state.internalModule="operacao";state.operationStage="producao";localStorage.setItem("algaroba_internal_module","operacao");localStorage.setItem("algaroba_operation_stage","producao");return ctx.renderInternal()}
       if(a==="submit"){
@@ -65,9 +96,22 @@ export function installInternalAdmin(ctx){
       }
     };
     var mode=document.querySelector("#testDeliveryMode");
-    if(mode)mode.onchange=function(){state.testDeliveryMode=mode.value;renderTestClient()};
+    if(mode)mode.onchange=function(){state.testDeliveryMode=mode.value;updateTestSaleUI()};
     var search=document.querySelector("#testProductSearch");
     if(search)search.oninput=function(){var q=search.value.trim().toLowerCase();document.querySelectorAll(".test-product").forEach(function(el){el.classList.toggle("hidden",!!q&&!el.dataset.search.includes(q))})};
+    main.oninput=function(ev){
+      var input=ev.target.closest("[data-test-qty-input]");if(!input)return;
+      var id=input.dataset.testQtyInput;
+      testSetQty(id,input.value);
+      updateTestSaleUI(id);
+    };
+    main.onchange=function(ev){
+      var input=ev.target.closest("[data-test-qty-input]");if(!input)return;
+      var id=input.dataset.testQtyInput;
+      var next=testSetQty(id,input.value);
+      input.value=next;
+      updateTestSaleUI(id);
+    };
   }
 
   async function renderReports(){
