@@ -1,5 +1,5 @@
 import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
-import { installInternalAdmin } from "./internal-admin.js?v=20261008-admin2";
+import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
