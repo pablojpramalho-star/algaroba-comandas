@@ -469,3 +469,65 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
   .operation-nav button>b{grid-row:auto;width:28px;height:28px}
   .operation-nav button>small{display:none}
 }
+
+/* Venda rápida — quantidade sem recarregar a lista */
+.test-product{
+  grid-template-columns:minmax(0,1fr) 126px!important;
+}
+.test-product-qty.sale-qty-fast{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:4px!important;
+  justify-content:stretch!important;
+}
+.sale-qty-main{
+  display:grid;
+  grid-template-columns:31px minmax(44px,1fr) 31px;
+  align-items:center;
+  gap:3px;
+}
+.sale-qty-main button{
+  height:32px!important;
+}
+.sale-qty-main input{
+  width:100%;
+  height:32px;
+  min-width:0;
+  padding:0 2px;
+  border:1px solid #d9c4a3;
+  border-radius:8px;
+  background:#fffdf8;
+  color:#075139;
+  text-align:center;
+  font-size:14px;
+  font-weight:900;
+  outline:none;
+  appearance:textfield;
+  -moz-appearance:textfield;
+}
+.sale-qty-main input::-webkit-inner-spin-button,
+.sale-qty-main input::-webkit-outer-spin-button{appearance:none;margin:0}
+.sale-qty-main input:focus{
+  border-color:#0b6743;
+  box-shadow:0 0 0 2px rgba(11,103,67,.10);
+}
+.sale-qty-jumps{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+}
+.sale-qty-jumps button{
+  height:25px!important;
+  border:1px solid #cad9bd!important;
+  border-radius:7px!important;
+  background:#edf3e7!important;
+  color:#0a6241!important;
+  font-size:8px!important;
+  font-weight:900!important;
+}
+.test-product-qty button:disabled{opacity:.35}
+@media(max-width:420px){
+  .test-product{grid-template-columns:minmax(0,1fr) 116px!important}
+  .sale-qty-main{grid-template-columns:29px minmax(40px,1fr) 29px}
+  .sale-qty-main input{font-size:13px}
+}
