@@ -37,7 +37,7 @@ export function installInternalMasterData(ctx){
           "<button type='button' class='"+(type==="avulso"?"active":"")+"' data-client-type='avulso'><i>•</i><div><strong>Avulsos</strong><span>Compras pontuais</span></div><b>"+counts.avulso+"</b></button>"+
           "<button type='button' class='"+(type==="nao_classificado"?"active":"")+"' data-client-type='nao_classificado'><i>?</i><div><strong>Não classificados</strong><span>Aguardando definição</span></div><b>"+counts.nao_classificado+"</b></button>"+
         "</section>"+
-        "<section class='master-toolbar client-toolbar'><form id='clientSearchForm' class='master-search'><span>⌕</span><input id='clientSearchInput' type='search' value='"+esc(state.clientSearch||"")+"' placeholder='Buscar nome, estabelecimento, WhatsApp, CPF/CNPJ ou código'><button>Buscar</button></form><div class='master-count'><b>"+filtered.length+"</b><span>"+typeLabel(type)+"</span></div></section>"+
+        "<section class='master-toolbar client-toolbar'><form id='clientSearchForm' class='master-search'><span>⌕</span><input id='clientSearchInput' type='search' value='"+esc(state.clientSearch||"")+"' placeholder='Buscar nome, estabelecimento, WhatsApp, CPF/CNPJ ou código'><button>Buscar</button></form><button type='button' class='master-new-client' data-client-new='1'>＋ Novo cliente</button><div class='master-count'><b>"+filtered.length+"</b><span>"+typeLabel(type)+"</span></div></section>"+
         "<div class='client-list-caption'>"+filtered.length+" "+(filtered.length===1?"cliente":"clientes")+(filtered.length>150?" • mostrando os primeiros 150":"")+"</div>"+
         "<section class='client-directory'>"+
           (shown.length?shown.map(function(c){
@@ -54,6 +54,8 @@ export function installInternalMasterData(ctx){
       var search=document.querySelector("#clientSearchInput");
       if(search)search.oninput=function(){state.clientSearch=search.value;renderClients()};
       main.onclick=function(ev){
+        var newButton=ev.target.closest("[data-client-new]");
+        if(newButton)return renderNewClient();
         var typeButton=ev.target.closest("[data-client-type]");
         if(typeButton){
           state.clientTypeFilter=typeButton.dataset.clientType;
@@ -66,6 +68,41 @@ export function installInternalMasterData(ctx){
     }catch(e){main.innerHTML=internalShell("clientes")+"<div class='empty'>"+esc(e.message)+"</div>"}
   }
 
+
+  function renderNewClient(){
+    main.innerHTML=internalShell("clientes")+
+      "<button type='button' class='work-back master-back' id='newClientBack'>← Clientes</button>"+
+      "<section class='client-profile-head new-client-head'><div class='client-avatar large'>＋</div><div><span>NOVO CADASTRO</span><h1>Novo cliente</h1><p>Cadastre os dados básicos e depois complete endereço, rota e horário de recebimento.</p></div></section>"+
+      "<form id='newClientForm' class='master-form'>"+
+        "<section class='master-form-section'><div class='master-form-title'><h2>Dados iniciais</h2><p>O nome é obrigatório. Os demais dados podem ser completados na ficha do cliente.</p></div><div class='master-form-grid'>"+
+          field("Nome / responsável","nome","",true)+
+          field("Nome fantasia","nome_fantasia","")+
+          "<label class='master-field'><span>Tipo de cliente</span><select name='tipo_cliente'><option value='nao_classificado'>Não classificado</option><option value='recorrente'>Recorrente / revenda</option><option value='avulso'>Avulso / consumidor final</option></select></label>"+
+          field("WhatsApp","whatsapp","")+
+          field("CPF/CNPJ","cpf_cnpj","")+
+          field("E-mail","email","","email")+
+        "</div></section>"+
+        "<section class='master-form-footer'><div><b>Próximo passo</b><small>Após criar, abriremos a ficha completa para cadastrar o endereço.</small></div><button class='master-save' type='submit'>Criar cliente →</button></section>"+
+      "</form>";
+    document.querySelector("#newClientBack").onclick=function(){renderClients()};
+    document.querySelector("#newClientForm").onsubmit=async function(ev){
+      ev.preventDefault();
+      var fd=new FormData(ev.currentTarget),btn=ev.currentTarget.querySelector("button[type='submit']");
+      try{
+        btn.disabled=true;btn.textContent="Criando...";
+        var id=await rpc("atendimento_criar_cliente",{
+          p_nome:fd.get("nome"),
+          p_nome_fantasia:fd.get("nome_fantasia")||null,
+          p_whatsapp:fd.get("whatsapp")||null,
+          p_cpf_cnpj:fd.get("cpf_cnpj")||null,
+          p_email:fd.get("email")||null,
+          p_tipo_cliente:fd.get("tipo_cliente")||"nao_classificado"
+        },true);
+        showToast("Cliente criado. Complete o cadastro e o endereço.");
+        await renderClientDetail(id);
+      }catch(e){showToast(e.message);btn.disabled=false;btn.textContent="Criar cliente →"}
+    };
+  }
 
   async function renderClientDetail(id){
     loading("Abrindo cadastro...");
