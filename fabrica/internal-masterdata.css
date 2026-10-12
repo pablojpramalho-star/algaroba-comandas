@@ -173,3 +173,28 @@
 .recipe-enable{display:flex;gap:10px;align-items:center;padding:12px;border-radius:13px;border:1px solid rgba(49,142,101,.42)}
 @media(min-width:780px){.recipe-line{grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,.6fr) minmax(0,1fr)}.recipe-name,.recipe-cost{grid-column:auto}.recipe-row-actions{grid-column:1/-1}}
 @media(max-width:420px){.recipe-cmv-box{grid-template-columns:1fr 1fr}.recipe-cmv-box div:first-child{grid-column:1/-1}}
+
+
+/* Receita por lote: campos e estoques de embalagem / etiqueta */
+.recipe-inventory-shortcut{margin:0 0 15px}
+.recipe-inventory-shortcut button{display:block;width:100%;border:1px solid #7eac8f;border-radius:14px;background:rgba(38,120,76,.15);color:inherit;font-weight:850;font-size:12px;text-align:left;padding:13px 14px;cursor:pointer}
+.recipe-yield-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+.recipe-yield-result{display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(184,146,79,.35);border-radius:14px;padding:10px 14px;background:rgba(87,118,72,.08)}
+.recipe-yield-result b{font-size:12px;opacity:.8}.recipe-yield-result strong{font-size:17px;color:#78b896}
+.recipe-package-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.recipe-package-grid .master-field{min-width:0}
+.recipe-package-grid select{width:100%;min-width:0}
+.recipe-cmv-box{grid-template-columns:repeat(2,minmax(0,1fr))}
+.recipe-cmv-box>div{min-width:0}
+.stock-search{margin:12px 0}
+.stock-primary-list{display:grid;gap:11px}
+.stock-primary-item{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border:1px solid rgba(174,144,92,.5);border-radius:16px;padding:13px;background:rgba(106,85,54,.09);min-width:0}
+.stock-primary-item .master-field{grid-column:1/-1;margin:0}
+.stock-primary-title{grid-column:1/-1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.stock-primary-title strong{font-size:15px;overflow-wrap:anywhere}.stock-primary-title span{font-size:11px;opacity:.65}
+.stock-primary-balance{grid-column:1/-1;display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.stock-primary-balance b{font-size:19px;color:#67a98b}.stock-primary-balance small{opacity:.7}
+.stock-primary-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.stock-primary-actions button{flex:1;min-width:130px;min-height:41px;border-radius:12px;border:1px solid rgba(44,128,91,.5);background:rgba(19,90,61,.16);color:inherit;font-weight:800;cursor:pointer}
+.stock-primary-actions button:last-child{background:#126144;color:#fff}
+@media(min-width:780px){.stock-primary-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
