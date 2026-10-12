@@ -1,7 +1,7 @@
 import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
-import { installInternalMasterData } from "./internal-masterdata.js?v=20261012-lote1";
+import { installInternalMasterData } from "./internal-masterdata.js?v=20261012-lote2";
 import { installInternalAttendance } from "./internal-attendance.js?v=20261011-attendance1";
 import { installInternalManagement } from "./internal-management.js?v=20261011-admin1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
