@@ -1,7 +1,8 @@
 import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
-import { installInternalMasterData } from "./internal-masterdata.js?v=20261011-clienttype2";
+import { installInternalMasterData } from "./internal-masterdata.js?v=20261011-clienttype3";
+import { installInternalAttendance } from "./internal-attendance.js?v=20261011-attendance1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -25,9 +26,10 @@ const state={
   adminOrders:[],adminQuery:"",
   productionOpenOrder:null,
   expeditionOpenOrder:null,
-  operationStage:localStorage.getItem("algaroba_operation_stage")||null
+  operationStage:localStorage.getItem("algaroba_operation_stage")||null,
+  attendanceStage:localStorage.getItem("algaroba_attendance_stage")||"pedidos"
 };
-let renderConference,renderRoute,renderReports,renderTestClient,renderDeskOrders;
+let renderConference,renderRoute,renderReports,renderTestClient,renderDeskOrders,renderAttendanceReport,renderAttendancePromotions;
 
 let renderClients=()=>{},renderProducts=()=>{};
 
@@ -1194,15 +1196,15 @@ function roleDisplay(role){
   return ({
     administrador:"ADM",
     gerente:"Gerência",
-    vendas:"Administrativo",
+    vendas:"Atendimento",
     financeiro:"Financeiro",
     producao:"Produção",
     expedicao:"Expedição"
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","pedidos","vendas","clientes","produtos","operacao","financeiro","caixa","estoque","relatorios"];
-  if(role==="vendas")return ["pedidos","vendas","clientes"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","atendimento","produtos","operacao","financeiro","caixa","estoque","relatorios"];
+  if(role==="vendas")return ["atendimento"];
   if(role==="financeiro")return ["financeiro","caixa","relatorios"];
   if(role==="producao")return ["operacao"];
   if(role==="expedicao")return ["operacao"];
@@ -1211,9 +1213,7 @@ function internalModulesForRole(role){
 function internalModuleMeta(key){
   return ({
     dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo do dia"},
-    pedidos:{label:"Pedidos",icon:"＋",desc:"WhatsApp e balcão"},
-    vendas:{label:"Administrativo",icon:"▤",desc:"Acompanhamento"},
-    clientes:{label:"Clientes",icon:"◎",desc:"Cadastro e observações"},
+    atendimento:{label:"Atendimento",icon:"◎",desc:"Pedidos e clientes"},
     produtos:{label:"Produtos",icon:"◇",desc:"Catálogo e preços"},
     operacao:{label:"Operação",icon:"◫",desc:"Produção à entrega"},
     financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
@@ -1221,6 +1221,25 @@ function internalModuleMeta(key){
     estoque:{label:"Estoque",icon:"▦",desc:"Produtos e insumos"},
     relatorios:{label:"Relatórios",icon:"≡",desc:"Gestão e histórico"}
   })[key]||{label:key,icon:"•",desc:""};
+}
+function attendanceStagesForRole(role){
+  if(["administrador","gerente","vendas"].includes(role))return ["pedidos","clientes","atendimento_relatorio","promocoes"];
+  return [];
+}
+function attendanceStageMeta(key){
+  return ({
+    pedidos:{label:"Pedido",icon:"＋",desc:"Tirar pedido"},
+    clientes:{label:"Clientes",icon:"◎",desc:"Cadastro"},
+    atendimento_relatorio:{label:"Relatório",icon:"≡",desc:"Acompanhamento"},
+    promocoes:{label:"Promoções",icon:"★",desc:"Condições comerciais"}
+  })[key]||{label:key,icon:"•",desc:""};
+}
+function attendanceNav(active,role){
+  const stages=attendanceStagesForRole(role);
+  if(!stages.length)return "";
+  return `<nav class="attendance-nav" aria-label="Atendimento">
+    ${stages.map(key=>{const m=attendanceStageMeta(key);return `<button type="button" class="${active===key?"active":""}" onclick="window.openAttendanceStage('${key}')"><b>${m.icon}</b><span>${m.label}</span><small>${m.desc}</small></button>`}).join("")}
+  </nav>`;
 }
 function operationStagesForRole(role){
   if(["administrador","gerente"].includes(role))return ["producao","conferencia","expedicao","rota"];
@@ -1247,7 +1266,8 @@ function internalShell(active){
   const safeRole=typeof state.role==="string"?state.role:"administrador";
   const modules=internalModulesForRole(safeRole);
   const operationStage=["producao","conferencia","expedicao","rota"].includes(active)?active:null;
-  const topActive=operationStage?"operacao":active;
+  const attendanceStage=["pedidos","clientes","atendimento_relatorio","promocoes"].includes(active)?active:null;
+  const topActive=operationStage?"operacao":attendanceStage?"atendimento":active;
   return `
     <section class="internal-shell-head">
       <div class="internal-brand">
@@ -1262,6 +1282,7 @@ function internalShell(active){
     <nav class="internal-nav" aria-label="Módulos internos">
       ${modules.map(key=>{const m=internalModuleMeta(key);return `<button type="button" class="${topActive===key?"active":""}" onclick="window.openInternalModule('${key}')"><b>${m.icon}</b><span>${m.label}</span><small>${m.desc}</small></button>`}).join("")}
     </nav>
+    ${attendanceStage?attendanceNav(attendanceStage,safeRole):""}
     ${operationStage?operationNav(operationStage,safeRole):""}
   `;
 }
@@ -1281,6 +1302,16 @@ window.openOperationStage=key=>{
   renderInternal();
 };
 window.refreshInternal=()=>renderInternal();
+function renderAttendance(){
+  const stages=attendanceStagesForRole(state.role);
+  if(!stages.length){main.innerHTML=internalShell("atendimento")+'<div class="empty">Seu perfil não possui acesso ao Atendimento.</div>';return}
+  if(!stages.includes(state.attendanceStage))state.attendanceStage=stages[0];
+  localStorage.setItem("algaroba_attendance_stage",state.attendanceStage);
+  if(state.attendanceStage==="pedidos")return renderDeskOrders();
+  if(state.attendanceStage==="clientes")return renderClients();
+  if(state.attendanceStage==="atendimento_relatorio")return renderAttendanceReport();
+  if(state.attendanceStage==="promocoes")return renderAttendancePromotions();
+}
 function renderOperation(){
   const stages=operationStagesForRole(state.role);
   if(!stages.length){main.innerHTML=internalShell("operacao")+'<div class="empty">Seu perfil não possui acesso operacional.</div>';return}
@@ -1300,9 +1331,7 @@ function renderInternal(){
   localStorage.setItem("algaroba_internal_module",state.internalModule);
 
   if(state.internalModule==="dashboard")return renderAdmin();
-  if(state.internalModule==="pedidos")return renderDeskOrders();
-  if(state.internalModule==="vendas")return renderAdministrative();
-  if(state.internalModule==="clientes")return renderClients();
+  if(state.internalModule==="atendimento")return renderAttendance();
   if(state.internalModule==="produtos")return renderProducts();
   if(state.internalModule==="operacao")return renderOperation();
   if(state.internalModule==="financeiro")return renderFinance();
@@ -2106,5 +2135,11 @@ const __internalMaster=installInternalMasterData({
 });
 renderClients=__internalMaster.renderClients;
 renderProducts=__internalMaster.renderProducts;
+
+const __internalAttendance=installInternalAttendance({
+  state,main,rpc,internalShell,loading,esc,showToast,fmtDate,fmtDateTime
+});
+renderAttendanceReport=__internalAttendance.renderAttendanceReport;
+renderAttendancePromotions=__internalAttendance.renderAttendancePromotions;
 
 boot();
