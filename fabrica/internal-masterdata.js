@@ -387,10 +387,58 @@ export function installInternalMasterData(ctx){
     }catch(e){main.innerHTML=internalShell("produtos")+"<div class='empty'>"+esc(e.message)+"</div>"}
   }
 
+  function receitaLinha(x){
+    x=x||{};
+    var unidade=x.unidade||"g";
+    var opts=["g","kg","ml","L","un"].map(function(u){return "<option value='"+u+"' "+(unidade===u?"selected":"")+">"+u+"</option>"}).join("");
+    var qtd=x.quantidade===null||x.quantidade===undefined?"":String(x.quantidade);
+    var preco=x.custo_referencia===null||x.custo_referencia===undefined?"":String(x.custo_referencia);
+    var saldo=x.insumo_id===undefined?"":("<small class='recipe-stock-info'>Estoque: "+Number(x.estoque_atual||0).toLocaleString("pt-BR")+" "+esc(unidade)+"</small>");
+    var entrada=x.insumo_id?"<button type='button' class='recipe-stock-btn' data-insumo-entrada='"+esc(x.insumo_id)+"' data-insumo-unidade='"+esc(unidade)+"'>+ Entrada no estoque</button>":"<small class='recipe-stock-info'>Salve para lançar estoque</small>";
+    return "<div class='recipe-line' data-recipe-row>"+
+      "<label class='master-field recipe-name'><span>Ingrediente</span><input data-recipe-name value='"+esc(x.nome||"")+"' placeholder='Nome da matéria-prima' maxlength='160'></label>"+
+      "<label class='master-field recipe-quantity'><span>Quantidade por produto</span><input data-recipe-qty inputmode='decimal' type='number' min='0.00001' step='any' value='"+esc(qtd)+"' placeholder='Ex.: 400'></label>"+
+      "<label class='master-field recipe-unit'><span>Un.</span><select data-recipe-unit>"+opts+"</select></label>"+
+      "<label class='master-field recipe-cost'><span>Custo compra (R$/kg, L ou un.)</span><input data-recipe-cost inputmode='decimal' type='number' min='0' step='any' value='"+esc(preco)+"' placeholder='Ex.: 12,00'></label>"+
+      "<div class='recipe-row-actions'>"+saldo+entrada+"<button type='button' class='recipe-remove' data-recipe-remove title='Remover ingrediente'>Remover</button></div>"+
+    "</div>";
+  }
+
+  function calcularReceitaNaTela(p){
+    var linhas=Array.from(document.querySelectorAll("[data-recipe-row]"));
+    var incompleto=linhas.length===0;
+    var custo=0;
+    linhas.forEach(function(row){
+      var nome=row.querySelector("[data-recipe-name]").value.trim();
+      var quantidade=Number(row.querySelector("[data-recipe-qty]").value);
+      var precoEl=row.querySelector("[data-recipe-cost]");
+      var preco=Number(precoEl.value);
+      var u=row.querySelector("[data-recipe-unit]").value;
+      if(!nome||!Number.isFinite(quantidade)||quantidade<=0||!precoEl.value.trim()||!Number.isFinite(preco)||preco<0){incompleto=true;return}
+      custo+=quantidade*preco/(u==="g"||u==="ml"?1000:1);
+    });
+    var extraEl=document.querySelector("[name='custo_extra']");
+    var extra=extraEl?Number(extraEl.value||0):0;
+    var total=custo+extra;
+    var el=document.querySelector("#recipeCmvValue");
+    if(el)el.textContent=incompleto?"A definir":brl(total);
+    var atacado=document.querySelector("#recipeCmvWholesale");
+    var varejo=document.querySelector("#recipeCmvRetail");
+    if(atacado)atacado.textContent=incompleto||Number(p.preco_atacado)<=0?"—":(total/Number(document.querySelector("[name='preco_atacado']").value||p.preco_atacado)*100).toFixed(1).replace(".",",")+"%";
+    if(varejo)varejo.textContent=incompleto||Number(p.preco_varejo)<=0?"—":(total/Number(document.querySelector("[name='preco_varejo']").value||p.preco_varejo)*100).toFixed(1).replace(".",",")+"%";
+    var aviso=document.querySelector("#recipeCmvNotice");
+    if(aviso)aviso.textContent=incompleto?"Cadastre as quantidades e os custos de todos os ingredientes para fechar o CMV.":"CMV calculado pelos ingredientes e pelo custo adicional por embalagem.";
+  }
+
   async function renderProductDetail(id){
     loading("Abrindo produto...");
     try{
-      var rows=await rpc("admin_produtos_lista",{p_busca:null},true),p=(rows||[]).find(function(x){return x.produto_id===id});
+      var dados=await Promise.all([
+        rpc("admin_produtos_lista",{p_busca:null},true),
+        rpc("admin_ficha_tecnica_produto",{p_produto_id:id},true)
+      ]);
+      var p=(dados[0]||[]).find(function(x){return x.produto_id===id});
+      var ficha=dados[1]||{ingredientes:[],custo_extra:0,controle_insumos_ativo:false};
       if(!p)throw new Error("Produto não encontrado.");
       main.innerHTML=internalShell("produtos")+
         "<button type='button' class='work-back master-back' id='productBack'>← Produtos</button>"+
@@ -400,14 +448,60 @@ export function installInternalMasterData(ctx){
             field("Nome do produto","nome",p.nome,true)+field("Sabor / nome curto","sabor",p.sabor)+field("Preço atacado","preco_atacado",Number(p.preco_atacado||0).toFixed(2),"number")+field("Preço varejo","preco_varejo",Number(p.preco_varejo||0).toFixed(2),"number")+field("Ordem de exibição","ordem_exibicao",p.ordem_exibicao,"number")+
             "<label class='master-field'><span>Disponibilidade</span><select name='disponibilidade_catalogo'><option value='disponivel' "+(p.disponibilidade_catalogo==="disponivel"?"selected":"")+">Disponível</option><option value='em_falta' "+(p.disponibilidade_catalogo==="em_falta"?"selected":"")+">Em falta</option><option value='indisponivel_temporario' "+(p.disponibilidade_catalogo==="indisponivel_temporario"?"selected":"")+">Indisponível temporariamente</option></select></label>"+
           "</div><label class='master-field full'><span>Descrição para o cliente</span><textarea name='descricao_cliente' rows='3'>"+esc(p.descricao_cliente||"")+"</textarea></label><label class='master-field full'><span>URL da imagem</span><input name='imagem_url' value='"+esc(p.imagem_url||"")+"' placeholder='https://...'></label></section>"+
-          "<section class='master-form-footer'><div class='master-toggles'><label class='master-toggle'><input type='checkbox' name='destaque' "+(p.destaque?"checked":"")+"><span>Produto em destaque</span></label><label class='master-toggle'><input type='checkbox' name='ativo' "+(p.ativo?"checked":"")+"><span>Produto ativo</span></label></div><button class='master-save' type='submit'>Salvar produto</button></section>"+
+          "<section class='master-form-section recipe-section'><div class='master-form-title'><h2>Ingredientes e CMV</h2><p>Ficha técnica privada da fábrica. As quantidades informadas correspondem a uma unidade deste produto vendido.</p></div>"+
+          "<div class='recipe-help'>No custo da compra, informe o preço de <b>1 kg</b> (ingredientes em g), de <b>1 litro</b> (ingredientes em ml) ou de <b>1 unidade</b>. Ingredientes com o mesmo nome compartilham esse custo entre as receitas.</div>"+
+          "<div id='recipeRows' class='recipe-rows'>"+(ficha.ingredientes||[]).map(receitaLinha).join("")+"</div>"+
+          "<button class='recipe-add' type='button' id='recipeAdd'>+ Adicionar ingrediente</button>"+
+          "<label class='master-field recipe-extra'><span>Outros custos por unidade (embalagem, energia, perdas etc.) — R$</span><input name='custo_extra' type='number' min='0' step='any' inputmode='decimal' value='"+esc(ficha.custo_extra||0)+"'></label>"+
+          "<div class='recipe-cmv-box'><div><span>CMV por unidade</span><strong id='recipeCmvValue'>—</strong></div><div><span>CMV atacado</span><strong id='recipeCmvWholesale'>—</strong></div><div><span>CMV varejo</span><strong id='recipeCmvRetail'>—</strong></div><small id='recipeCmvNotice'></small></div>"+
+          "<label class='master-toggle recipe-enable'><input type='checkbox' name='ativar_baixa' "+(ficha.controle_insumos_ativo?"checked":"")+"><span>Ativar baixa automática de ingredientes ao finalizar a produção</span></label>"+
+          "<p class='recipe-help'>Antes de ativar, cadastre as quantidades em estoque de cada ingrediente. Pedidos de teste não descontam insumos. O estoque não fica negativo: a finalização avisa quando faltar matéria-prima.</p></section>"+
+          "<section class='master-form-footer'><div class='master-toggles'><label class='master-toggle'><input type='checkbox' name='destaque' "+(p.destaque?"checked":"")+"><span>Produto em destaque</span></label><label class='master-toggle'><input type='checkbox' name='ativo' "+(p.ativo?"checked":"")+"><span>Produto ativo</span></label></div><button class='master-save' type='submit'>Salvar produto e ficha técnica</button></section>"+
         "</form>";
       document.querySelector("#productBack").onclick=function(){renderProducts()};
-      document.querySelector("#productEditForm").onsubmit=async function(ev){
+      var form=document.querySelector("#productEditForm");
+      document.querySelector("#recipeAdd").onclick=function(){
+        document.querySelector("#recipeRows").insertAdjacentHTML("beforeend",receitaLinha({}));
+        calcularReceitaNaTela(p);
+      };
+      form.oninput=function(){calcularReceitaNaTela(p)};
+      form.onchange=function(){calcularReceitaNaTela(p)};
+      form.onclick=async function(ev){
+        var rem=ev.target.closest("[data-recipe-remove]");
+        if(rem){rem.closest("[data-recipe-row]").remove();calcularReceitaNaTela(p);return}
+        var entrada=ev.target.closest("[data-insumo-entrada]");
+        if(entrada){
+          var unidade=entrada.dataset.insumoUnidade;
+          var insumoId=entrada.dataset.insumoEntrada;
+          var raw=window.prompt("Quanto deseja adicionar ao estoque? Informe em "+unidade+" (ex.: 2000 para 2 kg, se a unidade é g).");
+          if(raw===null)return;
+          var qtd=Number(raw.replace(",","."));
+          if(!Number.isFinite(qtd)||qtd<=0){showToast("Quantidade de entrada inválida.");return}
+          try{
+            await rpc("admin_entrada_estoque_insumo",{p_insumo_id:insumoId,p_quantidade:qtd},true);
+            showToast("Entrada registrada no estoque.");
+            await renderProductDetail(id);
+          }catch(e){showToast(e.message)}
+        }
+      };
+      calcularReceitaNaTela(p);
+      form.onsubmit=async function(ev){
         ev.preventDefault();
-        var fd=new FormData(ev.currentTarget);
+        var fd=new FormData(form);
+        var ingredientes=[];
         try{
-          await rpc("admin_atualizar_produto_completo",{
+          Array.from(form.querySelectorAll("[data-recipe-row]")).forEach(function(row){
+            var nome=row.querySelector("[data-recipe-name]").value.trim();
+            var qtdInput=row.querySelector("[data-recipe-qty]").value.trim();
+            var precoInput=row.querySelector("[data-recipe-cost]").value.trim();
+            if(!nome&&!qtdInput&&!precoInput)return;
+            if(!nome||!qtdInput||!Number.isFinite(Number(qtdInput))||Number(qtdInput)<=0||!["g","kg","ml","L","un"].includes(row.querySelector("[data-recipe-unit]").value)){
+              throw new Error("Preencha o nome, a quantidade e a unidade de todos os ingredientes.");
+            }
+            if(precoInput&&(!Number.isFinite(Number(precoInput))||Number(precoInput)<0))throw new Error("Preço do ingrediente inválido.");
+            ingredientes.push({nome:nome,quantidade:Number(qtdInput),unidade:row.querySelector("[data-recipe-unit]").value,custo_referencia:precoInput?Number(precoInput):null});
+          });
+          await rpc("admin_salvar_produto_com_ficha",{
             p_produto_id:id,
             p_nome:fd.get("nome"),
             p_sabor:fd.get("sabor")||null,
@@ -418,10 +512,13 @@ export function installInternalMasterData(ctx){
             p_ordem_exibicao:Number(fd.get("ordem_exibicao")||9999),
             p_destaque:fd.get("destaque")==="on",
             p_disponibilidade_catalogo:fd.get("disponibilidade_catalogo"),
-            p_ativo:fd.get("ativo")==="on"
+            p_ativo:fd.get("ativo")==="on",
+            p_ingredientes:ingredientes,
+            p_custo_extra:Number(fd.get("custo_extra")||0),
+            p_ativar_baixa:fd.get("ativar_baixa")==="on"
           },true);
           await loadCatalog();
-          showToast("Produto atualizado no catálogo.");
+          showToast("Cadastro, ingredientes e CMV atualizados.");
           await renderProductDetail(id);
         }catch(e){showToast(e.message)}
       };
