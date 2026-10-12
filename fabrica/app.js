@@ -1,7 +1,7 @@
 import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
-import { installInternalMasterData } from "./internal-masterdata.js?v=20261011-master1";
+import { installInternalMasterData } from "./internal-masterdata.js?v=20261011-clienttype1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -170,7 +170,7 @@ async function loadIdentity(){
   try{
     state.role=await rpc("current_user_role",{},true);
     if(state.role==="cliente"){
-      const p=await rpc("meu_perfil_cliente",{},true);state.profile=Array.isArray(p)?p[0]:p;
+      let p;try{p=await rpc("meu_perfil_cliente_v2",{},true)}catch{p=await rpc("meu_perfil_cliente",{},true)}state.profile=Array.isArray(p)?p[0]:p;
     }else{
       state.profile=null;
     }
@@ -824,10 +824,12 @@ function renderCompleteProfile(){
   if(state.role){go(state.role==="cliente"?"account":"internal");return}
   main.innerHTML=`<div class="login-card">
     <div class="login-mark"><img src="../algaroba-icon.svg" alt=""></div>
+    <div class="step-pill">Cliente recorrente / revenda</div>
     <h2>Complete seu cadastro</h2>
-    <p class="small" style="text-align:center">Informe seus dados. Se encontrarmos um cadastro antigo com os mesmos dados, ele será marcado para conferência sem liberar histórico automaticamente.</p>
+    <p class="small" style="text-align:center">Este cadastro é para clientes recorrentes da Algaroba. Seus dados ficam salvos para facilitar os próximos pedidos e entregas.</p>
     <form onsubmit="window.completeProfile(event)">
-      <div class="field"><label>Nome / nome do estabelecimento</label><input id="profileName" autocomplete="name" required></div>
+      <div class="field"><label>Nome do responsável</label><input id="profileName" autocomplete="name" required></div>
+      <div class="field"><label>Nome fantasia / estabelecimento</label><input id="profileTradeName" autocomplete="organization" placeholder="Ex.: Mercadinho São José" required></div>
       <div class="field"><label>WhatsApp com DDD</label><input id="profileWhatsapp" inputmode="tel" autocomplete="tel" placeholder="(84) 99999-9999" required></div>
       <div class="field"><label>CPF ou CNPJ <span class="small">(opcional)</span></label><input id="profileDocument" inputmode="numeric" autocomplete="off"></div>
       <button id="profileSubmit" class="button orange" style="width:100%" type="submit">Continuar →</button>
@@ -839,8 +841,9 @@ window.completeProfile=async e=>{
   e.preventDefault();
   const btn=$("#profileSubmit");btn.disabled=true;btn.textContent="Salvando...";
   try{
-    const result=await rpc("concluir_cadastro_cliente",{
+    const result=await rpc("concluir_cadastro_cliente_v2",{
       p_nome:$("#profileName").value.trim(),
+      p_nome_fantasia:$("#profileTradeName").value.trim(),
       p_whatsapp:$("#profileWhatsapp").value.trim(),
       p_cpf_cnpj:$("#profileDocument").value.trim()||null
     },true);
@@ -1061,6 +1064,7 @@ async function renderAccount(){
     main.innerHTML=`
       <div class="account-card">
         <h2>Olá, ${esc(state.profile?.nome?.split(" ")[0]||"cliente")}</h2>
+        ${state.profile?.nome_fantasia?`<div class="account-trade-name">${esc(state.profile.nome_fantasia)}</div>`:""}
         <div class="small">${esc(state.profile?.whatsapp||state.profile?.telefone||"")}</div>
       </div>
 
