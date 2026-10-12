@@ -304,22 +304,86 @@ export function installInternalMasterData(ctx){
     return "<span class='status warn'>"+esc(v||"indefinido")+"</span>";
   }
 
+  function productAdminGroupKey(p){
+    if(p.linha==="Tradicional")return "tradicional";
+    if(p.linha==="Zero")return "zero";
+    if(p.linha==="Classic")return "classic";
+    if(p.linha==="Intense")return "intense";
+    if(p.linha==="Raiz")return "raiz";
+    if(p.categoria==="Xaropes")return "xaropes";
+    if(p.categoria==="Coberturas")return "coberturas";
+    if(p.categoria==="Grãos e Farináceos")return "graos";
+    return "outros";
+  }
+
+  function productAdminGroups(){
+    return [
+      {key:"tradicional",label:"Tradicional",sub:"Linha Tradicional"},
+      {key:"zero",label:"Zero",sub:"Linha Zero"},
+      {key:"classic",label:"Classic",sub:"Linha Classic"},
+      {key:"intense",label:"Intense",sub:"Linha Intense"},
+      {key:"raiz",label:"Raiz",sub:"Linha Raiz"},
+      {key:"xaropes",label:"Xaropes",sub:"Xaropes"},
+      {key:"coberturas",label:"Coberturas",sub:"Coberturas"},
+      {key:"graos",label:"Grãos",sub:"Grãos e Farináceos"},
+      {key:"outros",label:"Outros",sub:"Outros produtos"}
+    ];
+  }
+
   async function renderProducts(query){
     if(typeof query==="string")state.productAdminSearch=query;
+    if(!state.productAdminGroup)state.productAdminGroup="all";
     loading("Carregando produtos...");
     try{
       var rows=await rpc("admin_produtos_lista",{p_busca:state.productAdminSearch||null},true)||[];
+      var defs=productAdminGroups();
+      var grouped={};
+      rows.forEach(function(p){
+        var key=productAdminGroupKey(p);
+        (grouped[key]||(grouped[key]=[])).push(p);
+      });
+      var visibleDefs=defs.filter(function(g){return (grouped[g.key]||[]).length>0});
+      if(state.productAdminGroup!=="all"&&!grouped[state.productAdminGroup])state.productAdminGroup="all";
+
+      function productCard(p){
+        return "<button type='button' class='product-admin-card' data-product-id='"+p.produto_id+"'><div class='product-admin-copy'><span>"+esc([p.categoria,p.linha].filter(Boolean).join(" • "))+"</span><strong>"+esc(p.sabor||p.nome)+"</strong><small>"+esc(p.nome)+" • "+(p.peso_volume?Number(p.peso_volume).toLocaleString("pt-BR")+" "+esc(p.unidade||""):"")+"</small><div>"+productAvailability(p.disponibilidade_catalogo)+(p.destaque?" <span class='status warn'>destaque</span>":"")+(!p.ativo?" <span class='status bad'>inativo</span>":"")+"</div></div><div class='product-admin-price'><small>Atacado</small><b>"+brl(p.preco_atacado)+"</b><small>Varejo</small><b>"+brl(p.preco_varejo)+"</b></div><span class='client-open'>›</span></button>";
+      }
+
+      function groupSection(g){
+        var list=grouped[g.key]||[];
+        if(!list.length)return "";
+        return "<section class='product-line-section product-line-"+g.key+"'><div class='product-line-head'><div><span>PRODUTOS</span><h2>"+esc(g.sub)+"</h2></div><b>"+list.length+" "+(list.length===1?"item":"itens")+"</b></div><div class='product-admin-list'>"+list.map(productCard).join("")+"</div></section>";
+      }
+
+      var displayed=state.productAdminGroup==="all"
+        ? visibleDefs.map(groupSection).join("")
+        : groupSection(defs.find(function(g){return g.key===state.productAdminGroup})||{key:state.productAdminGroup,label:state.productAdminGroup,sub:state.productAdminGroup});
+
       main.innerHTML=internalShell("produtos")+
         "<section class='internal-title'><div><span class='internal-eyebrow'>PRODUTOS</span><h1>Catálogo da Algaroba</h1><p>Edite o que o cliente vê sem misturar com o controle de estoque.</p></div></section>"+
         "<section class='master-toolbar'><form id='productSearchForm' class='master-search'><span>⌕</span><input id='productSearchInput' type='search' value='"+esc(state.productAdminSearch||"")+"' placeholder='Buscar produto, sabor, linha ou categoria'><button>Buscar</button></form><a class='master-preview-link' href='./catalogo.html' target='_blank' rel='noopener'>Ver catálogo público ↗</a></section>"+
-        "<section class='product-admin-list'>"+
-          (rows.length?rows.map(function(p){
-            return "<button type='button' class='product-admin-card' data-product-id='"+p.produto_id+"'><div class='product-admin-copy'><span>"+esc([p.categoria,p.linha].filter(Boolean).join(" • "))+"</span><strong>"+esc(p.sabor||p.nome)+"</strong><small>"+esc(p.nome)+" • "+(p.peso_volume?Number(p.peso_volume).toLocaleString("pt-BR")+" "+esc(p.unidade||""):"")+"</small><div>"+productAvailability(p.disponibilidade_catalogo)+(p.destaque?" <span class='status warn'>destaque</span>":"")+(!p.ativo?" <span class='status bad'>inativo</span>":"")+"</div></div><div class='product-admin-price'><small>Atacado</small><b>"+brl(p.preco_atacado)+"</b><small>Varejo</small><b>"+brl(p.preco_varejo)+"</b></div><span class='client-open'>›</span></button>";
-          }).join(""):"<div class='empty'>Nenhum produto encontrado.</div>")+
-        "</section>";
+        "<nav class='product-line-nav' aria-label='Filtrar produtos por linha'>"+
+          "<button type='button' class='"+(state.productAdminGroup==="all"?"active":"")+"' data-product-group='all'><span>Todos</span><b>"+rows.length+"</b></button>"+
+          visibleDefs.map(function(g){var count=(grouped[g.key]||[]).length;return "<button type='button' class='"+(state.productAdminGroup===g.key?"active":"")+"' data-product-group='"+g.key+"'><span>"+esc(g.label)+"</span><b>"+count+"</b></button>"}).join("")+
+        "</nav>"+
+        "<div class='product-grouped-list'>"+(displayed||"<div class='empty'>Nenhum produto encontrado.</div>")+"</div>";
+
       var form=document.querySelector("#productSearchForm");
-      if(form)form.onsubmit=function(ev){ev.preventDefault();state.productAdminSearch=document.querySelector("#productSearchInput").value.trim();renderProducts()};
-      main.onclick=function(ev){var b=ev.target.closest("[data-product-id]");if(b)renderProductDetail(b.dataset.productId)};
+      if(form)form.onsubmit=function(ev){
+        ev.preventDefault();
+        state.productAdminSearch=document.querySelector("#productSearchInput").value.trim();
+        renderProducts();
+      };
+      main.onclick=function(ev){
+        var groupBtn=ev.target.closest("[data-product-group]");
+        if(groupBtn){
+          state.productAdminGroup=groupBtn.dataset.productGroup;
+          renderProducts();
+          return;
+        }
+        var b=ev.target.closest("[data-product-id]");
+        if(b)renderProductDetail(b.dataset.productId);
+      };
     }catch(e){main.innerHTML=internalShell("produtos")+"<div class='empty'>"+esc(e.message)+"</div>"}
   }
 
