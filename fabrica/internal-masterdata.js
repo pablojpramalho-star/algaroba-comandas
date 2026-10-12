@@ -12,13 +12,13 @@ export function installInternalMasterData(ctx){
     if(typeof query==="string")state.clientSearch=query;
     loading("Carregando clientes...");
     try{
-      var rows=await rpc("admin_clientes_lista",{p_busca:state.clientSearch||null,p_limit:500},true)||[];
+      var rows=await rpc("admin_clientes_lista_v2",{p_busca:state.clientSearch||null,p_limit:500},true)||[];
       main.innerHTML=internalShell("clientes")+
         "<section class='internal-title'><div><span class='internal-eyebrow'>CLIENTES</span><h1>Cadastro de clientes</h1><p>Base antiga e novos cadastros em um único lugar. As observações internas não aparecem para o cliente.</p></div></section>"+
         "<section class='master-toolbar'><form id='clientSearchForm' class='master-search'><span>⌕</span><input id='clientSearchInput' type='search' value='"+esc(state.clientSearch||"")+"' placeholder='Buscar nome, WhatsApp, CPF/CNPJ ou código'><button>Buscar</button></form><div class='master-count'><b>"+rows.length+"</b><span>clientes encontrados</span></div></section>"+
         "<section class='client-directory'>"+
           (rows.length?rows.map(function(c){
-            return "<button type='button' class='client-directory-card' data-client-id='"+c.cliente_id+"'><div class='client-avatar'>"+esc((c.nome||"?").trim().slice(0,1).toUpperCase())+"</div><div class='client-directory-copy'><strong>"+esc(c.nome)+"</strong><small>"+esc(c.codigo_cliente||"Cadastro novo")+(c.whatsapp?" • "+esc(c.whatsapp):"")+"</small><div>"+clientStatus(c)+(c.status_migracao&&c.status_migracao!=="OK"?" <span class='status warn'>"+esc(c.status_migracao)+"</span>":"")+"</div></div><span class='client-open'>›</span></button>";
+            return "<button type='button' class='client-directory-card' data-client-id='"+c.cliente_id+"'><div class='client-avatar'>"+esc((c.nome||"?").trim().slice(0,1).toUpperCase())+"</div><div class='client-directory-copy'><strong>"+esc(c.nome_fantasia||c.nome)+"</strong><small>"+(c.nome_fantasia?esc(c.nome)+" • ":"")+esc(c.codigo_cliente||"Cadastro novo")+(c.whatsapp?" • "+esc(c.whatsapp):"")+"</small><div>"+clientStatus(c)+(c.tipo_cliente==="recorrente"?" <span class='status ok'>recorrente</span>":c.tipo_cliente==="avulso"?" <span class='status'>avulso</span>":" <span class='status warn'>não classificado</span>")+(c.status_migracao&&c.status_migracao!=="OK"?" <span class='status warn'>"+esc(c.status_migracao)+"</span>":"")+"</div></div><span class='client-open'>›</span></button>";
           }).join(""):"<div class='empty'>Nenhum cliente encontrado.</div>")+
         "</section>";
       var form=document.querySelector("#clientSearchForm");
@@ -33,14 +33,16 @@ export function installInternalMasterData(ctx){
   async function renderClientDetail(id){
     loading("Abrindo cadastro...");
     try{
-      var rows=await rpc("admin_cliente_detalhe",{p_cliente_id:id},true),c=Array.isArray(rows)?rows[0]:rows;
+      var rows=await rpc("admin_cliente_detalhe_v2",{p_cliente_id:id},true),c=Array.isArray(rows)?rows[0]:rows;
       if(!c)throw new Error("Cliente não encontrado.");
       main.innerHTML=internalShell("clientes")+
         "<button type='button' class='work-back master-back' id='clientBack'>← Clientes</button>"+
-        "<section class='client-profile-head'><div class='client-avatar large'>"+esc((c.nome||"?").trim().slice(0,1).toUpperCase())+"</div><div><span>"+esc(c.codigo_cliente||"CADASTRO NOVO")+"</span><h1>"+esc(c.nome)+"</h1><p>"+esc(c.origem==="my_loja_store"?"Importado do My Loja Store":"Cadastro do novo sistema")+(c.portal_ativado_em?" • Portal ativado":"")+"</p></div></section>"+
+        "<section class='client-profile-head'><div class='client-avatar large'>"+esc((c.nome_fantasia||c.nome||"?").trim().slice(0,1).toUpperCase())+"</div><div><span>"+esc(c.codigo_cliente||"CADASTRO NOVO")+"</span><h1>"+esc(c.nome_fantasia||c.nome)+"</h1><p>"+(c.nome_fantasia?"Responsável: "+esc(c.nome)+" • ":"")+esc(c.origem==="my_loja_store"?"Importado do My Loja Store":"Cadastro do novo sistema")+(c.portal_ativado_em?" • Portal ativado":"")+"</p></div></section>"+
         "<form id='clientEditForm' class='master-form'>"+
           "<section class='master-form-section'><div class='master-form-title'><h2>Dados do cliente</h2><p>Informações cadastrais que podem ser corrigidas pelo administrativo.</p></div><div class='master-form-grid'>"+
-            field("Nome","nome",c.nome,true)+field("WhatsApp","whatsapp",c.whatsapp)+field("Telefone","telefone",c.telefone)+field("CPF/CNPJ","cpf_cnpj",c.cpf_cnpj)+field("E-mail","email",c.email,"email")+field("Nascimento","nascimento",c.nascimento,"date")+
+            field("Nome do responsável","nome",c.nome,true)+field("Nome fantasia","nome_fantasia",c.nome_fantasia)+
+            "<label class='master-field'><span>Tipo de cliente</span><select name='tipo_cliente'><option value='nao_classificado' "+(c.tipo_cliente==="nao_classificado"?"selected":"")+">Não classificado</option><option value='recorrente' "+(c.tipo_cliente==="recorrente"?"selected":"")+">Recorrente / revenda</option><option value='avulso' "+(c.tipo_cliente==="avulso"?"selected":"")+">Avulso / consumidor final</option></select></label>"+
+            field("WhatsApp","whatsapp",c.whatsapp)+field("Telefone","telefone",c.telefone)+field("CPF/CNPJ","cpf_cnpj",c.cpf_cnpj)+field("E-mail","email",c.email,"email")+field("Nascimento","nascimento",c.nascimento,"date")+
           "</div><label class='master-field full'><span>Endereço legado / informação cadastrada</span><textarea name='endereco_legado' rows='3'>"+esc(c.endereco_legado||"")+"</textarea></label></section>"+
           "<section class='master-form-section internal-notes'><div class='master-form-title'><h2>Uso interno da Algaroba</h2><p>Esses campos são exclusivos da equipe. O cliente não vê essas informações.</p></div>"+
             "<label class='master-field full'><span>Ponto de referência interno</span><input name='referencia_interna' value='"+esc(c.referencia_interna||"")+"' placeholder='Ex.: box ao lado da farmácia, falar com Maria'></label>"+
@@ -54,9 +56,11 @@ export function installInternalMasterData(ctx){
         ev.preventDefault();
         var fd=new FormData(ev.currentTarget),birth=fd.get("nascimento")||null;
         try{
-          await rpc("admin_atualizar_cliente_interno",{
+          await rpc("admin_atualizar_cliente_interno_v2",{
             p_cliente_id:id,
             p_nome:fd.get("nome"),
+            p_nome_fantasia:fd.get("nome_fantasia")||null,
+            p_tipo_cliente:fd.get("tipo_cliente")||"nao_classificado",
             p_whatsapp:fd.get("whatsapp")||null,
             p_telefone:fd.get("telefone")||null,
             p_cpf_cnpj:fd.get("cpf_cnpj")||null,
