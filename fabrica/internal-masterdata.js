@@ -440,6 +440,10 @@ export function installInternalMasterData(ctx){
       var p=(dados[0]||[]).find(function(x){return x.produto_id===id});
       var ficha=dados[1]||{ingredientes:[],custo_extra:0,controle_insumos_ativo:false};
       if(!p)throw new Error("Produto não encontrado.");
+      var receitasIniciais=ficha.ingredientes||[];
+      if(receitasIniciais.length===0&&/tradicional.*açúcar mascavo/i.test(p.nome||"")){
+        receitasIniciais=["Amendoim","Açúcar mascavo","Amendoim torrado","Liga neutra","Sal"].map(function(nome){return {nome:nome,quantidade:"",unidade:"g",custo_referencia:""};});
+      }
       main.innerHTML=internalShell("produtos")+
         "<button type='button' class='work-back master-back' id='productBack'>← Produtos</button>"+
         "<section class='product-profile-head'><div><span>"+esc([p.categoria,p.linha].filter(Boolean).join(" • "))+"</span><h1>"+esc(p.sabor||p.nome)+"</h1><p>"+esc(p.modelo_fornecimento||"")+"</p></div>"+productAvailability(p.disponibilidade_catalogo)+"</section>"+
@@ -450,7 +454,7 @@ export function installInternalMasterData(ctx){
           "</div><label class='master-field full'><span>Descrição para o cliente</span><textarea name='descricao_cliente' rows='3'>"+esc(p.descricao_cliente||"")+"</textarea></label><label class='master-field full'><span>URL da imagem</span><input name='imagem_url' value='"+esc(p.imagem_url||"")+"' placeholder='https://...'></label></section>"+
           "<section class='master-form-section recipe-section'><div class='master-form-title'><h2>Ingredientes e CMV</h2><p>Ficha técnica privada da fábrica. As quantidades informadas correspondem a uma unidade deste produto vendido.</p></div>"+
           "<div class='recipe-help'>No custo da compra, informe o preço de <b>1 kg</b> (ingredientes em g), de <b>1 litro</b> (ingredientes em ml) ou de <b>1 unidade</b>. Ingredientes com o mesmo nome compartilham esse custo entre as receitas.</div>"+
-          "<div id='recipeRows' class='recipe-rows'>"+(ficha.ingredientes||[]).map(receitaLinha).join("")+"</div>"+
+          "<div id='recipeRows' class='recipe-rows'>"+receitasIniciais.map(receitaLinha).join("")+"</div>"+
           "<button class='recipe-add' type='button' id='recipeAdd'>+ Adicionar ingrediente</button>"+
           "<label class='master-field recipe-extra'><span>Outros custos por unidade (embalagem, energia, perdas etc.) — R$</span><input name='custo_extra' type='number' min='0' step='any' inputmode='decimal' value='"+esc(ficha.custo_extra||0)+"'></label>"+
           "<div class='recipe-cmv-box'><div><span>CMV por unidade</span><strong id='recipeCmvValue'>—</strong></div><div><span>CMV atacado</span><strong id='recipeCmvWholesale'>—</strong></div><div><span>CMV varejo</span><strong id='recipeCmvRetail'>—</strong></div><small id='recipeCmvNotice'></small></div>"+
