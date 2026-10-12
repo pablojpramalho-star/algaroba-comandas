@@ -175,7 +175,7 @@ export function installReceitasLote(ctx){
     loading("Carregando estoque primário...");
     try{
       var items=await rpc("admin_estoque_primario_listar",{},true)||[];
-      var categorias=["Matérias-primas","Embalagens","Etiquetas"];
+      var categorias=["Matérias-primas","Saborizantes","Embalagens","Etiquetas"];
       var filtered=items.filter(x=>x.categoria===grupo);
       main.innerHTML=internalShell("produtos")+
         "<button type='button' id='stockBack' class='work-back master-back'>← Voltar</button>"+
