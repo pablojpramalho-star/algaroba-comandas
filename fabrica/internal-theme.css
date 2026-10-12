@@ -1394,3 +1394,40 @@ body.internal-mode ::selection{
   body.internal-mode .panel,
   body.internal-mode .route-operation-card{border-radius:14px!important}
 }
+
+/* Atendimento — edição do pedido */
+.att-edit-order{margin-top:6px;min-height:30px;padding:0 9px;border:1px solid #c9d9bd;border-radius:9px;background:#eaf2e4;color:#0a5c3d;font-size:8px;font-weight:900}
+.sales-order-overlay{position:fixed;inset:0;z-index:200;background:rgba(20,26,21,.42);display:flex;align-items:flex-end;justify-content:center}
+.sales-order-sheet{width:min(100%,720px);max-height:92svh;overflow:auto;border-radius:24px 24px 0 0;background:#fff8e9;box-shadow:0 -14px 40px rgba(28,35,28,.2)}
+.sales-order-sheet>header{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #e4d1b0;background:#fffaf1}
+.sales-order-sheet>header button{min-height:34px;border:1px solid #dcc7a4;border-radius:10px;background:#fffdf8;color:#165a3d;font-size:8px;font-weight:900}
+.sales-order-sheet>header span{display:block;font-size:7px;font-weight:950;letter-spacing:.12em;color:#aa603d}
+.sales-order-sheet>header h2{margin:2px 0 0;font:700 20px Georgia,"Times New Roman",serif;color:#075139}
+.sales-order-sheet>header small{display:block;margin-top:2px;font-size:8px;color:#756d61}
+.sales-order-sheet>header>strong{font:700 16px Georgia,"Times New Roman",serif;color:#075139}
+.sales-order-alert{margin:10px 12px 0;padding:10px;border:1px solid #e7b677;border-radius:12px;background:#fff0d8;color:#7f4b20}
+.sales-order-alert b,.sales-order-alert span{display:block}.sales-order-alert b{font-size:10px}.sales-order-alert span{margin-top:3px;font-size:8px;line-height:1.35}
+.sales-order-alert.locked{border-color:#e3b1a3;background:#fff0eb;color:#8b3e2c}
+.sales-order-items{display:grid;gap:8px;padding:10px 12px}
+.sales-edit-item{padding:10px;border:1px solid #e1cead;border-radius:14px;background:#fffdf8}
+.sales-edit-item.canceled{opacity:.55}
+.sales-edit-status{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.sales-edit-status span{font-size:7px;font-weight:900;text-transform:uppercase;color:#786f62}.sales-edit-status b{padding:3px 6px;border-radius:999px;background:#ffdfb9;color:#9a4d1e;font-size:7px}
+.sales-edit-item label{display:grid;gap:3px;font-size:7px;font-weight:850;color:#776e60}
+.sales-edit-item select,.sales-edit-item input{width:100%;min-height:37px;padding:0 9px;border:1px solid #ddc8a6;border-radius:9px;background:#fffaf0;color:#173e31;font-size:10px}
+.sales-edit-row{display:grid;grid-template-columns:90px 1fr;gap:7px;margin-top:7px}
+.sales-edit-price{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:8px;color:#71695e}.sales-edit-price b{font:700 14px Georgia,"Times New Roman",serif;color:#075139}
+.sales-edit-actions{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px}.sales-edit-actions button{min-height:34px;border:0;border-radius:9px;background:#0a6742;color:#fff;font-size:8px;font-weight:900}.sales-edit-actions .remove{padding:0 10px;background:#fff0eb;color:#9c412e;border:1px solid #e3b7a9}
+.sales-add-item{margin:0 12px 10px;padding:10px;border:1px dashed #cfb78f;border-radius:14px;background:#fff4dd}.sales-add-item h3{margin:0 0 7px;font:700 15px Georgia,"Times New Roman",serif;color:#075139}.sales-add-item>div{display:grid;grid-template-columns:minmax(0,1fr) 64px auto;gap:6px}.sales-add-item select,.sales-add-item input{min-height:37px;border:1px solid #dcc7a5;border-radius:9px;background:#fffdf8;padding:0 8px;color:#173e31}.sales-add-item button{border:0;border-radius:9px;background:#f05b22;color:#fff;font-size:8px;font-weight:900}
+.sales-order-sheet>footer{position:sticky;bottom:0;display:flex;justify-content:space-between;padding:10px 14px;border-top:1px solid #e5d2b2;background:#fffaf1;color:#6e685e;font-size:8px}.sales-order-sheet>footer b{font-size:11px;color:#075139}
+
+/* Produção — alterações feitas pelo Atendimento */
+.order-work-card.changed{border:2px solid #ed934d!important;background:#fff6e8!important;box-shadow:0 5px 16px rgba(213,112,34,.12)!important}
+.production-change-badge{display:inline-block;margin-left:5px;padding:3px 6px;border-radius:999px;background:#e85c22;color:#fff;font-size:7px;vertical-align:middle}
+.work-item.changed{border:2px solid #ed934d!important;background:#fff8ec!important}
+.production-item-change{display:inline-block!important;width:max-content;margin-bottom:4px;padding:3px 6px;border-radius:999px;background:#ffe0b9;color:#a14d1e;font:900 7px system-ui,sans-serif!important;letter-spacing:.04em}
+@media(max-width:430px){
+  .sales-order-sheet{max-height:94svh}
+  .sales-order-sheet>header{grid-template-columns:auto 1fr}.sales-order-sheet>header>strong{grid-column:2;text-align:left}
+  .sales-add-item>div{grid-template-columns:1fr 58px}.sales-add-item button{grid-column:1/-1;min-height:36px}
+}
