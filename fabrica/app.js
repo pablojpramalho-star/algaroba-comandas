@@ -1301,6 +1301,15 @@ window.openOperationStage=key=>{
   localStorage.setItem("algaroba_operation_stage",key);
   renderInternal();
 };
+window.openAttendanceStage=key=>{
+  const stages=attendanceStagesForRole(state.role);
+  if(!stages.includes(key)){showToast("Seu perfil não tem acesso a esta área.");return}
+  state.internalModule="atendimento";
+  state.attendanceStage=key;
+  localStorage.setItem("algaroba_internal_module","atendimento");
+  localStorage.setItem("algaroba_attendance_stage",key);
+  renderInternal();
+};
 window.refreshInternal=()=>renderInternal();
 function renderAttendance(){
   const stages=attendanceStagesForRole(state.role);
