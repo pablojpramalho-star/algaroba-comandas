@@ -1,5 +1,7 @@
+import { installReceitasLote } from "./internal-receitas.js?v=20261012-lote1";
 export function installInternalMasterData(ctx){
   const state=ctx.state,main=ctx.main,rpc=ctx.rpc,internalShell=ctx.internalShell,loading=ctx.loading,esc=ctx.esc,showToast=ctx.showToast,brl=ctx.brl,fmtDate=ctx.fmtDate,loadCatalog=ctx.loadCatalog;
+  const receitasLote=installReceitasLote(ctx);
   if(!("clientTypeFilter" in state))state.clientTypeFilter=localStorage.getItem("algaroba_client_type")||"recorrente";
 
   function clientStatus(c){
@@ -361,6 +363,7 @@ export function installInternalMasterData(ctx){
 
       main.innerHTML=internalShell("produtos")+
         "<section class='internal-title'><div><span class='internal-eyebrow'>PRODUTOS</span><h1>Catálogo da Algaroba</h1><p>Edite o que o cliente vê sem misturar com o controle de estoque.</p></div></section>"+
+        "<div class='recipe-inventory-shortcut'><button type='button' id='openStockInventory'>📦 Estoque primário: matérias-primas, embalagens e etiquetas</button></div>"+
         "<section class='master-toolbar'><form id='productSearchForm' class='master-search'><span>⌕</span><input id='productSearchInput' type='search' value='"+esc(state.productAdminSearch||"")+"' placeholder='Buscar produto, sabor, linha ou categoria'><button>Buscar</button></form><a class='master-preview-link' href='./catalogo.html' target='_blank' rel='noopener'>Ver catálogo público ↗</a></section>"+
         "<nav class='product-line-nav' aria-label='Filtrar produtos por linha'>"+
           "<button type='button' class='"+(state.productAdminGroup==="all"?"active":"")+"' data-product-group='all'><span>Todos</span><b>"+rows.length+"</b></button>"+
@@ -368,6 +371,7 @@ export function installInternalMasterData(ctx){
         "</nav>"+
         "<div class='product-grouped-list'>"+(displayed||"<div class='empty'>Nenhum produto encontrado.</div>")+"</div>";
 
+      document.querySelector("#openStockInventory").onclick=function(){receitasLote.renderEstoquePrimario("Etiquetas",renderProducts)};
       var form=document.querySelector("#productSearchForm");
       if(form)form.onsubmit=function(ev){
         ev.preventDefault();
@@ -431,6 +435,7 @@ export function installInternalMasterData(ctx){
   }
 
   async function renderProductDetail(id){
+    return receitasLote.renderProductDetail(id,renderProducts);
     loading("Abrindo produto...");
     try{
       var dados=await Promise.all([
