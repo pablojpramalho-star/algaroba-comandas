@@ -149,3 +149,27 @@
   .product-line-head h2{font-size:19px}
   .product-line-nav{margin-left:-2px;margin-right:-2px}
 }
+
+
+/* Ficha técnica, ingredientes, CMV e estoque primário */
+.recipe-section{display:grid;gap:13px}
+.recipe-rows{display:grid;gap:12px}
+.recipe-line{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;padding:12px;border:1px solid rgba(179,145,77,.45);border-radius:16px;background:rgba(150,115,61,.075);min-width:0}
+.recipe-line .master-field{min-width:0;margin:0}
+.recipe-line .master-field input,.recipe-line .master-field select{min-width:0;width:100%}
+.recipe-name,.recipe-cost{grid-column:1/-1}
+.recipe-row-actions{grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.recipe-stock-info{font-size:11px;opacity:.8}
+.recipe-stock-btn,.recipe-remove,.recipe-add{border:1px solid rgba(165,130,66,.65);border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer;background:rgba(129,98,52,.13);color:inherit}
+.recipe-remove{border-color:rgba(166,73,70,.4);color:#bc766c}
+.recipe-add{width:100%;background:rgba(18,110,79,.12);border-color:rgba(54,139,101,.55);color:#9cd5b4}
+.recipe-extra{max-width:100%}
+.recipe-help{font-size:12px;line-height:1.5;color:inherit;opacity:.83;padding:12px;border:1px solid rgba(179,145,77,.3);border-radius:12px}
+.recipe-cmv-box{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px;background:rgba(17,89,66,.16);border:1px solid rgba(49,142,101,.4);border-radius:16px}
+.recipe-cmv-box div{display:grid;gap:4px}
+.recipe-cmv-box span{font-size:10px;opacity:.85}
+.recipe-cmv-box strong{font-size:19px;color:#b4edca}
+.recipe-cmv-box small{grid-column:1/-1;font-size:11px;line-height:1.45;opacity:.8}
+.recipe-enable{display:flex;gap:10px;align-items:center;padding:12px;border-radius:13px;border:1px solid rgba(49,142,101,.42)}
+@media(min-width:780px){.recipe-line{grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,.6fr) minmax(0,1fr)}.recipe-name,.recipe-cost{grid-column:auto}.recipe-row-actions{grid-column:1/-1}}
+@media(max-width:420px){.recipe-cmv-box{grid-template-columns:1fr 1fr}.recipe-cmv-box div:first-child{grid-column:1/-1}}
