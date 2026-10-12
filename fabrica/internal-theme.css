@@ -290,9 +290,9 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
 .raw-material-placeholder{grid-column:1/-1;padding:18px;border:1px dashed #d8bf98;border-radius:16px;background:#fffaf0;text-align:center}.raw-material-placeholder b{font:700 18px Georgia,"Times New Roman",serif;color:#075139}.raw-material-placeholder p{max-width:520px;margin:6px auto 0;font-size:9px;line-height:1.45;color:#746d61}
 
 /* 7 módulos: rolagem horizontal natural no mobile */
-.internal-nav{grid-template-columns:repeat(7,minmax(0,1fr))}
+.internal-nav{grid-template-columns:repeat(8,minmax(0,1fr))}
 @media(max-width:760px){
-  .internal-nav{grid-template-columns:repeat(7,82px)}
+  .internal-nav{grid-template-columns:repeat(8,82px)}
   .today-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .today-kpis>div{min-height:68px}.today-kpis b{font-size:21px}
   .today-flow{grid-template-columns:repeat(4,1fr)}
@@ -623,3 +623,205 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
 .delivery-client-items{display:grid;gap:5px}.delivery-client-items>small{font-size:8px;color:#756d61}.delivery-client-items button{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:6px;align-items:center;padding:7px;border:1px solid #e0ceae;border-radius:10px;background:#fffdf8;color:#174734;text-align:left}.delivery-client-items button.checked{background:#eaf3e5;border-color:#bcd2ae}.delivery-client-items button>span{font-size:16px;color:#0b6542}.delivery-client-items button>b{font-size:9px}.delivery-client-items button>em{font-style:normal;font-size:8px;color:#746d61}.delivery-complete-btn{width:100%;min-height:48px!important}
 .expedition-order-card.in-route{border-color:#d5a965!important}.expedition-order-card.in-route .expedition-order-summary{background:#fff6e4!important}
 @media(max-width:760px){.route-start-form{grid-template-columns:1fr 1fr}.route-start-form .button{grid-column:1/-1}.route-finish-form{grid-template-columns:1fr}.route-finish-form .button{width:100%}}
+
+/* Atendimento — pedido, clientes, relatório e promoções */
+.attendance-nav{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+  margin:-7px 0 16px;
+  padding:8px;
+  border:1px solid #dfcaa8;
+  border-radius:16px;
+  background:#fffaf0;
+}
+.attendance-nav button{
+  display:grid;
+  grid-template-columns:32px 1fr;
+  grid-template-rows:auto auto;
+  align-items:center;
+  column-gap:7px;
+  min-height:54px;
+  padding:7px 9px;
+  border:1px solid transparent;
+  border-radius:12px;
+  background:transparent;
+  color:#315846;
+  text-align:left;
+}
+.attendance-nav button>b{
+  grid-row:1/3;
+  display:grid;
+  place-items:center;
+  width:31px;height:31px;
+  border-radius:10px;
+  background:#e8f0df;
+  color:#0a6241;
+  font-size:13px;
+}
+.attendance-nav button>span{font-size:10px;font-weight:900}
+.attendance-nav button>small{font-size:7px;color:#81786a}
+.attendance-nav button.active{
+  background:#07543a;
+  color:#fff;
+  border-color:#07543a;
+}
+.attendance-nav button.active>b{background:rgba(255,255,255,.12);color:#ffd179}
+.attendance-nav button.active>small{color:#d9e6de}
+
+.master-new-client{
+  min-height:40px;
+  padding:0 12px;
+  border:0;
+  border-radius:11px;
+  background:#0a6542;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.new-client-head{margin-top:6px}
+
+.attendance-report-filter{
+  display:grid;
+  grid-template-columns:130px 130px minmax(220px,1fr) auto;
+  gap:7px;
+  padding:10px;
+  border:1px solid #dfcaa8;
+  border-radius:15px;
+  background:#fffaf0;
+}
+.attendance-report-filter label{display:grid;gap:3px;font-size:7px;font-weight:900;text-transform:uppercase;color:#776f62}
+.attendance-report-filter input{
+  min-height:38px;
+  border:1px solid #dcc8a8;
+  border-radius:10px;
+  background:#fffdf8;
+  color:#174734;
+  padding:0 9px;
+  font-size:9px;
+}
+.attendance-report-filter button{
+  align-self:end;
+  min-height:38px;
+  padding:0 12px;
+  border:0;
+  border-radius:10px;
+  background:#0a6542;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+}
+.attendance-kpis{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:7px;
+  margin:8px 0 12px;
+}
+.attendance-kpis>div{
+  min-height:70px;
+  padding:9px 10px;
+  border:1px solid #e0cbaa;
+  border-radius:14px;
+  background:#fffdf8;
+}
+.attendance-kpis span{display:block;font-size:7px;font-weight:900;color:#846f5b}
+.attendance-kpis b{display:block;margin-top:5px;font:700 23px Georgia,"Times New Roman",serif;color:#075139}
+
+.attendance-order-report,.attendance-client-signals{display:grid;gap:6px}
+.attendance-order-report article{
+  display:grid;
+  grid-template-columns:95px minmax(0,1fr) minmax(145px,.65fr);
+  gap:9px;
+  align-items:center;
+  padding:10px 11px;
+  border:1px solid #e1cfaf;
+  border-radius:13px;
+  background:#fffdf8;
+}
+.att-order-no{font-size:8px;font-weight:950;color:#a15f3d;overflow-wrap:anywhere}
+.att-order-main strong{display:block;font-size:11px;color:#174734}
+.att-order-main small,.att-order-main span{display:block;margin-top:2px;font-size:7.5px;color:#796f62}
+.att-order-main span{color:#53675a}
+.att-order-side{text-align:right}
+.att-order-side>b{display:block;font-size:8px;color:#0a6341;text-transform:uppercase}
+.att-order-side small,.att-order-side em{display:block;margin-top:3px;font-size:7px;color:#746c60;font-style:normal}
+
+.attendance-signal-tabs{
+  display:flex;
+  gap:5px;
+  overflow:auto;
+  margin-bottom:7px;
+  scrollbar-width:none;
+}
+.attendance-signal-tabs button{
+  white-space:nowrap;
+  min-height:31px;
+  padding:0 9px;
+  border:1px solid #ddc9a7;
+  border-radius:999px;
+  background:#fff8e8;
+  color:#315846;
+  font-size:7.5px;
+  font-weight:900;
+}
+.attendance-signal-tabs button.active{background:#07543a;color:#fff;border-color:#07543a}
+.attendance-client-signals article{
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) 105px;
+  gap:8px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid #e1cfaf;
+  border-radius:13px;
+  background:#fffdf8;
+}
+.attendance-client-signals article.needs-attention{border-color:#e4b798;background:#fff9f3}
+.att-client-avatar{
+  display:grid;place-items:center;
+  width:36px;height:36px;
+  border-radius:50%;
+  background:#e8f0df;
+  color:#0a6241;
+  font:700 15px Georgia,"Times New Roman",serif;
+}
+.att-client-main strong{display:block;font-size:10px;color:#174734}
+.att-client-main small,.att-client-main span,.att-client-main em{display:block;margin-top:2px;font-size:7.5px;color:#756d61;font-style:normal}
+.att-client-main span{color:#53675a}
+.att-client-main em{color:#a35738;font-weight:800}
+.att-client-side{text-align:right}
+.att-client-side b{display:block;font:700 20px Georgia,"Times New Roman",serif;color:#075139}
+.att-client-side small,.att-client-side span{display:block;font-size:7px;color:#776f62}
+
+.promo-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}
+.promo-kpis>div{padding:11px;border:1px solid #dfcaa8;border-radius:14px;background:#fffdf8}
+.promo-kpis span{display:block;font-size:8px;color:#806e5c;font-weight:900}
+.promo-kpis b{display:block;margin-top:4px;font:700 25px Georgia,"Times New Roman",serif;color:#075139}
+.attendance-promos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.promo-card{position:relative;padding:13px;border:1px solid #dfcaa8;border-radius:16px;background:#fffdf8;overflow:hidden}
+.promo-card.ativa{border-color:#b8d2a8;background:#fbfff8}
+.promo-card.programada{border-color:#e2c89c;background:#fffaf1}
+.promo-status{position:absolute;right:9px;top:9px;padding:4px 7px;border-radius:999px;background:#eaf1e3;color:#0a6140;font-size:7px;font-weight:950;text-transform:uppercase}
+.promo-card strong{display:block;padding-right:70px;font:700 18px Georgia,"Times New Roman",serif;color:#075139}
+.promo-card span{display:block;margin-top:3px;font-size:8px;color:#9a6848;font-weight:900}
+.promo-card p{margin:7px 0;font-size:9px;line-height:1.35;color:#5e655e}
+.promo-terms{display:flex;align-items:center;gap:7px;margin:8px 0;padding:7px 8px;border-radius:10px;background:#edf3e6}
+.promo-terms b{font-size:10px;color:#0b603f}.promo-terms small{font-size:7px;color:#696f66}
+.attendance-promo-note{margin-top:10px}
+
+@media(max-width:760px){
+  .attendance-nav{grid-template-columns:repeat(4,95px);overflow:auto}
+  .attendance-nav button{grid-template-columns:1fr;grid-template-rows:28px auto;justify-items:center;text-align:center;padding:6px}
+  .attendance-nav button>b{grid-row:auto;width:28px;height:28px}
+  .attendance-nav button>small{display:none}
+  .attendance-report-filter{grid-template-columns:1fr 1fr}
+  .attendance-report-filter .search{grid-column:1/-1}
+  .attendance-report-filter button{grid-column:1/-1}
+  .attendance-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .attendance-order-report article{grid-template-columns:1fr 105px}
+  .att-order-no{grid-column:1/-1}
+  .attendance-client-signals article{grid-template-columns:34px minmax(0,1fr) 90px}
+  .attendance-promos{grid-template-columns:1fr}
+  .client-toolbar{grid-template-columns:1fr auto!important}
+  .client-toolbar .master-count{grid-column:1/-1}
+}
