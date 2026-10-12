@@ -2194,4 +2194,11 @@ const __internalAttendance=installInternalAttendance({
 renderAttendanceReport=__internalAttendance.renderAttendanceReport;
 renderAttendancePromotions=__internalAttendance.renderAttendancePromotions;
 
+const __internalManagement=installInternalManagement({
+  state,main,rpc,internalShell,loading,esc,showToast,fmtTime,fmtDate,fmtDateTime,brl
+});
+renderAttendanceRoutes=__internalManagement.renderAttendanceRoutes;
+renderAdminRoutes=__internalManagement.renderAdminRoutes;
+renderAdministrativeReports=__internalManagement.renderAdministrativeReports;
+
 boot();
