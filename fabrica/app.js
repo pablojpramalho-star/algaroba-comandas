@@ -1504,68 +1504,160 @@ async function renderExpedition(){
   loading("Carregando Expedição...");
   try{
     const today=localDateISO();
-    const [rows,planning,executions]=await Promise.all([
-      rpc("expedicao_conferencia_fila",{},true),
+    const [rows,planning,executions,completed]=await Promise.all([
+      rpc("expedicao_operacao_fila",{},true),
       rpc("expedicao_planejamento_rota",{p_data:today},true),
-      table("rota_execucoes?select=id,rota_id,data_rota,status,hora_saida_prevista,saiu_em,finalizada_em,motorista,veiculo,odometro_inicio,odometro_fim,entregas_planejadas,entregas_concluidas,entregas_pendentes&data_rota=eq."+today)
+      table("rota_execucoes?select=id,rota_id,data_rota,status,hora_saida_prevista,saiu_em,finalizada_em,motorista,veiculo,odometro_inicio,odometro_fim,entregas_planejadas,entregas_concluidas,entregas_pendentes&data_rota=eq."+today),
+      rpc("expedicao_entregas_concluidas_hoje",{p_data:today},true)
     ]);
+
     const groups={};(rows||[]).forEach(x=>(groups[x.pedido_id]??=[]).push(x));
     const routeGroups={};(planning||[]).forEach(x=>(routeGroups[x.rota_id]??={meta:x,items:[]}).items.push(x));
 
     main.innerHTML=internalShell("expedicao")+`
       <section class="internal-title">
-        <div><span class="internal-eyebrow">EXPEDIÇÃO</span><h1>Conferência e saída</h1><p>Segunda conferência: abra o pedido, confira cada item e finalize.</p></div>
+        <div><span class="internal-eyebrow">EXPEDIÇÃO</span><h1>Conferência e rota</h1><p>Conferência interna, saída da rota e entrega ao cliente.</p></div>
       </section>
+
       <section class="expedition-order-list">
         ${Object.keys(groups).length?Object.entries(groups).map(([pid,it])=>{
-          const first=it[0],checked=it.filter(x=>x.expedicao_conferido).length,all=checked===it.length;
+          const first=it[0];
+          const checked=it.filter(x=>x.expedicao_conferido).length;
+          const all=checked===it.length;
           const open=state.expeditionOpenOrder===pid;
           const expReady=["pronto_rota","pronto_retirada","conferido"].includes(first.expedicao_status);
+          const inRoute=first.status_pedido==="saiu_entrega";
           const readyLabel=first.modalidade_entrega==="retirada_fabrica"?"Pronto para retirada":first.modalidade_entrega==="rota"?"Pronto para rota":"Conferência concluída";
           const finalLabel=first.modalidade_entrega==="retirada_fabrica"?"Pedido pronto para retirada":first.modalidade_entrega==="rota"?"Pedido pronto para rota":"Concluir conferência";
-          return `<article class="expedition-order-card ${expReady?"ready":""}">
+          const pending=Number(first.valor_pendente||0);
+
+          return `<article id="exp-order-${pid}" class="expedition-order-card ${expReady?"ready":""} ${inRoute?"in-route":""}">
             <button class="expedition-order-summary" type="button" onclick="window.toggleExpeditionOrder('${pid}')">
               <div>
                 <span>${esc(first.numero)}</span>
                 <strong>${esc(first.cliente_nome)}</strong>
-                <small>${first.modalidade_entrega==="retirada_fabrica"?"Retirada na fábrica":esc(first.rota_nome||"Rota")} • ${checked}/${it.length} conferidos</small>
+                <small>${inRoute?"EM ROTA • ":first.modalidade_entrega==="retirada_fabrica"?"RETIRADA • ":""}${checked}/${it.length} conferidos</small>
               </div>
               <div class="expedition-summary-status">
-                <b class="${expReady?"ok":all?"warn":""}">${expReady?"✓ "+readyLabel:checked+"/"+it.length}</b>
-                <small>${first.liberado_financeiro?"Financeiro liberado":"Aguardando financeiro"}</small>
+                <b class="${inRoute?"warn":expReady?"ok":all?"warn":""}">${inRoute?"🚚 Em rota":expReady?"✓ "+readyLabel:checked+"/"+it.length}</b>
+                <small>${pending>0?"Financeiro: "+brl(pending)+" pendente":"Financeiro quitado"}</small>
                 <em>${open?"⌃":"⌄"}</em>
               </div>
             </button>
+
             ${open?`<div class="expedition-order-body">
               <div class="expedition-address">${esc(first.endereco||"")}</div>
-              ${it.map(x=>`<button class="expedition-item ${x.expedicao_conferido?"checked":""}" type="button" onclick="window.expCheckItem('${x.item_id}','${pid}',${x.expedicao_conferido?"false":"true"})">
-                <span class="expedition-check">${x.expedicao_conferido?"✓":"○"}</span>
-                <div><strong>${esc(x.produto)}</strong><small>${Number(x.quantidade).toLocaleString("pt-BR")} un.</small></div>
-                <b>${x.expedicao_conferido?"Conferido":"Conferir"}</b>
-              </button>`).join("")}
-              <div class="expedition-order-footer">
-                ${!expReady&&all?`<button class="button orange" onclick="window.expFinishCheck('${pid}')">${finalLabel}</button>`:""}
-                ${expReady?`<div class="expedition-ready"><b>✓ ${readyLabel}</b><small>${first.liberado_financeiro?"Pedido liberado pelo Financeiro.":"Conferência física concluída. Aguarde a liberação financeira para saída/retirada."}</small></div>`:""}
-                ${expReady&&first.liberado_financeiro&&first.status_pedido==="pagamento_confirmado"&&first.modalidade_entrega==="rota"?`<button class="button" onclick="window.expUpdate('${pid}','saiu_entrega')">Saiu para entrega →</button>`:""}
-                ${expReady&&first.liberado_financeiro&&first.status_pedido==="pagamento_confirmado"&&first.modalidade_entrega==="retirada_fabrica"?`<button class="button" onclick="window.expUpdate('${pid}','entregue')">Confirmar retirada ✓</button>`:""}
-                ${first.status_pedido==="saiu_entrega"?'<div class="notice green">Pedido em rota.</div>':""}
-              </div>
+
+              ${inRoute?`
+                <section class="delivery-client-panel">
+                  <div class="delivery-client-title"><b>Entrega ao cliente</b><span>Faça a conferência final antes de concluir.</span></div>
+
+                  <label class="delivery-field">
+                    <span>Como foi feita a conferência?</span>
+                    <select id="deliveryConference-${pid}" onchange="window.deliveryConferenceMode('${pid}')">
+                      <option value="total">Conferido total / peso</option>
+                      <option value="sacola">Conferido por sacola</option>
+                      <option value="item">Conferido por item</option>
+                    </select>
+                  </label>
+
+                  <label class="delivery-field">
+                    <span>Referência da conferência</span>
+                    <input id="deliveryReference-${pid}" type="text" placeholder="Ex.: 22 kg conferidos">
+                  </label>
+
+                  <div id="deliveryItems-${pid}" class="delivery-client-items hidden">
+                    <small>Clique em cada item junto com o cliente:</small>
+                    ${it.map(x=>`<button class="${x.entrega_cliente_conferido?"checked":""}" type="button" onclick="window.expClientCheckItem('${x.item_id}','${pid}',${x.entrega_cliente_conferido?"false":"true"})">
+                      <span>${x.entrega_cliente_conferido?"✓":"○"}</span><b>${esc(x.produto)}</b><em>${Number(x.quantidade).toLocaleString("pt-BR")} un.</em>
+                    </button>`).join("")}
+                  </div>
+
+                  ${pending>0?`
+                    <label class="delivery-field">
+                      <span>Pagamento na entrega</span>
+                      <select id="deliveryPayStatus-${pid}" onchange="window.deliveryPaymentMode('${pid}')">
+                        <option value="recebido">Recebido agora</option>
+                        <option value="nao_recebido">Não recebido • deixar em aberto</option>
+                      </select>
+                    </label>
+                    <div id="deliveryPayBox-${pid}" class="delivery-payment-grid">
+                      <label><span>Forma</span><select id="deliveryPayMethod-${pid}">
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="pix">Pix</option>
+                        <option value="credito">Cartão de crédito</option>
+                        <option value="debito">Cartão de débito</option>
+                      </select></label>
+                      <label><span>Valor recebido</span><input id="deliveryPayValue-${pid}" type="number" min="0.01" step="0.01" value="${pending.toFixed(2)}"></label>
+                    </div>
+                  `:`<div class="delivery-paid-note">✓ Pagamento já quitado antes da entrega.</div>`}
+
+                  <label class="delivery-field"><span>Observação (opcional)</span><input id="deliveryObs-${pid}" type="text" placeholder="Observação da entrega"></label>
+
+                  <button class="button orange delivery-complete-btn" type="button" onclick="window.finishDelivery('${pid}',${pending})">✓ Confirmar entrega ao cliente</button>
+                </section>
+              `:`
+                ${it.map(x=>`<button class="expedition-item ${x.expedicao_conferido?"checked":""}" type="button" onclick="window.expCheckItem('${x.item_id}','${pid}',${x.expedicao_conferido?"false":"true"})">
+                  <span class="expedition-check">${x.expedicao_conferido?"✓":"○"}</span>
+                  <div><strong>${esc(x.produto)}</strong><small>${Number(x.quantidade).toLocaleString("pt-BR")} un.</small></div>
+                  <b>${x.expedicao_conferido?"Conferido":"Conferir"}</b>
+                </button>`).join("")}
+
+                <div class="expedition-order-footer">
+                  ${!expReady&&all?`<button class="button orange" onclick="window.expFinishCheck('${pid}')">${finalLabel}</button>`:""}
+                  ${expReady?`<div class="expedition-ready"><b>✓ ${readyLabel}</b><small>${first.modalidade_entrega==="rota"?"Aguarde a saída da rota.":"Pedido conferido e pronto para retirada."}</small></div>`:""}
+                </div>
+              `}
             </div>`:""}
           </article>`;
-        }).join(""):'<div class="empty">Nenhum pedido aguardando conferência na Expedição.</div>'}
+        }).join(""):'<div class="empty">Nenhum pedido aguardando conferência ou entrega.</div>'}
       </section>
 
-      <div class="section-head"><div><h2>Planejamento de hoje</h2><p>${fmtDate(today)} • rotas liberadas para organização</p></div></div>
+      <div class="section-head"><div><h2>Rotas de hoje</h2><p>${fmtDate(today)} • veículo e odômetro obrigatórios</p></div></div>
+
       ${Object.values(routeGroups).length?Object.values(routeGroups).map(g=>{
-        const x=executions.find(e=>e.rota_id===g.meta.rota_id);
-        return `<div class="panel expedition-route-panel">
-          <div class="summary"><div><b>${esc(g.meta.rota_nome)}</b><span class="status ${x?.status==="em_rota"?"warn":x?.status==="finalizada"?"ok":""}">${esc(x?.status||"planejada")}</span></div>
-          <div class="small">${g.items.length} entregas • saída padrão ${fmtTime(g.meta.hora_saida_padrao)}</div>
-          <div class="inline-actions">
-            ${!x||x.status==="planejada"?`<button class="button" onclick="window.startRoute('${g.meta.rota_id}','${today}')">Iniciar rota</button>`:""}
-            ${x?.status==="em_rota"?`<button class="button orange" onclick="window.finishRoute('${x.id}')">Finalizar rota</button>`:""}
-          </div></div>
-        </div>`;
+        const x=(executions||[]).find(e=>e.rota_id===g.meta.rota_id);
+        const delivered=(completed||[]).filter(e=>e.rota_id===g.meta.rota_id);
+        const activeItems=g.items.filter(p=>p.status_pedido==="saiu_entrega");
+        return `<article class="route-operation-card ${x?.status||"planejada"}">
+          <div class="route-operation-head">
+            <div><b>${esc(g.meta.rota_nome)}</b><small>${g.items.length+delivered.length} entregas planejadas • saída padrão ${fmtTime(g.meta.hora_saida_padrao)}</small></div>
+            <span class="status ${x?.status==="em_rota"?"warn":x?.status==="finalizada"?"ok":""}">${esc(x?.status||"planejada")}</span>
+          </div>
+
+          ${!x||x.status==="planejada"?`
+            <div class="route-start-form">
+              <label><span>Veículo *</span><select id="routeVehicle-${g.meta.rota_id}">
+                <option value="">Selecione</option>
+                <option value="Fiat Cronos">🚗 Carro • Fiat Cronos</option>
+                <option value="Yamaha Crosser XTZ">🏍️ Moto • Yamaha Crosser XTZ</option>
+              </select></label>
+              <label><span>Motorista</span><input id="routeDriver-${g.meta.rota_id}" type="text" placeholder="Nome do motorista"></label>
+              <label><span>Odômetro inicial *</span><input id="routeOdoStart-${g.meta.rota_id}" type="number" min="0" step="0.1" inputmode="decimal" placeholder="Ex.: 159000"></label>
+              <button class="button" onclick="window.startRoute('${g.meta.rota_id}','${today}')">Iniciar rota →</button>
+            </div>
+          `:""}
+
+          ${x?.status==="em_rota"?`
+            <div class="route-live-meta"><span>🚘 ${esc(x.veiculo||"")}</span><span>Odômetro inicial <b>${Number(x.odometro_inicio||0).toLocaleString("pt-BR")}</b></span><span>Saída ${fmtDateTime(x.saiu_em)}</span></div>
+            <div class="route-delivery-list">
+              ${activeItems.length?activeItems.map((p,i)=>`<button type="button" class="route-delivery-open" onclick="window.openRouteDelivery('${p.pedido_id}')">
+                <span>${p.ordem_planejada||i+1}</span>
+                <div><b>${esc(p.cliente_nome)}</b><small>${esc(p.numero)} • ${esc(p.bairro||p.cidade||"")}</small></div>
+                <em>Abrir entrega ›</em>
+              </button>`).join(""):'<div class="empty compact">Todas as entregas carregadas já receberam baixa.</div>'}
+            </div>
+            <div class="route-finish-form">
+              <label><span>Odômetro final *</span><input id="routeOdoEnd-${x.id}" type="number" min="${Number(x.odometro_inicio||0)}" step="0.1" inputmode="decimal" placeholder="Obrigatório ao finalizar"></label>
+              <input id="routeFinishObs-${x.id}" type="text" placeholder="Observação final (opcional)">
+              <button class="button orange" onclick="window.finishRoute('${x.id}',${Number(x.odometro_inicio||0)})">Finalizar rota ✓</button>
+            </div>
+          `:""}
+
+          ${delivered.length?`<div class="route-delivered-list"><strong>Entregues</strong>${delivered.map(d=>`<div><span>✓</span><div><b>${esc(d.cliente_nome)}</b><small>${esc(d.numero)} • ${d.conferencia_tipo==="item"?"por item":d.conferencia_tipo==="sacola"?"por sacola":"conferência total"}</small></div><em>${Number(d.valor_em_aberto||0)>0?"Em aberto "+brl(d.valor_em_aberto):"Concluído"}</em></div>`).join("")}</div>`:""}
+
+          ${x?.status==="finalizada"?`<div class="route-finalized-note">✓ Rota finalizada • ${Number(x.odometro_inicio||0).toLocaleString("pt-BR")} → ${Number(x.odometro_fim||0).toLocaleString("pt-BR")} km</div>`:""}
+        </article>`;
       }).join(""):'<div class="empty compact">Nenhuma rota planejada para hoje.</div>'}
     `;
   }catch(e){main.innerHTML=internalShell("expedicao")+'<div class="empty">'+esc(e.message)+'</div>'}
@@ -1591,25 +1683,84 @@ window.expFinishCheck=async pedidoId=>{
     await renderExpedition();
   }catch(e){showToast(e.message)}
 };
-window.expUpdate=async(id,status)=>{
-  try{await rpc("expedicao_atualizar_status",{p_pedido_id:id,p_novo_status:status},true);showToast("Status atualizado.");state.internalModule="expedicao";state.expeditionOpenOrder=id;await renderExpedition()}catch(e){showToast(e.message)}
+window.expClientCheckItem=async(id,pedidoId,checked)=>{
+  const y=window.scrollY;
+  try{
+    await rpc("expedicao_conferir_cliente_item",{p_item_id:id,p_conferido:checked},true);
+    state.expeditionOpenOrder=pedidoId;
+    await renderExpedition();
+    requestAnimationFrame(()=>window.scrollTo(0,y));
+  }catch(e){showToast(e.message)}
+};
+window.deliveryConferenceMode=id=>{
+  const mode=document.querySelector("#deliveryConference-"+id)?.value||"total";
+  const items=document.querySelector("#deliveryItems-"+id);
+  const ref=document.querySelector("#deliveryReference-"+id);
+  if(items)items.classList.toggle("hidden",mode!=="item");
+  if(ref)ref.placeholder=mode==="sacola"?"Ex.: 5 sacolas conferidas":mode==="item"?"Observação da conferência por item":"Ex.: 22 kg conferidos";
+};
+window.deliveryPaymentMode=id=>{
+  const mode=document.querySelector("#deliveryPayStatus-"+id)?.value||"recebido";
+  document.querySelector("#deliveryPayBox-"+id)?.classList.toggle("hidden",mode!=="recebido");
+};
+window.finishDelivery=async(id,pending)=>{
+  const tipo=document.querySelector("#deliveryConference-"+id)?.value||"total";
+  const referencia=document.querySelector("#deliveryReference-"+id)?.value?.trim()||null;
+  const observacao=document.querySelector("#deliveryObs-"+id)?.value?.trim()||null;
+  let situacao="ja_pago",metodo=null,valor=0;
+  if(Number(pending)>0){
+    situacao=document.querySelector("#deliveryPayStatus-"+id)?.value||"recebido";
+    if(situacao==="recebido"){
+      metodo=document.querySelector("#deliveryPayMethod-"+id)?.value||null;
+      valor=Number(document.querySelector("#deliveryPayValue-"+id)?.value||0);
+      if(!metodo||!Number.isFinite(valor)||valor<=0){showToast("Informe a forma e o valor recebido.");return}
+    }
+  }
+  try{
+    await rpc("expedicao_concluir_entrega_v2",{
+      p_pedido_id:id,
+      p_conferencia_tipo:tipo,
+      p_conferencia_referencia:referencia,
+      p_pagamento_situacao:situacao,
+      p_metodo:metodo,
+      p_valor_recebido:valor,
+      p_observacao:observacao
+    },true);
+    state.expeditionOpenOrder=null;
+    showToast(situacao==="nao_recebido"?"Entrega concluída com pendência enviada ao Financeiro.":"Entrega concluída e cliente notificado.");
+    await renderExpedition();
+  }catch(e){showToast(e.message)}
+};
+window.openRouteDelivery=async id=>{
+  state.expeditionOpenOrder=id;
+  await renderExpedition();
+  requestAnimationFrame(()=>document.querySelector("#exp-order-"+id)?.scrollIntoView({behavior:"smooth",block:"start"}));
 };
 window.startRoute=async(rotaId,data)=>{
-  const motorista=prompt("Nome do motorista (opcional):")||null;
-  const veiculo=prompt("Veículo/placa (opcional):")||null;
-  const kmTxt=prompt("Odômetro inicial (opcional):")||"";
-  const km=kmTxt?Number(kmTxt.replace(",",".")):null;
-  if(kmTxt&&Number.isNaN(km)){showToast("Odômetro inválido.");return}
-  try{await rpc("expedicao_iniciar_rota",{p_rota_id:rotaId,p_data:data,p_motorista:motorista,p_veiculo:veiculo,p_odometro_inicio:km},true);showToast("Rota iniciada.");await renderExpedition()}catch(e){showToast(e.message)}
+  const veiculo=document.querySelector("#routeVehicle-"+rotaId)?.value||"";
+  const motorista=document.querySelector("#routeDriver-"+rotaId)?.value?.trim()||null;
+  const kmRaw=document.querySelector("#routeOdoStart-"+rotaId)?.value||"";
+  const km=Number(kmRaw);
+  if(!["Fiat Cronos","Yamaha Crosser XTZ"].includes(veiculo)){showToast("Selecione Carro Fiat Cronos ou Moto Yamaha Crosser XTZ.");return}
+  if(kmRaw===""||!Number.isFinite(km)||km<0){showToast("Odômetro inicial é obrigatório.");return}
+  try{
+    await rpc("expedicao_iniciar_rota",{p_rota_id:rotaId,p_data:data,p_motorista:motorista,p_veiculo:veiculo,p_odometro_inicio:km},true);
+    showToast("Rota iniciada. Clientes notificados.");
+    await renderExpedition();
+  }catch(e){showToast(e.message)}
 };
-window.finishRoute=async(execId)=>{
-  const kmTxt=prompt("Odômetro final (opcional):")||"";
-  const km=kmTxt?Number(kmTxt.replace(",",".")):null;
-  if(kmTxt&&Number.isNaN(km)){showToast("Odômetro inválido.");return}
-  const obs=prompt("Observação de encerramento (opcional):")||null;
-  try{await rpc("expedicao_finalizar_rota",{p_execucao_id:execId,p_odometro_fim:km,p_observacao:obs},true);showToast("Rota finalizada.");await renderExpedition()}catch(e){showToast(e.message)}
+window.finishRoute=async(execId,initialKm)=>{
+  const kmRaw=document.querySelector("#routeOdoEnd-"+execId)?.value||"";
+  const km=Number(kmRaw);
+  if(kmRaw===""||!Number.isFinite(km)){showToast("Odômetro final é obrigatório.");return}
+  if(km<Number(initialKm||0)){showToast("Odômetro final não pode ser menor que o inicial.");return}
+  const obs=document.querySelector("#routeFinishObs-"+execId)?.value?.trim()||null;
+  try{
+    await rpc("expedicao_finalizar_rota",{p_execucao_id:execId,p_odometro_fim:km,p_observacao:obs},true);
+    showToast("Rota finalizada.");
+    await renderExpedition();
+  }catch(e){showToast(e.message)}
 };
-
 
 async function renderFinance(){
   loading("Carregando Financeiro...");
