@@ -1,6 +1,7 @@
 import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
+import { installInternalMasterData } from "./internal-masterdata.js?v=20261011-master1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -27,6 +28,8 @@ const state={
   operationStage:localStorage.getItem("algaroba_operation_stage")||null
 };
 let renderConference,renderRoute,renderReports,renderTestClient,renderDeskOrders;
+
+let renderClients=()=>{},renderProducts=()=>{};
 
 function showToast(message){
   toastEl.textContent=message;toastEl.style.display="block";
@@ -1094,8 +1097,8 @@ function roleDisplay(role){
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","pedidos","vendas","operacao","financeiro","caixa","estoque","relatorios"];
-  if(role==="vendas")return ["pedidos","vendas"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","pedidos","vendas","clientes","produtos","operacao","financeiro","caixa","estoque","relatorios"];
+  if(role==="vendas")return ["pedidos","vendas","clientes"];
   if(role==="financeiro")return ["financeiro","caixa","relatorios"];
   if(role==="producao")return ["operacao"];
   if(role==="expedicao")return ["operacao"];
@@ -1105,7 +1108,9 @@ function internalModuleMeta(key){
   return ({
     dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo do dia"},
     pedidos:{label:"Pedidos",icon:"＋",desc:"WhatsApp e balcão"},
-    vendas:{label:"Administrativo",icon:"▤",desc:"Clientes e acompanhamento"},
+    vendas:{label:"Administrativo",icon:"▤",desc:"Acompanhamento"},
+    clientes:{label:"Clientes",icon:"◎",desc:"Cadastro e observações"},
+    produtos:{label:"Produtos",icon:"◇",desc:"Catálogo e preços"},
     operacao:{label:"Operação",icon:"◫",desc:"Produção à entrega"},
     financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
     caixa:{label:"Caixa",icon:"▣",desc:"Recebimentos"},
@@ -1193,6 +1198,8 @@ function renderInternal(){
   if(state.internalModule==="dashboard")return renderAdmin();
   if(state.internalModule==="pedidos")return renderDeskOrders();
   if(state.internalModule==="vendas")return renderAdministrative();
+  if(state.internalModule==="clientes")return renderClients();
+  if(state.internalModule==="produtos")return renderProducts();
   if(state.internalModule==="operacao")return renderOperation();
   if(state.internalModule==="financeiro")return renderFinance();
   if(state.internalModule==="caixa")return renderCash();
@@ -1838,5 +1845,11 @@ const __internalOrders=installInternalOrders({
   state,main,rpc,internalShell,loading,esc,showToast,brl,fmtDate,groupScene,productVisualClass,measure,displayProductName
 });
 renderDeskOrders=__internalOrders.renderDeskOrders;
+
+const __internalMaster=installInternalMasterData({
+  state,main,rpc,internalShell,loading,esc,showToast,brl,fmtDate,loadCatalog,renderInternal
+});
+renderClients=__internalMaster.renderClients;
+renderProducts=__internalMaster.renderProducts;
 
 boot();
