@@ -1,4 +1,4 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
+import { installInternalFlow } from "./internal-flow.js?v=20261012-route12";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
 import { installInternalMasterData } from "./internal-masterdata.js?v=20261012-lote2";
