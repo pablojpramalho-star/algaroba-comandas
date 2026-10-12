@@ -53,3 +53,99 @@
   .client-history-shortcut{align-items:flex-start;flex-direction:column}
   .client-history-shortcut button{width:100%}
 }
+
+
+/* Produtos administrativos agrupados por linha/categoria */
+.product-line-nav{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:2px 1px 10px;
+  margin:0 0 10px;
+  scrollbar-width:none;
+}
+.product-line-nav::-webkit-scrollbar{display:none}
+.product-line-nav button{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex:0 0 auto;
+  min-height:38px;
+  padding:0 11px;
+  border:1px solid #dfc9a7;
+  border-radius:999px;
+  background:#fff8e8;
+  color:#285842;
+  font-size:9px;
+  font-weight:900;
+}
+.product-line-nav button b{
+  display:grid;
+  place-items:center;
+  min-width:23px;
+  height:23px;
+  padding:0 5px;
+  border-radius:999px;
+  background:#edf3e6;
+  color:#0a6542;
+  font-size:8px;
+}
+.product-line-nav button.active{
+  background:#07543a;
+  border-color:#07543a;
+  color:#fff;
+}
+.product-line-nav button.active b{
+  background:rgba(255,255,255,.14);
+  color:#ffd27e;
+}
+.product-grouped-list{
+  display:grid;
+  gap:13px;
+}
+.product-line-section{
+  display:grid;
+  gap:8px;
+}
+.product-line-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 3px 5px;
+  border-bottom:1px solid #e6d3b3;
+}
+.product-line-head span{
+  display:block;
+  margin-bottom:2px;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.12em;
+  color:#a86a45;
+}
+.product-line-head h2{
+  margin:0;
+  font:700 21px/1 Georgia,"Times New Roman",serif;
+  color:#075139;
+}
+.product-line-head>b{
+  flex:0 0 auto;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#eef3e7;
+  color:#0b6240;
+  font-size:8px;
+}
+.product-line-tradicional .product-line-head{border-bottom-color:#d6d9b7}
+.product-line-zero .product-line-head{border-bottom-color:#bfcfbc}
+.product-line-classic .product-line-head{border-bottom-color:#e5c390}
+.product-line-intense .product-line-head{border-bottom-color:#d8a69d}
+.product-line-raiz .product-line-head{border-bottom-color:#c7b08c}
+.product-line-xaropes .product-line-head,
+.product-line-coberturas .product-line-head{border-bottom-color:#e0b173}
+.product-line-graos .product-line-head{border-bottom-color:#b9c89c}
+
+@media(max-width:760px){
+  .product-line-head h2{font-size:19px}
+  .product-line-nav{margin-left:-2px;margin-right:-2px}
+}
