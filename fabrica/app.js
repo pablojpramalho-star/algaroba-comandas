@@ -1,8 +1,8 @@
-import { installInternalFlow } from "./internal-flow.js?v=20261012-route12";
+import { installInternalFlow } from "./internal-flow.js?v=20261012-edit2";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
 import { installInternalMasterData } from "./internal-masterdata.js?v=20261012-lote2";
-import { installInternalAttendance } from "./internal-attendance.js?v=20261011-attendance1";
+import { installInternalAttendance } from "./internal-attendance.js?v=20261012-edit2";
 import { installInternalManagement } from "./internal-management.js?v=20261011-admin1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
@@ -2189,7 +2189,7 @@ renderClients=__internalMaster.renderClients;
 renderProducts=__internalMaster.renderProducts;
 
 const __internalAttendance=installInternalAttendance({
-  state,main,rpc,internalShell,loading,esc,showToast,fmtDate,fmtDateTime
+  state,main,rpc,table,internalShell,loading,esc,showToast,fmtDate,fmtDateTime,brl
 });
 renderAttendanceReport=__internalAttendance.renderAttendanceReport;
 renderAttendancePromotions=__internalAttendance.renderAttendancePromotions;
