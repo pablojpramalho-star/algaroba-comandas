@@ -554,3 +554,60 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
 .desk-success{max-width:480px;margin:40px auto;text-align:center;padding:25px 18px;border:1px solid #dfc9a7;border-radius:22px;background:#fffdf8}.desk-success>div{display:grid;place-items:center;width:58px;height:58px;margin:auto;border-radius:50%;background:#e6f1df;color:#087044;font-size:28px;font-weight:900}.desk-success h1{font:700 30px Georgia,"Times New Roman",serif;color:#075139}.desk-success p,.desk-success span{color:#746d60;font-size:10px}.desk-success strong{display:block;margin:13px 0 4px;font:700 25px Georgia,"Times New Roman",serif;color:#075139}.desk-success span{display:block}.desk-success button{min-height:43px;margin-top:16px;padding:0 15px;border:0;border-radius:12px;background:#0a6542;color:#fff;font-weight:900}
 @media(max-width:760px){.internal-nav{grid-template-columns:repeat(8,82px)}}
 @media(max-width:420px){.desk-category-card{grid-template-columns:40% minmax(0,1fr) 20px;min-height:96px}.desk-category-card .group-scene{min-height:96px}.desk-category-card strong{font-size:15px}.desk-product{grid-template-columns:66px minmax(0,1fr) 84px}.desk-product-photo{width:66px;height:62px}.desk-review-list article{grid-template-columns:minmax(0,1fr) 84px 68px}}
+
+
+/* Clientes — classificação e cadastro */
+.clients-title{margin-bottom:10px!important}
+.client-type-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.client-type-grid button{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:78px;padding:10px;border:1px solid #dfcba9;border-radius:17px;background:#fffdf8;text-align:left;color:#214839}
+.client-type-grid button i{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#eaf1e3;color:#0a6341;font-style:normal;font-size:21px;font-weight:900}
+.client-type-grid button div strong{display:block;font:700 15px/1 Georgia,"Times New Roman",serif;color:#075139}
+.client-type-grid button div span{display:block;margin-top:4px;font-size:7.5px;color:#7a7266}
+.client-type-grid button>b{font:700 23px/1 Georgia,"Times New Roman",serif;color:#0b6643}
+.client-type-grid button.active{background:#07543a;border-color:#07543a;color:#fff;box-shadow:0 7px 16px rgba(7,84,58,.14)}
+.client-type-grid button.active i{background:rgba(255,255,255,.12);color:#ffd27d}
+.client-type-grid button.active div strong,.client-type-grid button.active>b{color:#fff}
+.client-type-grid button.active div span{color:#d5e3da}
+.client-list-caption{padding:4px 2px 8px;font-size:8px;color:#766e62}
+.client-directory{display:grid;gap:7px}
+.client-directory-card{display:grid;grid-template-columns:43px minmax(0,1fr) 24px;align-items:center;gap:9px;width:100%;padding:10px;border:1px solid #e0ceae;border-radius:15px;background:#fffdf8;text-align:left;color:#173e31;box-shadow:0 3px 9px rgba(62,43,20,.035)}
+.client-directory-card .client-avatar{display:grid;place-items:center;width:43px;height:43px;border-radius:50%;background:#e6efdc;color:#0a6140;font:700 18px Georgia,"Times New Roman",serif}
+.client-directory-copy strong{display:block;font:700 15px/1.05 Georgia,"Times New Roman",serif;color:#075139}
+.client-directory-copy small{display:block;margin-top:3px;font-size:8px;color:#846f5f}
+.client-directory-copy>div{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.client-open{font-size:25px;color:#0b6543}
+.client-type-badge{padding:4px 7px;border-radius:999px;font-size:7px;font-weight:900}
+.client-type-badge.recorrente{background:#e1efdd;color:#17603d}
+.client-type-badge.avulso{background:#fff0d8;color:#9a592e}
+.client-type-badge.nao_classificado{background:#efede6;color:#716e67}
+
+/* Ficha cadastral mais limpa */
+.client-profile-head{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #dfc9a7;border-radius:18px;background:linear-gradient(135deg,#fffaf0,#fff2da);box-shadow:0 6px 16px rgba(62,43,20,.05)}
+.client-profile-head .client-avatar.large{width:58px;height:58px;font-size:24px}
+.client-profile-head span{font-size:8px;font-weight:900;letter-spacing:.09em;color:#a1623e}
+.client-profile-head h1{margin:3px 0 0;font:700 28px/1 Georgia,"Times New Roman",serif;color:#075139}
+.client-profile-head p{margin:5px 0 0;font-size:8.5px;color:#746d61}
+.master-form.client-full-form{display:grid;gap:9px;margin-top:10px}
+.master-form-section{padding:12px;border:1px solid #e0ceae;border-radius:16px;background:#fffdf8;box-shadow:0 3px 9px rgba(62,43,20,.03)}
+.master-form-title h2{margin:0;font:700 17px Georgia,"Times New Roman",serif;color:#075139}
+.master-form-title p{margin:3px 0 9px;font-size:8px;color:#766e62}
+.master-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.master-field span{display:block;margin-bottom:4px;font-size:7.5px;font-weight:850;color:#71685b}
+.master-field input,.master-field select,.master-field textarea{width:100%;min-height:39px;padding:8px 9px;border:1px solid #dcc7a5;border-radius:10px;background:#fffdf8;color:#173e31;font:inherit;font-size:10px;box-sizing:border-box}
+.master-field.full{display:block;margin-top:8px}
+.master-check-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.master-toggle{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:10px;background:#fff7e7;border:1px solid #ead8b8;font-size:8px;color:#365743}
+.client-section-highlight{background:#fff8e8!important}
+.commercial-section{background:#f8f3e8!important}
+.internal-notes{background:#f3f6ed!important}
+.master-form-footer{position:sticky;bottom:10px;z-index:8;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #d8c19b;border-radius:14px;background:rgba(255,250,240,.97);box-shadow:0 8px 24px rgba(65,44,20,.10);backdrop-filter:blur(8px)}
+.master-save{min-height:42px;padding:0 15px;border:0;border-radius:11px;background:#ef5b23;color:#fff;font-weight:900}
+.client-history-shortcut{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:11px 12px;border:1px solid #e1cfaf;border-radius:14px;background:#fffaf0}
+.client-history-shortcut b{display:block;font-size:10px;color:#075139}.client-history-shortcut span{display:block;margin-top:2px;font-size:8px;color:#756e61}.client-history-shortcut button{min-height:34px;padding:0 10px;border:1px solid #d8c19b;border-radius:9px;background:#fff8e8;color:#0b6040;font-size:8px;font-weight:900}
+@media(max-width:760px){
+  .client-type-grid{grid-template-columns:1fr}
+  .client-type-grid button{min-height:66px}
+  .master-form-grid{grid-template-columns:1fr}
+  .client-profile-head h1{font-size:23px}
+  .master-form-footer{bottom:6px}
+}
