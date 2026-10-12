@@ -477,3 +477,46 @@ html,body{background:#efe7d7!important;color-scheme:light}
   text-underline-offset:3px;
 }
 .auth-forgot-link:active{opacity:.7}
+
+/* Endereço do cliente v2 */
+.required-star{color:#d95524}
+.address-number-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:end;
+}
+.no-number-toggle{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:45px;
+  padding:0 12px;
+  margin-bottom:1px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fffaf0;
+  color:var(--green);
+  font-size:10px;
+  font-weight:850;
+  cursor:pointer;
+}
+.no-number-toggle input{
+  width:18px;
+  height:18px;
+  accent-color:var(--green);
+}
+.autofilled-address{
+  background:#f0f5e9!important;
+  color:#315b45!important;
+  border-color:#cddbbf!important;
+}
+.address-setup-card #addressSubmit:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+  filter:saturate(.55);
+}
+@media(max-width:420px){
+  .address-number-row{grid-template-columns:minmax(0,1fr) auto}
+  .no-number-toggle{padding:0 9px;font-size:9px}
+}
