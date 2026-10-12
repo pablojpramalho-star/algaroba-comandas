@@ -295,7 +295,7 @@ export function installInternalMasterData(ctx){
 
   function field(label,name,value,requiredOrType,typeArg){
     var required=requiredOrType===true,type=typeof requiredOrType==="string"?requiredOrType:(typeArg||"text");
-    return "<label class='master-field'><span>"+label+"</span><input type='"+type+"' name='"+name+"' value='"+esc(value||"")+"' "+(required?"required":"")+"></label>";
+    return "<label class='master-field'><span>"+label+"</span><input type='"+type+"' name='"+name+"' value='"+esc(value??"")+"' "+(type==="number"?"step='any' inputmode='decimal' ":"")+(required?"required":"")+"></label>";
   }
 
   function productAvailability(v){
