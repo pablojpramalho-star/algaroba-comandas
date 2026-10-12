@@ -24,3 +24,32 @@
 @media(min-width:761px){
   .internal-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
 }
+
+/* Ficha administrativa completa do cliente */
+.client-full-form{display:grid;gap:12px}
+.client-section-highlight{background:linear-gradient(135deg,#fffdf8,#f7f2e5)!important}
+.client-legacy-note{margin-top:10px;padding:9px 11px;border-radius:11px;background:#fff3dd;color:#72583e;font-size:9px;line-height:1.4}
+.master-check-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.commercial-section{border-left:4px solid #0b6844!important}
+.commercial-section.readonly{opacity:.78}
+.client-history-shortcut{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px;padding:13px 14px;border:1px solid #dfcba9;border-radius:16px;background:#fffaf0}
+.client-history-shortcut b,.client-history-shortcut span{display:block}
+.client-history-shortcut b{font:700 16px Georgia,"Times New Roman",serif;color:#075139}
+.client-history-shortcut span{margin-top:3px;font-size:8px;color:#756d61}
+.client-history-shortcut button{min-height:36px;padding:0 11px;border:1px solid #d6be98;border-radius:10px;background:#eaf1e3;color:#0b6040;font-size:8px;font-weight:900}
+.client-history-panel{margin-top:10px;padding:13px;border:1px solid #dfcba9;border-radius:16px;background:#fffdf8}
+.client-history-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0}
+.client-history-kpis>div{padding:9px;border-radius:11px;background:#f5efe2}
+.client-history-kpis b,.client-history-kpis span{display:block}
+.client-history-kpis b{font:700 15px Georgia,"Times New Roman",serif;color:#075139}
+.client-history-kpis span{margin-top:2px;font-size:7px;color:#776f62}
+.client-history-orders{display:grid;gap:5px}
+.client-history-orders article{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 9px;border:1px solid #eee0c7;border-radius:10px;background:#fffaf4}
+.client-history-orders article b,.client-history-orders article small{display:block}
+.client-history-orders article b{font-size:9px;color:#174734}
+.client-history-orders article small{margin-top:2px;font-size:7px;color:#7d7467}
+.client-history-orders article strong{font-size:9px;color:#0a6040}
+@media(max-width:600px){
+  .client-history-shortcut{align-items:flex-start;flex-direction:column}
+  .client-history-shortcut button{width:100%}
+}
