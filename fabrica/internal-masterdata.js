@@ -1,4 +1,4 @@
-import { installReceitasLote } from "./internal-receitas.js?v=20261012-lote1";
+import { installReceitasLote } from "./internal-receitas.js?v=20261012-lote2";
 export function installInternalMasterData(ctx){
   const state=ctx.state,main=ctx.main,rpc=ctx.rpc,internalShell=ctx.internalShell,loading=ctx.loading,esc=ctx.esc,showToast=ctx.showToast,brl=ctx.brl,fmtDate=ctx.fmtDate,loadCatalog=ctx.loadCatalog;
   const receitasLote=installReceitasLote(ctx);
