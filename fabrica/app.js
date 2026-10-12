@@ -3,6 +3,7 @@ import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
 import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
 import { installInternalMasterData } from "./internal-masterdata.js?v=20261011-clienttype3";
 import { installInternalAttendance } from "./internal-attendance.js?v=20261011-attendance1";
+import { installInternalManagement } from "./internal-management.js?v=20261011-admin1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -27,9 +28,11 @@ const state={
   productionOpenOrder:null,
   expeditionOpenOrder:null,
   operationStage:localStorage.getItem("algaroba_operation_stage")||null,
-  attendanceStage:localStorage.getItem("algaroba_attendance_stage")||"pedidos"
+  attendanceStage:localStorage.getItem("algaroba_attendance_stage")||"pedidos",
+  administrativeStage:localStorage.getItem("algaroba_administrative_stage")||"produtos",
+  adminRoutes:[]
 };
-let renderConference,renderRoute,renderReports,renderTestClient,renderDeskOrders,renderAttendanceReport,renderAttendancePromotions;
+let renderConference,renderRoute,renderReports,renderTestClient,renderDeskOrders,renderAttendanceReport,renderAttendancePromotions,renderAttendanceRoutes,renderAdminRoutes,renderAdministrativeReports;
 
 let renderClients=()=>{},renderProducts=()=>{};
 
@@ -1203,9 +1206,9 @@ function roleDisplay(role){
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","atendimento","produtos","operacao","financeiro","caixa","estoque","relatorios"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","atendimento","operacao","financeiro","administrativo"];
   if(role==="vendas")return ["atendimento"];
-  if(role==="financeiro")return ["financeiro","caixa","relatorios"];
+  if(role==="financeiro")return ["financeiro","administrativo"];
   if(role==="producao")return ["operacao"];
   if(role==="expedicao")return ["operacao"];
   return [];
@@ -1213,23 +1216,21 @@ function internalModulesForRole(role){
 function internalModuleMeta(key){
   return ({
     dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo do dia"},
-    atendimento:{label:"Atendimento",icon:"◎",desc:"Pedidos e clientes"},
-    produtos:{label:"Produtos",icon:"◇",desc:"Catálogo e preços"},
+    atendimento:{label:"Atendimento",icon:"◎",desc:"Pedidos, clientes e rotas"},
     operacao:{label:"Operação",icon:"◫",desc:"Produção à entrega"},
     financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
-    caixa:{label:"Caixa",icon:"▣",desc:"Recebimentos"},
-    estoque:{label:"Estoque",icon:"▦",desc:"Produtos e insumos"},
-    relatorios:{label:"Relatórios",icon:"≡",desc:"Gestão e histórico"}
+    administrativo:{label:"Administrativo",icon:"▦",desc:"Gestão da fábrica"}
   })[key]||{label:key,icon:"•",desc:""};
 }
 function attendanceStagesForRole(role){
-  if(["administrador","gerente","vendas"].includes(role))return ["pedidos","clientes","atendimento_relatorio","promocoes"];
+  if(["administrador","gerente","vendas"].includes(role))return ["pedidos","clientes","rotas_atendimento","atendimento_relatorio","promocoes"];
   return [];
 }
 function attendanceStageMeta(key){
   return ({
     pedidos:{label:"Pedido",icon:"＋",desc:"Tirar pedido"},
     clientes:{label:"Clientes",icon:"◎",desc:"Cadastro"},
+    rotas_atendimento:{label:"Rotas",icon:"⇢",desc:"Consultar / sugerir"},
     atendimento_relatorio:{label:"Relatório",icon:"≡",desc:"Acompanhamento"},
     promocoes:{label:"Promoções",icon:"★",desc:"Condições comerciais"}
   })[key]||{label:key,icon:"•",desc:""};
