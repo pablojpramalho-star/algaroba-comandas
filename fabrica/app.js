@@ -861,33 +861,107 @@ function renderAddressSetup(){
   main.innerHTML=`<div class="login-card address-setup-card">
     <div class="step-pill">Última etapa</div>
     <h2>Endereço principal</h2>
-    <p class="small">Digite o CEP primeiro. Quando houver endereço específico, rua, bairro, cidade e UF serão preenchidos automaticamente. Todos os campos continuam editáveis.</p>
-    <form onsubmit="window.savePrimaryAddress(event)">
+    <p class="small">Informe primeiro o CEP. Quando o CEP tiver endereço específico, o sistema preenche rua, bairro, cidade e UF automaticamente. Em CEP geral de município/região, complete os campos que não vierem preenchidos.</p>
+    <form id="primaryAddressForm" onsubmit="window.savePrimaryAddress(event)">
       <div class="field">
-        <label>CEP</label>
+        <label>CEP <b class="required-star">*</b></label>
         <div class="cep-row">
-          <input id="addressCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000">
+          <input id="addressCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required>
           <button id="cepLookupButton" class="button soft" type="button">Buscar CEP</button>
         </div>
         <div id="cepStatus" class="cep-status" aria-live="polite">Digite os 8 números do CEP.</div>
       </div>
-      <div class="field"><label>Rua / avenida</label><input id="addressStreet" autocomplete="street-address" required></div>
-      <div class="grid address-grid">
-        <div class="field"><label>Número</label><input id="addressNumber" required></div>
-        <div class="field"><label>Complemento</label><input id="addressComplement" placeholder="Apto., sala, bloco..."></div>
+
+      <div class="field">
+        <label>Rua / avenida <b class="required-star">*</b></label>
+        <input id="addressStreet" autocomplete="address-line1" required>
       </div>
-      <div class="field"><label>Bairro</label><input id="addressNeighborhood" required></div>
-      <div class="grid address-grid">
-        <div class="field"><label>Cidade</label><input id="addressCity" required></div>
-        <div class="field"><label>UF</label><input id="addressUf" maxlength="2" required></div>
+
+      <div class="address-number-row">
+        <div class="field address-number-field">
+          <label>Número <b class="required-star">*</b></label>
+          <input id="addressNumber" inputmode="text" autocomplete="address-line2" required>
+        </div>
+        <label class="no-number-toggle">
+          <input id="addressNoNumber" type="checkbox">
+          <span>Sem número</span>
+        </label>
       </div>
-      <div class="field"><label>Ponto de referência <span class="small">(opcional)</span></label><input id="addressReference"></div>
-      <button id="addressSubmit" class="button orange" style="width:100%" type="submit">Salvar e continuar →</button>
+
+      <div class="grid address-grid">
+        <div class="field">
+          <label>Bairro <b class="required-star">*</b></label>
+          <input id="addressNeighborhood" required>
+        </div>
+        <div class="field">
+          <label>Conjunto <span class="small">(opcional)</span></label>
+          <input id="addressComplex" placeholder="Ex.: Conjunto Santarém">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Complemento <span class="small">(opcional)</span></label>
+        <input id="addressComplement" placeholder="Apto., bloco, casa, lote, sala...">
+      </div>
+
+      <div class="grid address-grid">
+        <div class="field">
+          <label>Cidade <b class="required-star">*</b></label>
+          <input id="addressCity" required>
+        </div>
+        <div class="field">
+          <label>Estado / UF <b class="required-star">*</b></label>
+          <input id="addressUf" maxlength="2" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ponto de referência <span class="small">(opcional)</span></label>
+        <input id="addressReference" placeholder="Ex.: próximo à igreja, mercado, esquina...">
+      </div>
+
+      <button id="addressSubmit" class="button orange" style="width:100%" type="submit">Salvar endereço e concluir cadastro →</button>
     </form>
-    <button class="button ghost" style="width:100%;margin-top:8px" type="button" onclick="window.skipAddress()">Cadastrar depois</button>
   </div>`;
   window.bindCepLookup();
+  window.bindAddressRules();
 }
+window.bindAddressRules=()=>{
+  const number=$("#addressNumber"),noNumber=$("#addressNoNumber"),form=$("#primaryAddressForm");
+  const applyNumberRule=()=>{
+    if(!number||!noNumber)return;
+    if(noNumber.checked){
+      number.value="";
+      number.disabled=true;
+      number.required=false;
+      number.placeholder="Sem número";
+    }else{
+      number.disabled=false;
+      number.required=true;
+      number.placeholder="";
+    }
+    window.updateAddressSubmitState();
+  };
+  noNumber?.addEventListener("change",applyNumberRule);
+  form?.querySelectorAll("input").forEach(el=>el.addEventListener("input",window.updateAddressSubmitState));
+  applyNumberRule();
+};
+
+window.updateAddressSubmitState=()=>{
+  const btn=$("#addressSubmit");
+  if(!btn)return;
+  const cep=($("#addressCep")?.value||"").replace(/\D/g,"");
+  const noNumber=!!$("#addressNoNumber")?.checked;
+  const hasNumber=noNumber||!!$("#addressNumber")?.value.trim();
+  const complete=
+    cep.length===8 &&
+    !!$("#addressStreet")?.value.trim() &&
+    hasNumber &&
+    !!$("#addressNeighborhood")?.value.trim() &&
+    !!$("#addressCity")?.value.trim() &&
+    ($("#addressUf")?.value.trim().length===2);
+  btn.disabled=!complete;
+};
 
 window.bindCepLookup=()=>{
   const input=$("#addressCep"),button=$("#cepLookupButton");
@@ -901,6 +975,7 @@ window.bindCepLookup=()=>{
       const status=$("#cepStatus");
       if(status){status.textContent="Digite os 8 números do CEP.";status.className="cep-status"}
     }
+    window.updateAddressSubmitState();
   };
   input.addEventListener("input",format);
   input.addEventListener("blur",()=>{
@@ -917,8 +992,7 @@ window.bindCepLookup=()=>{
 window.lookupCep=async(cep,force=false)=>{
   const digits=String(cep||"").replace(/\D/g,"");
   if(digits.length!==8)return;
-  const status=$("#cepStatus"),button=$("#cepLookupButton");
-  const cepInput=$("#addressCep");
+  const status=$("#cepStatus"),button=$("#cepLookupButton"),cepInput=$("#addressCep");
   if(!force&&cepInput?.dataset.lookupCep===digits)return;
   const requestId=(window.lookupCep.requestId||0)+1;window.lookupCep.requestId=requestId;
   if(status){status.textContent="Consultando CEP...";status.className="cep-status loading-cep"}
@@ -931,19 +1005,29 @@ window.lookupCep=async(cep,force=false)=>{
     if(data.erro)throw new Error("CEP não encontrado.");
 
     const street=$("#addressStreet"),neighborhood=$("#addressNeighborhood"),city=$("#addressCity"),uf=$("#addressUf");
-    if(data.logradouro)street.value=data.logradouro;
-    if(data.bairro)neighborhood.value=data.bairro;
-    if(data.localidade)city.value=data.localidade;
-    if(data.uf)uf.value=data.uf;
+    street.value=data.logradouro||"";
+    neighborhood.value=data.bairro||"";
+    city.value=data.localidade||"";
+    uf.value=data.uf||"";
+
+    street.readOnly=!!data.logradouro;
+    neighborhood.readOnly=!!data.bairro;
+    city.readOnly=!!data.localidade;
+    uf.readOnly=!!data.uf;
+
+    [street,neighborhood,city,uf].forEach(el=>el?.classList.toggle("autofilled-address",!!el?.readOnly));
 
     if(cepInput)cepInput.dataset.lookupCep=digits;
     const generic=!data.logradouro||!data.bairro;
     if(status){
       status.textContent=generic
-        ?"CEP geral da cidade/região. Cidade e UF foram preenchidas; complete rua e bairro manualmente."
-        :"Endereço localizado. Confira os dados e informe número/complemento.";
+        ?"CEP geral da cidade/região. Complete manualmente rua e/ou bairro; cidade e UF já foram preenchidas."
+        :"Endereço localizado. Agora informe número, conjunto e complemento quando houver.";
       status.className="cep-status "+(generic?"generic-cep":"ok-cep");
     }
+
+    window.updateAddressSubmitState();
+
     if(generic){
       if(!data.logradouro)street.focus();
       else if(!data.bairro)neighborhood.focus();
@@ -952,32 +1036,48 @@ window.lookupCep=async(cep,force=false)=>{
     }
   }catch(err){
     if(cepInput)delete cepInput.dataset.lookupCep;
-    if(status){status.textContent=err.message+" Preencha o endereço manualmente.";status.className="cep-status error-cep"}
+    const street=$("#addressStreet"),neighborhood=$("#addressNeighborhood"),city=$("#addressCity"),uf=$("#addressUf");
+    [street,neighborhood,city,uf].forEach(el=>{if(el){el.readOnly=false;el.classList.remove("autofilled-address")}});
+    if(status){status.textContent=err.message+" Confira o CEP ou tente novamente.";status.className="cep-status error-cep"}
+    window.updateAddressSubmitState();
   }finally{
     if(button)button.disabled=false;
   }
 };
+
 window.savePrimaryAddress=async e=>{
   e.preventDefault();
+  const cep=($("#addressCep")?.value||"").replace(/\D/g,"");
+  const noNumber=!!$("#addressNoNumber")?.checked;
+  const number=$("#addressNumber")?.value.trim()||"";
+
+  if(cep.length!==8){showToast("CEP é obrigatório e deve ter 8 números.");$("#addressCep")?.focus();return}
+  if(!noNumber&&!number){showToast("Informe o número ou marque Sem número.");$("#addressNumber")?.focus();return}
+  if(!$("#addressStreet")?.value.trim()||!$("#addressNeighborhood")?.value.trim()||!$("#addressCity")?.value.trim()||$("#addressUf")?.value.trim().length!==2){
+    showToast("Confira rua, bairro, cidade e estado.");return;
+  }
+
   const btn=$("#addressSubmit");btn.disabled=true;btn.textContent="Salvando...";
   try{
-    await rpc("cliente_salvar_endereco_principal",{
-      p_cep:$("#addressCep").value.trim()||null,
+    await rpc("cliente_salvar_endereco_principal_v2",{
+      p_cep:cep,
       p_logradouro:$("#addressStreet").value.trim(),
-      p_numero:$("#addressNumber").value.trim(),
-      p_complemento:$("#addressComplement").value.trim()||null,
+      p_numero:noNumber?null:number,
+      p_sem_numero:noNumber,
       p_bairro:$("#addressNeighborhood").value.trim(),
+      p_conjunto:$("#addressComplex").value.trim()||null,
+      p_complemento:$("#addressComplement").value.trim()||null,
       p_cidade:$("#addressCity").value.trim(),
-      p_uf:$("#addressUf").value.trim(),
+      p_uf:$("#addressUf").value.trim().toUpperCase(),
       p_referencia:$("#addressReference").value.trim()||null
     },true);
     showToast("Endereço salvo.");
     const target=state.returnView||"home";state.returnView=null;go(target);
   }catch(err){
-    showToast(err.message);btn.disabled=false;btn.textContent="Salvar e continuar →";
+    showToast(err.message);btn.disabled=false;btn.textContent="Salvar endereço e concluir cadastro →";
   }
 };
-window.skipAddress=()=>{const target=state.returnView||"home";state.returnView=null;go(target)};
+window.skipAddress=()=>{showToast("O endereço é obrigatório para concluir o cadastro.");go("address-setup")};
 
 window.login=async e=>{
   e.preventDefault();const btn=$("#loginSubmit");btn.disabled=true;btn.textContent="Entrando...";
@@ -1053,7 +1153,7 @@ async function renderAccount(){
   loading("Carregando cadastro...");
   try{
     const [addresses,promotions,benefits,conditionRows]=await Promise.all([
-      table("cliente_enderecos?select=id,identificacao,logradouro,numero,bairro,cidade,uf,recebimento_inicio,recebimento_fim,intervalo_inicio,intervalo_fim,observacao_recebimento,janela_recebimento_confirmada&ativo=eq.true&order=identificacao.asc"),
+      table("cliente_enderecos?select=id,identificacao,cep,logradouro,numero,sem_numero,bairro,conjunto,complemento,cidade,uf,recebimento_inicio,recebimento_fim,intervalo_inicio,intervalo_fim,observacao_recebimento,janela_recebimento_confirmada&ativo=eq.true&order=identificacao.asc"),
       rpc("minhas_promocoes",{},true),
       rpc("meus_beneficios_disponiveis",{},true),
       rpc("minha_condicao_comercial_resumo",{},true)
@@ -1078,7 +1178,7 @@ async function renderAccount(){
       </div>
 
       <div class="section-head"><div><h2>Horário de recebimento</h2><p>Ajuda a Expedição a organizar a sequência da rota, sem prometer horário de chegada.</p></div></div>
-      ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.numero||"")} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty"><div class="empty-icon">📍</div>Nenhum endereço cadastrado.<br><br><button class="button" onclick="window.goAddressSetup()">Cadastrar endereço</button></div>'}
+      ${addresses.length?addresses.map(a=>`<div class="account-card"><b>${esc(a.identificacao||"Endereço")}</b><div class="small">${esc(a.logradouro||"")}, ${esc(a.sem_numero?"S/N":(a.numero||""))}${a.complemento?" • "+esc(a.complemento):""}${a.conjunto?" • "+esc(a.conjunto):""} • ${esc(a.bairro||"")}, ${esc(a.cidade||"")}/${esc(a.uf||"")}${a.cep?" • CEP "+esc(a.cep):""}</div><div class="grid" style="margin-top:8px"><div class="field"><label>Recebe a partir de</label><input id="ini-${a.id}" type="time" value="${fmtTime(a.recebimento_inicio)}"></div><div class="field"><label>Recebe até</label><input id="fim-${a.id}" type="time" value="${fmtTime(a.recebimento_fim)}"></div><div class="field"><label>Intervalo início</label><input id="intini-${a.id}" type="time" value="${fmtTime(a.intervalo_inicio)}"></div><div class="field"><label>Intervalo fim</label><input id="intfim-${a.id}" type="time" value="${fmtTime(a.intervalo_fim)}"></div></div><div class="field"><label>Observação</label><input id="obs-${a.id}" value="${esc(a.observacao_recebimento||"")}" placeholder="Ex.: receber pela porta lateral"></div><button class="button" onclick="window.saveReceiving('${a.id}')">Salvar horário</button></div>`).join(""):'<div class="empty"><div class="empty-icon">📍</div>Nenhum endereço cadastrado.<br><br><button class="button" onclick="window.goAddressSetup()">Cadastrar endereço</button></div>'}
       <div class="actions" style="max-width:470px;margin:14px auto"><button class="button ghost" onclick="window.logout()">Sair da conta</button></div>
     `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
