@@ -1,5 +1,6 @@
 import { installInternalFlow } from "./internal-flow.js?v=20261009-route11";
 import { installInternalAdmin } from "./internal-admin.js?v=20261011-sales2";
+import { installInternalOrders } from "./internal-orders.js?v=20261011-orders1";
 const SUPABASE_URL="https://zqyehddgyiqtbynnoecz.supabase.co";
 const PUBLISHABLE_KEY="sb_publishable_WERTeRIu5m88f89HfjSdWg_AlI91sb5";
 const AUTH_REDIRECT_URL="https://pablojpramalho-star.github.io/algaroba-comandas/fabrica/";
@@ -25,7 +26,7 @@ const state={
   expeditionOpenOrder:null,
   operationStage:localStorage.getItem("algaroba_operation_stage")||null
 };
-let renderConference,renderRoute,renderReports,renderTestClient;
+let renderConference,renderRoute,renderReports,renderTestClient,renderDeskOrders;
 
 function showToast(message){
   toastEl.textContent=message;toastEl.style.display="block";
@@ -1093,8 +1094,8 @@ function roleDisplay(role){
   })[role]||role||"Interno";
 }
 function internalModulesForRole(role){
-  if(["administrador","gerente"].includes(role))return ["dashboard","vendas","operacao","financeiro","caixa","estoque","relatorios"];
-  if(role==="vendas")return ["vendas"];
+  if(["administrador","gerente"].includes(role))return ["dashboard","pedidos","vendas","operacao","financeiro","caixa","estoque","relatorios"];
+  if(role==="vendas")return ["pedidos","vendas"];
   if(role==="financeiro")return ["financeiro","caixa","relatorios"];
   if(role==="producao")return ["operacao"];
   if(role==="expedicao")return ["operacao"];
@@ -1103,7 +1104,8 @@ function internalModulesForRole(role){
 function internalModuleMeta(key){
   return ({
     dashboard:{label:"Visão geral",icon:"⌂",desc:"Resumo do dia"},
-    vendas:{label:"Vendas",icon:"▤",desc:"Pedidos e clientes"},
+    pedidos:{label:"Pedidos",icon:"＋",desc:"WhatsApp e balcão"},
+    vendas:{label:"Administrativo",icon:"▤",desc:"Clientes e acompanhamento"},
     operacao:{label:"Operação",icon:"◫",desc:"Produção à entrega"},
     financeiro:{label:"Financeiro",icon:"R$",desc:"Pagamentos"},
     caixa:{label:"Caixa",icon:"▣",desc:"Recebimentos"},
@@ -1189,6 +1191,7 @@ function renderInternal(){
   localStorage.setItem("algaroba_internal_module",state.internalModule);
 
   if(state.internalModule==="dashboard")return renderAdmin();
+  if(state.internalModule==="pedidos")return renderDeskOrders();
   if(state.internalModule==="vendas")return renderAdministrative();
   if(state.internalModule==="operacao")return renderOperation();
   if(state.internalModule==="financeiro")return renderFinance();
@@ -1830,5 +1833,10 @@ const __internalAdmin=installInternalAdmin({
 renderTestClient=__internalAdmin.renderTestClient;
 renderReports=__internalAdmin.renderReports;
 window.openTestClient=()=>renderTestClient();
+
+const __internalOrders=installInternalOrders({
+  state,main,rpc,internalShell,loading,esc,showToast,brl,fmtDate,groupScene,productVisualClass,measure,displayProductName
+});
+renderDeskOrders=__internalOrders.renderDeskOrders;
 
 boot();
