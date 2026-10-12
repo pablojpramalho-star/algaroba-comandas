@@ -27,15 +27,15 @@ export function installInternalFlow(ctx){
   renderProduction=async function(){
     loading("Carregando Produção...");
     try{
-      var rows=await rpc("producao_fila",{},true)||[];
+      var rows=await rpc("producao_fila_operacional",{},true)||[];
       var groups=groupsBy(rows,"pedido_id");
       if(state.productionOpenOrder&&!groups[state.productionOpenOrder]) state.productionOpenOrder=null;
 
       if(!state.productionOpenOrder){
         var cards=Object.keys(groups).map(function(pid){
-          var it=groups[pid],done=it.filter(doneProduction).length;
-          return "<button type='button' class='order-work-card' data-prod-action='open' data-id='"+pid+"'>"+
-            "<div><span>"+esc(it[0].numero)+"</span><strong>"+esc(it[0].cliente_nome)+"</strong><small>"+it.length+" itens • "+done+" concluídos</small></div>"+
+          var it=groups[pid],done=it.filter(doneProduction).length,changed=it.some(function(x){return x.item_alterado});
+          return "<button type='button' class='order-work-card "+(changed?"changed":"")+"' data-prod-action='open' data-id='"+pid+"'>"+
+            "<div><span>"+esc(it[0].numero)+" "+(changed?"<b class='production-change-badge'>ALTERADO</b>":"")+"</span><strong>"+esc(it[0].cliente_nome)+"</strong><small>"+it.length+" itens • "+done+" concluídos"+(changed?" • revisão "+Number(it[0].revisao_operacional||1):"")+"</small></div>"+
             "<div class='order-work-progress'><b>"+done+"/"+it.length+"</b><i><em style='width:"+percent(done,it.length)+"%'></em></i></div>"+
             "<strong class='order-work-arrow'>›</strong></button>";
         }).join("");
@@ -59,9 +59,10 @@ export function installInternalFlow(ctx){
         }else{
           actions="<button class='work-ready' data-prod-action='update' data-id='"+x.item_id+"' data-status='pronto' data-q='"+Number(x.quantidade_solicitada)+"'>✓ Pronto</button>";
         }
-        return "<article class='work-item "+(finished?"done ":"")+(missing?"missing":"")+"'>"+
+        var changeLabel=x.alteracao_tipo==="adicionado"?"NOVO ITEM":x.alteracao_tipo==="produto_trocado"?"PRODUTO TROCADO":x.alteracao_tipo==="quantidade_alterada"?"QUANTIDADE ALTERADA":x.alteracao_tipo==="removido"?"ITEM REMOVIDO":"ALTERADO";
+        return "<article class='work-item "+(finished?"done ":"")+(missing?"missing ":"")+(x.item_alterado?"changed":"")+"'>"+
           "<div class='work-item-check'>"+(finished?(missing?"!":"✓"):"")+"</div>"+
-          "<div class='work-item-copy'><strong>"+esc(x.produto)+"</strong><small>Solicitado: "+Number(x.quantidade_solicitada).toLocaleString("pt-BR")+" • "+(x.modelo_fornecimento==="estoque"?"Separação de estoque":"Produção sob encomenda")+"</small>"+
+          "<div class='work-item-copy'>"+(x.item_alterado?"<b class='production-item-change'>⚠ "+changeLabel+"</b>":"")+"<strong>"+esc(x.produto)+"</strong><small>Solicitado: "+Number(x.quantidade_solicitada).toLocaleString("pt-BR")+" • "+(x.modelo_fornecimento==="estoque"?"Separação de estoque":"Produção sob encomenda")+"</small>"+
           (finished?"<span class='"+(missing?"missing-label":"done-label")+"'>"+(missing?"Produto em falta":separated?"Separado e pronto":"Pronto")+"</span>":"<span class='pending-label'>Pendente</span>")+"</div>"+
           "<div class='work-item-actions'>"+actions+"</div></article>";
       }).join("");
@@ -78,7 +79,7 @@ export function installInternalFlow(ctx){
 
   async function afterProductionItem(message){
     var pedidoId=state.productionOpenOrder;
-    var rows=await rpc("producao_fila",{},true)||[];
+    var rows=await rpc("producao_fila_operacional",{},true)||[];
     var current=rows.filter(function(x){return x.pedido_id===pedidoId});
     if(current.length&&current.every(doneProduction)){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
