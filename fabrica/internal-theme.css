@@ -825,3 +825,80 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
   .client-toolbar{grid-template-columns:1fr auto!important}
   .client-toolbar .master-count{grid-column:1/-1}
 }
+
+/* Administrativo agrupado + Rotas no Atendimento */
+.internal-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.administrative-nav,.attendance-nav{
+  display:flex;gap:7px;overflow:auto;margin:-7px 0 14px;padding:4px 1px;scrollbar-width:none
+}
+.administrative-nav::-webkit-scrollbar,.attendance-nav::-webkit-scrollbar{display:none}
+.administrative-nav button,.attendance-nav button{
+  flex:0 0 132px;display:grid;grid-template-columns:30px 1fr;grid-template-rows:auto auto;align-items:center;
+  min-height:54px;padding:7px 9px;border:1px solid #dfc9a6;border-radius:13px;background:#fffaf0;color:#214b38;text-align:left
+}
+.administrative-nav button>b,.attendance-nav button>b{
+  grid-row:1/3;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#eaf1e3;color:#0b6040
+}
+.administrative-nav button span,.attendance-nav button span{font-size:10px;font-weight:900}
+.administrative-nav button small,.attendance-nav button small{font-size:7px;color:#7d7568}
+.administrative-nav button.active,.attendance-nav button.active{background:#07543a;color:#fff;border-color:#07543a}
+.administrative-nav button.active>b,.attendance-nav button.active>b{background:rgba(255,255,255,.12);color:#ffd07c}
+.administrative-nav button.active small,.attendance-nav button.active small{color:#dce9e1}
+
+.route-read-list,.admin-route-list,.route-suggestion-list,.admin-report-list{display:grid;gap:8px}
+.route-read-card{padding:13px;border:1px solid #dfc9a7;border-radius:17px;background:#fffdf8}
+.route-read-main>span{font-size:7px;font-weight:950;letter-spacing:.13em;color:#a56844}
+.route-read-main strong{display:block;margin-top:2px;font:700 19px Georgia,"Times New Roman",serif;color:#075139}
+.route-read-main p{margin:5px 0 0;font-size:9px;line-height:1.4;color:#746c60}
+.route-read-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.route-read-facts>div{padding:8px;border-radius:11px;background:#f4eee1}
+.route-read-facts small,.route-read-facts b{display:block}
+.route-read-facts small{font-size:7px;color:#867b6b}
+.route-read-facts b{margin-top:2px;font-size:10px;color:#174e38}
+.route-suggest-btn{width:100%;min-height:35px;margin-top:9px;border:1px solid #d8c29f;border-radius:10px;background:#fff7e7;color:#176040;font-size:8px;font-weight:900}
+
+.admin-route-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #dfc9a7;border-radius:15px;background:#fffdf8}
+.admin-route-card.inactive{opacity:.62}
+.admin-route-card>div>span{font-size:7px;font-weight:950;color:#0b6742}
+.admin-route-card>div>strong{display:block;margin:2px 0;font:700 17px Georgia,"Times New Roman",serif;color:#075139}
+.admin-route-card small{display:block;font-size:8px;color:#776f62}
+.admin-route-card>button{min-height:34px;padding:0 12px;border:1px solid #d9c4a1;border-radius:10px;background:#fff8e9;color:#15593d;font-size:8px;font-weight:900}
+.route-admin-form{margin:0 0 12px;padding:13px;border:1px solid #d8c09b;border-radius:17px;background:#fffaf0}
+.route-form-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.route-form-head b{display:block;font:700 19px Georgia,"Times New Roman",serif;color:#075139}
+.route-form-head small{display:block;font-size:8px;color:#7d7466}
+.route-form-head button{width:31px;height:31px;border:0;border-radius:9px;background:#f0e8d9;color:#765b46}
+.route-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.route-form-grid label{display:grid;gap:4px}
+.route-form-grid label.wide{grid-column:1/-1}
+.route-form-grid span{font-size:8px;font-weight:850;color:#665e53}
+.route-form-grid input,.route-form-grid select{height:38px;padding:0 9px;border:1px solid #dbc5a1;border-radius:10px;background:#fffdf8;color:#174432}
+.route-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0}
+.route-days label input{display:none}
+.route-days label span{display:grid;place-items:center;min-height:34px;border:1px solid #ddc8a6;border-radius:9px;background:#fff8e9;color:#5d6259;font-size:8px;font-weight:900}
+.route-days label input:checked+span{background:#0a6542;border-color:#0a6542;color:#fff}
+.route-save-btn{width:100%}
+
+.route-suggestion-list article{display:flex;justify-content:space-between;gap:10px;padding:11px;border:1px solid #e0cdad;border-radius:14px;background:#fffdf8}
+.route-suggestion-list strong{display:block;margin:5px 0 3px;color:#075139}
+.route-suggestion-list p{margin:0;font-size:9px;color:#5f5a50}
+.route-suggestion-list small,.route-suggestion-list em{display:block;margin-top:4px;font-size:7px;color:#7f776a}
+.route-suggestion-list em{font-style:normal;color:#3b644f}
+.route-suggestion-actions{display:flex;gap:4px;align-items:center}
+.route-suggestion-actions button{min-height:32px;border:1px solid #d8c29f;border-radius:9px;background:#fff8e8;color:#155a3e;font-size:7px;font-weight:900}
+
+.admin-report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.admin-report-grid article{padding:11px;border:1px solid #dfcaa8;border-radius:15px;background:#fffaf0}
+.admin-report-grid span,.admin-report-grid small{display:block}
+.admin-report-grid span{font-size:7px;font-weight:900;color:#926748}
+.admin-report-grid b{display:block;margin:4px 0;font:700 19px Georgia,"Times New Roman",serif;color:#075139}
+.admin-report-grid small{font-size:7px;color:#7d7466}
+.admin-report-list article{display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid #e2d0b2;border-radius:11px;background:#fffdf8}
+.admin-report-list b{font-size:9px;color:#174a35}
+.admin-report-list span{text-align:right;font-size:8px;color:#746c60}
+
+@media(max-width:760px){
+  .internal-nav{grid-template-columns:repeat(5,92px)!important}
+  .administrative-nav button,.attendance-nav button{flex-basis:116px}
+  .admin-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
