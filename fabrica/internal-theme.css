@@ -902,3 +902,495 @@ body.internal-mode .section-head + .panel:has(.stock-compact-card){
   .administrative-nav button,.attendance-nav button{flex-basis:116px}
   .admin-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* =========================================================
+   ALGAROBA INTERNO — DARK PRO
+   Padrão visual único para toda a operação da fábrica.
+   Portal do cliente não é afetado.
+   ========================================================= */
+body.internal-mode{
+  --int-bg:#050806;
+  --int-surface:#0d120f;
+  --int-surface-2:#131a15;
+  --int-surface-3:#19211b;
+  --int-border:#294335;
+  --int-border-soft:#1e3328;
+  --int-text:#f4f2e8;
+  --int-muted:#a9b2ab;
+  --int-green:#66d79b;
+  --int-green-strong:#0d7a4c;
+  --int-green-deep:#063f2a;
+  --int-cream:#fff0cf;
+  --int-orange:#f2a15d;
+  --int-danger:#ff7767;
+  --int-warning:#f2c66d;
+  --int-info:#8ed4ff;
+
+  background:var(--int-bg)!important;
+  color:var(--int-text)!important;
+  color-scheme:dark!important;
+}
+body.internal-mode .app,
+body.internal-mode .main{
+  background:
+    radial-gradient(circle at 10% 0%,rgba(15,117,75,.10),transparent 320px),
+    radial-gradient(circle at 92% 18%,rgba(135,95,40,.06),transparent 300px),
+    var(--int-bg)!important;
+  color:var(--int-text)!important;
+}
+body.internal-mode .main{
+  max-width:1180px!important;
+  padding-top:14px!important;
+}
+
+/* Cabeçalho interno */
+body.internal-mode .internal-shell-head{
+  background:linear-gradient(135deg,#0b100d,#101712)!important;
+  border-color:var(--int-border)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.28)!important;
+}
+body.internal-mode .internal-brand img{
+  background:#102c20!important;
+  border:1px solid #284a37!important;
+}
+body.internal-mode .internal-brand strong{
+  color:var(--int-cream)!important;
+  font-size:26px!important;
+}
+body.internal-mode .internal-brand span{
+  color:var(--int-muted)!important;
+}
+body.internal-mode .internal-refresh,
+body.internal-mode .internal-logout{
+  background:#151d17!important;
+  border-color:#33483a!important;
+  color:var(--int-text)!important;
+}
+body.internal-mode .internal-logout{
+  color:#ff9d91!important;
+  border-color:#5b302b!important;
+}
+
+/* Navegação principal e submenus */
+body.internal-mode .internal-nav,
+body.internal-mode .attendance-nav,
+body.internal-mode .administrative-nav,
+body.internal-mode .operation-nav{
+  background:#0a0f0c!important;
+  border-color:var(--int-border)!important;
+}
+body.internal-mode .internal-nav button,
+body.internal-mode .attendance-nav button,
+body.internal-mode .administrative-nav button,
+body.internal-mode .operation-nav button{
+  background:#111813!important;
+  border-color:#22392c!important;
+  color:#dbe4de!important;
+  box-shadow:none!important;
+}
+body.internal-mode .internal-nav button>b,
+body.internal-mode .attendance-nav button>b,
+body.internal-mode .administrative-nav button>b,
+body.internal-mode .operation-nav button>b{
+  background:#0b2a1c!important;
+  color:var(--int-green)!important;
+}
+body.internal-mode .internal-nav button small,
+body.internal-mode .attendance-nav button small,
+body.internal-mode .administrative-nav button small,
+body.internal-mode .operation-nav button small{
+  color:#8e9a92!important;
+}
+body.internal-mode .internal-nav button.active,
+body.internal-mode .attendance-nav button.active,
+body.internal-mode .administrative-nav button.active,
+body.internal-mode .operation-nav button.active{
+  background:linear-gradient(135deg,#075239,#08734a)!important;
+  border-color:#17905d!important;
+  color:#fff!important;
+  box-shadow:0 6px 18px rgba(4,107,68,.20)!important;
+}
+body.internal-mode .internal-nav button.active>b,
+body.internal-mode .attendance-nav button.active>b,
+body.internal-mode .administrative-nav button.active>b,
+body.internal-mode .operation-nav button.active>b{
+  background:rgba(0,0,0,.22)!important;
+  color:#ffd48a!important;
+}
+
+/* Títulos e textos */
+body.internal-mode .internal-title h1,
+body.internal-mode .section-head h2,
+body.internal-mode .route-read-main strong,
+body.internal-mode .admin-route-card>div>strong,
+body.internal-mode .route-form-head b,
+body.internal-mode .promo-card strong,
+body.internal-mode .production-order-summary strong,
+body.internal-mode .expedition-order-summary strong,
+body.internal-mode .production-item-copy strong,
+body.internal-mode .expedition-item strong,
+body.internal-mode .delivery-client-title b,
+body.internal-mode .stock-big-name strong,
+body.internal-mode .today-orders-head strong,
+body.internal-mode .cash-closed>b{
+  color:#c7f8df!important;
+}
+body.internal-mode .internal-eyebrow{
+  color:#f3a871!important;
+}
+body.internal-mode .internal-title p,
+body.internal-mode .section-head p,
+body.internal-mode .row-sub,
+body.internal-mode .small,
+body.internal-mode small{
+  color:var(--int-muted)!important;
+}
+
+/* Superfícies gerais */
+body.internal-mode .panel,
+body.internal-mode .row,
+body.internal-mode .internal-kpi,
+body.internal-mode .today-kpis>div,
+body.internal-mode .today-orders-card,
+body.internal-mode .internal-order-card,
+body.internal-mode .route-read-card,
+body.internal-mode .admin-route-card,
+body.internal-mode .route-admin-form,
+body.internal-mode .promo-card,
+body.internal-mode .attendance-report-filter,
+body.internal-mode .attendance-kpis>div,
+body.internal-mode .attendance-order-report article,
+body.internal-mode .attendance-client-signals article,
+body.internal-mode .admin-report-grid article,
+body.internal-mode .admin-report-list article,
+body.internal-mode .production-order-card,
+body.internal-mode .expedition-order-card,
+body.internal-mode .route-operation-card,
+body.internal-mode .cash-pending article,
+body.internal-mode .cash-movements article,
+body.internal-mode .stock-big-card,
+body.internal-mode .stock-line-card,
+body.internal-mode .stock-compact-card,
+body.internal-mode .test-client-head,
+body.internal-mode .test-product,
+body.internal-mode .dispatch-stage-card,
+body.internal-mode .report-period,
+body.internal-mode .report-kpis>div,
+body.internal-mode .report-grid article{
+  background:var(--int-surface)!important;
+  border-color:var(--int-border)!important;
+  color:var(--int-text)!important;
+  box-shadow:0 6px 18px rgba(0,0,0,.18)!important;
+}
+body.internal-mode .row:hover,
+body.internal-mode .internal-order-card:hover,
+body.internal-mode .production-order-card:hover,
+body.internal-mode .expedition-order-card:hover{
+  background:#111a14!important;
+}
+
+/* Cards resolvidos / atenção */
+body.internal-mode .production-order-card.complete,
+body.internal-mode .expedition-order-card.ready,
+body.internal-mode .production-item.resolved,
+body.internal-mode .expedition-item.checked,
+body.internal-mode .promo-card.ativa{
+  background:#0d1c14!important;
+  border-color:#2c6c4a!important;
+}
+body.internal-mode .production-item.unavailable,
+body.internal-mode .attendance-client-signals article.needs-attention,
+body.internal-mode .stock-big-card.low{
+  background:#21110e!important;
+  border-color:#6b342b!important;
+}
+
+/* Itens e separadores */
+body.internal-mode .production-order-body,
+body.internal-mode .expedition-order-body,
+body.internal-mode .production-item,
+body.internal-mode .expedition-item,
+body.internal-mode .today-order{
+  background:#0b100d!important;
+  border-color:#1f3328!important;
+  color:var(--int-text)!important;
+}
+body.internal-mode .production-item-check,
+body.internal-mode .expedition-check{
+  background:#17201a!important;
+  color:#9aa59d!important;
+}
+body.internal-mode .production-item.resolved .production-item-check,
+body.internal-mode .expedition-item.checked .expedition-check{
+  background:#103d28!important;
+  color:#86e9b5!important;
+}
+body.internal-mode .production-item.unavailable .production-item-check{
+  background:#4a1f18!important;
+  color:#ff9d8e!important;
+}
+
+/* KPIs */
+body.internal-mode .internal-kpi span,
+body.internal-mode .today-kpis span,
+body.internal-mode .attendance-kpis span,
+body.internal-mode .admin-report-grid span,
+body.internal-mode .report-kpis span{
+  color:#b6a58d!important;
+}
+body.internal-mode .internal-kpi b,
+body.internal-mode .today-kpis b,
+body.internal-mode .attendance-kpis b,
+body.internal-mode .admin-report-grid b,
+body.internal-mode .report-kpis b,
+body.internal-mode .stock-big-number b,
+body.internal-mode .cash-mini-kpis b{
+  color:#b9f4d5!important;
+}
+body.internal-mode .today-flow span{
+  background:#102119!important;
+  color:#c6d7cc!important;
+}
+body.internal-mode .today-flow b{
+  color:#79dfa9!important;
+}
+
+/* Campos e filtros */
+body.internal-mode input,
+body.internal-mode select,
+body.internal-mode textarea,
+body.internal-mode .field input,
+body.internal-mode .field select,
+body.internal-mode .field textarea,
+body.internal-mode .route-start-form input,
+body.internal-mode .route-start-form select,
+body.internal-mode .route-finish-form input,
+body.internal-mode .delivery-field input,
+body.internal-mode .delivery-field select,
+body.internal-mode .delivery-payment-grid input,
+body.internal-mode .delivery-payment-grid select,
+body.internal-mode .attendance-report-filter input,
+body.internal-mode .route-form-grid input,
+body.internal-mode .route-form-grid select,
+body.internal-mode .report-period input{
+  background:#090d0b!important;
+  border-color:#31503e!important;
+  color:#f3f2e9!important;
+  box-shadow:none!important;
+}
+body.internal-mode input::placeholder,
+body.internal-mode textarea::placeholder{
+  color:#78827b!important;
+}
+body.internal-mode label,
+body.internal-mode .field label,
+body.internal-mode .route-start-form label span,
+body.internal-mode .route-finish-form label span,
+body.internal-mode .delivery-field>span,
+body.internal-mode .delivery-payment-grid label>span{
+  color:#adb8b0!important;
+}
+
+/* Botões */
+body.internal-mode .button,
+body.internal-mode button.button,
+body.internal-mode .master-new-client,
+body.internal-mode .attendance-report-filter button,
+body.internal-mode .route-save-btn,
+body.internal-mode .cash-pending button{
+  background:#0d7047!important;
+  border-color:#168a59!important;
+  color:#fff!important;
+}
+body.internal-mode .button.orange,
+body.internal-mode .prod-primary,
+body.internal-mode .delivery-complete-btn{
+  background:linear-gradient(135deg,#0f7d50,#0a5c3d)!important;
+  border-color:#15905d!important;
+  color:#fff!important;
+}
+body.internal-mode .button.ghost,
+body.internal-mode .button.soft,
+body.internal-mode .production-item-actions button,
+body.internal-mode .stock-big-actions button,
+body.internal-mode .route-suggest-btn,
+body.internal-mode .admin-route-card>button,
+body.internal-mode .route-suggestion-actions button{
+  background:#151d17!important;
+  border-color:#365240!important;
+  color:#bff1d5!important;
+}
+body.internal-mode .prod-missing-btn,
+body.internal-mode .button.danger{
+  background:#8e241c!important;
+  border-color:#b33a2c!important;
+  color:#fff!important;
+}
+
+/* Status */
+body.internal-mode .status{
+  border:1px solid transparent!important;
+}
+body.internal-mode .status.ok,
+body.internal-mode .prod-done{
+  background:#103d28!important;
+  color:#8aebb8!important;
+  border-color:#255b3e!important;
+}
+body.internal-mode .status.warn{
+  background:#3e2c0d!important;
+  color:#f4cb78!important;
+  border-color:#74561c!important;
+}
+body.internal-mode .status.bad,
+body.internal-mode .prod-missing{
+  background:#4a1d18!important;
+  color:#ff9f91!important;
+  border-color:#6c3028!important;
+}
+
+/* Produção e Expedição */
+body.internal-mode .production-order-summary,
+body.internal-mode .expedition-order-summary{
+  color:var(--int-text)!important;
+}
+body.internal-mode .production-progress b{
+  color:#8be9b5!important;
+}
+body.internal-mode .production-progress span,
+body.internal-mode .production-order-footer,
+body.internal-mode .expedition-summary-status small{
+  color:#9da8a0!important;
+}
+body.internal-mode .production-order-footer,
+body.internal-mode .expedition-order-footer{
+  border-top:1px solid #203529!important;
+  background:#0a0f0c!important;
+}
+body.internal-mode .expedition-address,
+body.internal-mode .route-live-meta,
+body.internal-mode .delivery-paid-note,
+body.internal-mode .expedition-ready{
+  background:#102119!important;
+  color:#c7dbcf!important;
+}
+body.internal-mode .delivery-client-panel{
+  background:#0c120e!important;
+  border-color:#2d4939!important;
+}
+body.internal-mode .route-delivery-open,
+body.internal-mode .delivery-client-items button{
+  background:#101713!important;
+  border-color:#293f33!important;
+  color:var(--int-text)!important;
+}
+body.internal-mode .route-delivery-open>span{
+  background:#0b6c45!important;
+}
+body.internal-mode .delivery-client-items button.checked{
+  background:#0d2418!important;
+  border-color:#376a4b!important;
+}
+
+/* Caixa */
+body.internal-mode .cash-balance{
+  background:linear-gradient(135deg,#063f2a,#075b3b)!important;
+  border:1px solid #1e7d52!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.25)!important;
+}
+body.internal-mode .cash-balance b{
+  color:#fff2d2!important;
+}
+body.internal-mode .cash-mini-kpis>div{
+  background:#0f1511!important;
+  border-color:#2d4637!important;
+}
+body.internal-mode .cash-actions button{
+  background:#121a14!important;
+  border-color:#304b3a!important;
+  color:#c6f1d9!important;
+}
+body.internal-mode .cash-actions .close{
+  background:#291713!important;
+  border-color:#623229!important;
+  color:#ff9d8d!important;
+}
+body.internal-mode .cash-closed{
+  background:#0d120f!important;
+  border-color:#35503e!important;
+  color:#dfe8e2!important;
+}
+
+/* Estoque */
+body.internal-mode .stock-section-head h2{
+  color:#c8f7df!important;
+}
+body.internal-mode .stock-section-head p,
+body.internal-mode .stock-big-name small,
+body.internal-mode .stock-big-meta{
+  color:#9ba59e!important;
+}
+body.internal-mode .stock-section-head>span{
+  background:#10281b!important;
+  color:#7de2ac!important;
+}
+body.internal-mode .stock-big-number span{
+  color:#9faaa2!important;
+}
+body.internal-mode .stock-big-meta>span:first-child{
+  background:#151c17!important;
+}
+body.internal-mode .raw-material-placeholder{
+  background:#0c110e!important;
+  border-color:#344d3d!important;
+  color:#aeb8b1!important;
+}
+body.internal-mode .raw-material-placeholder b{
+  color:#c8f7df!important;
+}
+
+/* Relatórios, atendimento e administrativo */
+body.internal-mode .promo-terms,
+body.internal-mode .route-read-facts>div,
+body.internal-mode .test-info-strip>div{
+  background:#121914!important;
+}
+body.internal-mode .route-read-main p,
+body.internal-mode .promo-card p,
+body.internal-mode .att-order-main small,
+body.internal-mode .att-client-main small,
+body.internal-mode .admin-report-list span{
+  color:#9da79f!important;
+}
+body.internal-mode .att-order-main strong,
+body.internal-mode .att-client-main strong,
+body.internal-mode .admin-report-list b,
+body.internal-mode .route-suggestion-list strong{
+  color:#d9eee2!important;
+}
+body.internal-mode .att-client-avatar{
+  background:#103624!important;
+  color:#8de8b8!important;
+}
+
+/* Scrollbars discretas */
+body.internal-mode *{
+  scrollbar-color:#31503e #090d0b;
+}
+body.internal-mode ::selection{
+  background:#16754d;
+  color:#fff;
+}
+
+/* Mobile: mais compacto e legível */
+@media(max-width:760px){
+  body.internal-mode .main{padding:10px 8px 42px!important}
+  body.internal-mode .internal-shell-head{padding:10px!important}
+  body.internal-mode .internal-brand strong{font-size:22px!important}
+  body.internal-mode .internal-title h1{font-size:30px!important}
+  body.internal-mode .production-order-summary,
+  body.internal-mode .expedition-order-summary{padding:11px!important}
+  body.internal-mode .panel,
+  body.internal-mode .route-operation-card{border-radius:14px!important}
+}
