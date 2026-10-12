@@ -1,5 +1,6 @@
 export function installInternalMasterData(ctx){
   const state=ctx.state,main=ctx.main,rpc=ctx.rpc,internalShell=ctx.internalShell,loading=ctx.loading,esc=ctx.esc,showToast=ctx.showToast,brl=ctx.brl,fmtDate=ctx.fmtDate,loadCatalog=ctx.loadCatalog;
+  if(!("clientTypeFilter" in state))state.clientTypeFilter=localStorage.getItem("algaroba_client_type")||"recorrente";
 
   function clientStatus(c){
     if(!c.ativo)return "<span class='status bad'>inativo</span>";
@@ -12,23 +13,59 @@ export function installInternalMasterData(ctx){
     if(typeof query==="string")state.clientSearch=query;
     loading("Carregando clientes...");
     try{
-      var rows=await rpc("admin_clientes_lista_v2",{p_busca:state.clientSearch||null,p_limit:500},true)||[];
+      var rows=await rpc("admin_clientes_lista_v2",{p_busca:null,p_limit:500},true)||[];
+      var type=state.clientTypeFilter||"recorrente";
+      var q=(state.clientSearch||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+      var counts={
+        recorrente:rows.filter(function(c){return c.tipo_cliente==="recorrente"}).length,
+        avulso:rows.filter(function(c){return c.tipo_cliente==="avulso"}).length,
+        nao_classificado:rows.filter(function(c){return !c.tipo_cliente||c.tipo_cliente==="nao_classificado"}).length
+      };
+      var filtered=rows.filter(function(c){
+        var ct=c.tipo_cliente||"nao_classificado";
+        if(ct!==type)return false;
+        if(!q)return true;
+        return [c.nome,c.nome_fantasia,c.whatsapp,c.telefone,c.cpf_cnpj,c.email,c.codigo_cliente]
+          .filter(Boolean).join(" ").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(q);
+      });
+      var shown=filtered.slice(0,150);
+      function typeLabel(v){return v==="recorrente"?"Recorrente":v==="avulso"?"Avulso":"Não classificado"}
       main.innerHTML=internalShell("clientes")+
-        "<section class='internal-title'><div><span class='internal-eyebrow'>CLIENTES</span><h1>Cadastro de clientes</h1><p>Base antiga e novos cadastros em um único lugar. As observações internas não aparecem para o cliente.</p></div></section>"+
-        "<section class='master-toolbar'><form id='clientSearchForm' class='master-search'><span>⌕</span><input id='clientSearchInput' type='search' value='"+esc(state.clientSearch||"")+"' placeholder='Buscar nome, WhatsApp, CPF/CNPJ ou código'><button>Buscar</button></form><div class='master-count'><b>"+rows.length+"</b><span>clientes encontrados</span></div></section>"+
+        "<section class='internal-title clients-title'><div><span class='internal-eyebrow'>CLIENTES</span><h1>Cadastro de clientes</h1><p>Organize recorrentes, avulsos e cadastros ainda não classificados.</p></div></section>"+
+        "<section class='client-type-grid'>"+
+          "<button type='button' class='"+(type==="recorrente"?"active":"")+"' data-client-type='recorrente'><i>↻</i><div><strong>Recorrentes</strong><span>Relacionamento contínuo</span></div><b>"+counts.recorrente+"</b></button>"+
+          "<button type='button' class='"+(type==="avulso"?"active":"")+"' data-client-type='avulso'><i>•</i><div><strong>Avulsos</strong><span>Compras pontuais</span></div><b>"+counts.avulso+"</b></button>"+
+          "<button type='button' class='"+(type==="nao_classificado"?"active":"")+"' data-client-type='nao_classificado'><i>?</i><div><strong>Não classificados</strong><span>Aguardando definição</span></div><b>"+counts.nao_classificado+"</b></button>"+
+        "</section>"+
+        "<section class='master-toolbar client-toolbar'><form id='clientSearchForm' class='master-search'><span>⌕</span><input id='clientSearchInput' type='search' value='"+esc(state.clientSearch||"")+"' placeholder='Buscar nome, estabelecimento, WhatsApp, CPF/CNPJ ou código'><button>Buscar</button></form><div class='master-count'><b>"+filtered.length+"</b><span>"+typeLabel(type)+"</span></div></section>"+
+        "<div class='client-list-caption'>"+filtered.length+" "+(filtered.length===1?"cliente":"clientes")+(filtered.length>150?" • mostrando os primeiros 150":"")+"</div>"+
         "<section class='client-directory'>"+
-          (rows.length?rows.map(function(c){
-            return "<button type='button' class='client-directory-card' data-client-id='"+c.cliente_id+"'><div class='client-avatar'>"+esc((c.nome||"?").trim().slice(0,1).toUpperCase())+"</div><div class='client-directory-copy'><strong>"+esc(c.nome_fantasia||c.nome)+"</strong><small>"+(c.nome_fantasia?esc(c.nome)+" • ":"")+esc(c.codigo_cliente||"Cadastro novo")+(c.whatsapp?" • "+esc(c.whatsapp):"")+"</small><div>"+clientStatus(c)+(c.tipo_cliente==="recorrente"?" <span class='status ok'>recorrente</span>":c.tipo_cliente==="avulso"?" <span class='status'>avulso</span>":" <span class='status warn'>não classificado</span>")+(c.status_migracao&&c.status_migracao!=="OK"?" <span class='status warn'>"+esc(c.status_migracao)+"</span>":"")+"</div></div><span class='client-open'>›</span></button>";
-          }).join(""):"<div class='empty'>Nenhum cliente encontrado.</div>")+
+          (shown.length?shown.map(function(c){
+            return "<button type='button' class='client-directory-card' data-client-id='"+c.cliente_id+"'>"+
+              "<div class='client-avatar'>"+esc((c.nome_fantasia||c.nome||"?").trim().slice(0,1).toUpperCase())+"</div>"+
+              "<div class='client-directory-copy'><strong>"+esc(c.nome_fantasia||c.nome)+"</strong>"+
+              "<small>"+(c.nome_fantasia?esc(c.nome)+" • ":"")+esc(c.codigo_cliente||"Cadastro novo")+(c.whatsapp?" • "+esc(c.whatsapp):"")+"</small>"+
+              "<div>"+clientStatus(c)+" <span class='client-type-badge "+esc(c.tipo_cliente||"nao_classificado")+"'>"+typeLabel(c.tipo_cliente)+"</span>"+(c.status_migracao&&c.status_migracao!=="OK"?" <span class='status warn'>"+esc(c.status_migracao)+"</span>":"")+"</div></div>"+
+              "<span class='client-open'>›</span></button>";
+          }).join(""):"<div class='empty'>Nenhum cliente nesta classificação.</div>")+
         "</section>";
       var form=document.querySelector("#clientSearchForm");
       if(form)form.onsubmit=function(ev){ev.preventDefault();state.clientSearch=document.querySelector("#clientSearchInput").value.trim();renderClients()};
+      var search=document.querySelector("#clientSearchInput");
+      if(search)search.oninput=function(){state.clientSearch=search.value;renderClients()};
       main.onclick=function(ev){
+        var typeButton=ev.target.closest("[data-client-type]");
+        if(typeButton){
+          state.clientTypeFilter=typeButton.dataset.clientType;
+          localStorage.setItem("algaroba_client_type",state.clientTypeFilter);
+          return renderClients();
+        }
         var b=ev.target.closest("[data-client-id]");
         if(b)renderClientDetail(b.dataset.clientId);
       };
     }catch(e){main.innerHTML=internalShell("clientes")+"<div class='empty'>"+esc(e.message)+"</div>"}
   }
+
 
   async function renderClientDetail(id){
     loading("Abrindo cadastro...");
