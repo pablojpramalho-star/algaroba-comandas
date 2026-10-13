@@ -21,7 +21,7 @@ export function installInternalFlow(ctx){
   function doneProduction(x){return ["pronto","separado","indisponivel","cancelado"].includes(x.status_item)}
   function percent(a,b){return Math.round((a/Math.max(b,1))*100)}
   function conferenceLabel(v){
-    return v==="por_item"?"por item":v==="por_sacola"?"por sacola/volume":"conferência total";
+    return ["por_item","item"].includes(v)?"por item":["por_sacola","sacola"].includes(v)?"por sacola/volume":"conferência total";
   }
 
   renderProduction=async function(){
@@ -77,18 +77,19 @@ export function installInternalFlow(ctx){
     }catch(e){main.innerHTML=internalShell("producao")+"<div class='empty'>"+esc(e.message)+"</div>"}
   };
 
-  async function afterProductionItem(message){
+  async function afterProductionItem(message,scrollY){
     var pedidoId=state.productionOpenOrder;
     var rows=await rpc("producao_fila_operacional",{},true)||[];
     var current=rows.filter(function(x){return x.pedido_id===pedidoId});
     if(current.length&&current.every(doneProduction)){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
-      showToast("Pedido pronto e enviado para a Expedição.");
+      showToast("✓ Pedido pronto e separado • enviado para a Expedição.");
       return renderProduction();
     }
     showToast(message);
-    return renderProduction();
+    await renderProduction();
+    if(Number.isFinite(scrollY))requestAnimationFrame(function(){window.scrollTo(0,scrollY)});
   }
 
   function bindProduction(){
@@ -100,10 +101,10 @@ export function installInternalFlow(ctx){
       if(a==="update"){
         var status=b.dataset.status,q=Number(b.dataset.q);
         var obs=status==="indisponivel"?"Estoque indisponível - produto em falta.":null;
-        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem(status==="indisponivel"?"Produto marcado em falta.":"Item conferido.")}catch(e){showToast(e.message)}
+        try{var y=window.scrollY;await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem(status==="indisponivel"?"Produto em falta • estoque indisponível.":"✓ Item conferido.",y)}catch(e){showToast(e.message)}
       }
       if(a==="reopen"){
-        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:"em_producao",p_quantidade_faturada:Number(b.dataset.q),p_observacao:"Item reaberto para conferência"},true);showToast("Item reaberto.");await renderProduction()}catch(e){showToast(e.message)}
+        try{var y2=window.scrollY;await rpc("producao_atualizar_item",{p_item_id:id,p_status:"em_producao",p_quantidade_faturada:Number(b.dataset.q),p_observacao:"Item reaberto para conferência"},true);showToast("Item reaberto.");await renderProduction();requestAnimationFrame(function(){window.scrollTo(0,y2)})}catch(e){showToast(e.message)}
       }
       if(a==="adjust"){
         var max=Number(b.dataset.max),current=Number(b.dataset.current);
@@ -113,7 +114,7 @@ export function installInternalFlow(ctx){
         if(!Number.isFinite(q)||q<0||q>max){showToast("Quantidade inválida.");return}
         var status=q<=0?"indisponivel":"separado";
         var obs=q<=0?"Estoque indisponível - produto em falta.":q<max?"Estoque insuficiente - quantidade parcial disponível.":null;
-        try{await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem("Quantidade confirmada.")}catch(e){showToast(e.message)}
+        try{var y3=window.scrollY;await rpc("producao_atualizar_item",{p_item_id:id,p_status:status,p_quantidade_faturada:q,p_observacao:obs},true);await afterProductionItem("Quantidade confirmada.",y3)}catch(e){showToast(e.message)}
       }
       if(a==="finish"){
         try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);state.productionOpenOrder=null;showToast("Produção concluída. Pedido enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
@@ -197,10 +198,21 @@ export function installInternalFlow(ctx){
         rpc("expedicao_planejamento_rota",{p_data:today},true),
         table("rota_execucoes?select=id,rota_id,data_rota,status,hora_saida_prevista,saiu_em,finalizada_em,motorista,veiculo,odometro_inicio,odometro_fim,entregas_planejadas,entregas_concluidas,entregas_pendentes&data_rota=eq."+today),
         rpc("rota_pedidos_em_andamento",{},true),
-        rpc("expedicao_entregas_concluidas_hoje",{p_data:today},true)
+        rpc("expedicao_entregas_concluidas_hoje",{p_data:today},true),
+        table("rotas?select=id,nome,hora_inicio_padrao,hora_inicio_antecipada&ativo=eq.true")
       ]);
-      var planning=result[0]||[],executions=result[1]||[],deliveryGroups=groupsBy(result[2],"pedido_id"),delivered=result[3]||[];
-      var routeGroups={};planning.forEach(function(x){var g=routeGroups[x.rota_id]||(routeGroups[x.rota_id]={meta:x,items:[]});g.items.push(x)});
+      var planning=result[0]||[],executions=result[1]||[],deliveryGroups=groupsBy(result[2],"pedido_id"),delivered=result[3]||[],routes=result[4]||[];
+      var routeGroups={};
+      function ensureRoute(rid){
+        if(!rid)return null;
+        if(routeGroups[rid])return routeGroups[rid];
+        var r=routes.find(function(x){return x.id===rid})||{};
+        routeGroups[rid]={meta:{rota_id:rid,rota_nome:r.nome||"Rota",hora_saida_padrao:r.hora_inicio_padrao||null,hora_saida_antecipada:r.hora_inicio_antecipada||null},items:[]};
+        return routeGroups[rid];
+      }
+      planning.forEach(function(x){var g=ensureRoute(x.rota_id);g.meta=x;g.items.push(x)});
+      executions.forEach(function(x){ensureRoute(x.rota_id)});
+      delivered.forEach(function(x){ensureRoute(x.rota_id)});
 
       if(state.routeOpenOrder&&!deliveryGroups[state.routeOpenOrder])state.routeOpenOrder=null;
 
@@ -221,12 +233,14 @@ export function installInternalFlow(ctx){
 
       var routesHtml=Object.keys(routeGroups).map(function(rid){
         var g=routeGroups[rid],x=executions.find(function(e){return e.rota_id===rid}),safe=rid.replaceAll("-"),control="";
-        if(!x||x.status==="planejada"){
+        if((!x||x.status==="planejada")&&g.items.length){
           control="<div class='route-start-form'><label>Veículo *<select id='routeVehicle-"+safe+"'><option value=''>Selecione</option><option value='Fiat Cronos'>Carro • Fiat Cronos</option><option value='Yamaha Crosser XTZ'>Moto • Yamaha Crosser XTZ</option></select></label><label>Motorista<input id='routeDriver-"+safe+"' placeholder='Nome'></label><label>Odômetro inicial *<input id='routeKmStart-"+safe+"' type='number' min='0' step='0.1' inputmode='decimal' placeholder='Obrigatório'></label><button data-route-action='start-route' data-route='"+rid+"' data-date='"+today+"'>Iniciar rota →</button></div>";
         }else if(x.status==="em_rota"){
           control="<div class='route-running'><span>"+esc(x.veiculo||"")+" • km inicial <b>"+Number(x.odometro_inicio||0).toLocaleString("pt-BR")+"</b></span><div><input id='routeKmEnd-"+safe+"' type='number' min='"+Number(x.odometro_inicio||0)+"' step='0.1' inputmode='decimal' placeholder='Odômetro final *'><button data-route-action='finish-route' data-id='"+x.id+"' data-route='"+rid+"'>Finalizar rota</button></div></div>";
-        }else control="<div class='route-finished'>✓ Rota finalizada • "+Number(x.odometro_inicio||0).toLocaleString("pt-BR")+" → "+Number(x.odometro_fim||0).toLocaleString("pt-BR")+" km</div>";
-        return "<section class='route-card'><div class='route-card-head'><div><strong>"+esc(g.meta.rota_nome)+"</strong><small>"+g.items.length+" entregas planejadas • saída "+fmtTime(g.meta.hora_saida_padrao)+"</small></div><span class='status "+(x&&x.status==="em_rota"?"warn":x&&x.status==="finalizada"?"ok":"")+"'>"+esc(x?x.status:"planejada")+"</span></div>"+control+"</section>";
+        }else if(x&&x.status==="finalizada") control="<div class='route-finished'>✓ Rota finalizada • "+Number(x.odometro_inicio||0).toLocaleString("pt-BR")+" → "+Number(x.odometro_fim||0).toLocaleString("pt-BR")+" km</div>";
+        else control="<div class='route-finished'>✓ Entregas concluídas</div>";
+        var deliveredCount=delivered.filter(function(d){return d.rota_id===rid}).length;
+        return "<section class='route-card'><div class='route-card-head'><div><strong>"+esc(g.meta.rota_nome)+"</strong><small>"+(g.items.length+deliveredCount)+" entregas • saída "+fmtTime(g.meta.hora_saida_padrao)+"</small></div><span class='status "+(x&&x.status==="em_rota"?"warn":x&&x.status==="finalizada"?"ok":"")+"'>"+esc(x?x.status:"planejada")+"</span></div>"+control+"</section>";
       }).join("");
       var activeHtml=Object.keys(deliveryGroups).map(function(pid){
         var it=deliveryGroups[pid];
@@ -290,7 +304,7 @@ export function installInternalFlow(ctx){
     await baseFinance();
     try{
       var alerts=await rpc("financeiro_alertas_entrega",{},true)||[];
-      if(!alerts.length)return;
+      if(!alerts.length||main.querySelector(".finance-delivery-alerts"))return;
       var title=main.querySelector(".internal-title");
       if(!title)return;
       var box=document.createElement("section");
