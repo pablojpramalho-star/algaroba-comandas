@@ -84,7 +84,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.43 • TABLET COMPATÍVEL</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.44 • TABLET COMPATÍVEL</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -1493,8 +1493,7 @@ function stockKey(name) {
 }
 function inventoryCatalog() {
     let out = [];
-    const add = (key, cat, price) => { if (!out.some(x => x.key === key))
-        out.push({ key, cat, price }); };
+    const add = (key, cat, price) => { let existing = out.find(x => x.key === key); if (existing) { if (cat === 'Bases') { existing.cat = 'Bases'; existing.price = price; } return; } out.push({ key, cat, price }); };
     const ks = ['Coca-Cola Original', 'Coca-Cola Zero', 'Fanta Laranja', 'Guaraná Kuat', 'Sprite', 'Schweppes'];
     const litro = ['Coca-Cola Original', 'Coca-Cola Zero', 'Fanta Laranja'];
     const sucos = ['Acerola', 'Cajá', 'Uva', 'Mangaba', 'Maracujá', 'Goiaba', 'Caju', 'Manga', 'Graviola', 'Tamarindo'];
@@ -1922,6 +1921,8 @@ function renderInventory() {
     ensureDisposableInventory();
     let flavorNames = ensureShakeFlavorInventory(), milkItem = ensureShakeMilkInventory();
     let rows = inventoryCatalog().filter(p => !isGenericShakeSize(p));
+    for (const key of ['Pão na Chapa (base)', 'Queijo Coalho', 'Queijo Muçarela', 'Queijo Manteiga']) { let p = rows.find(x => x.key === key); if (!p) rows.push({ key: key, cat: 'Bases', price: key === 'Pão na Chapa (base)' ? 2 : 3 }); else p.cat = 'Bases'; if (!state.inventory.items[key]) state.inventory.items[key] = { qty: 0, cost: 0, min: 0, track: true, category: 'Bases', cat: 'Bases', stockUnit: 'un' }; }
+
     for (const k of ['Açúcar', 'Café em Pó', 'Leite em Pó', 'Goma de Tapioca', 'Garrafa de Café']) {
         let x = state.inventory.items[k];
         if (x && !rows.some(p => p.key === k))
