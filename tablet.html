@@ -1947,7 +1947,7 @@ function renderInventory() {
         renderInventoryHistory();
         return;
     }
-    let filtered = rows.filter(p => inventoryCategoryName(p.cat) === inventoryViewCategory), head = `<button class=btn onclick=closeInventoryCategory()>← CATEGORIAS</button><div class=panel><h2>${inventoryCategoryIcon(inventoryViewCategory)} ${esc(inventoryViewCategory)}</h2><div class=muted>${filtered.length} produtos</div></div>`;
+    let filtered = rows.filter(p => inventoryCategoryName(p.cat) === inventoryViewCategory).sort((a,b) => a.key.localeCompare(b.key,'pt-BR')), head = `<button class=btn onclick=closeInventoryCategory()>← CATEGORIAS</button><div class=panel><h2>${inventoryCategoryIcon(inventoryViewCategory)} ${esc(inventoryViewCategory)}</h2><div class=muted>${filtered.length} produtos</div></div>`;
     if (inventoryViewCategory === 'Shakes') {
         filtered.sort((a, b) => a.key.localeCompare(b.key, 'pt-BR'));
         list.innerHTML = head + `<button class="btn primary" style="width:100%;margin-bottom:10px" onclick=openShakeCostSettings()>🧾 FICHA DE CUSTO DOS SHAKES</button><input id=shakeStockSearch placeholder="🔎 Buscar sabor..." oninput=filterShakeStockCards()><div id=shakeStockCards>${filtered.map(p => p.key === 'Leite em Pó' ? shakeRawMaterialCard(p) : shakeStockCard(p)).join('')}</div>`;
