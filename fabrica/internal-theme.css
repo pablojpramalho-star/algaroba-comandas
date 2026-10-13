@@ -1431,3 +1431,49 @@ body.internal-mode ::selection{
   .sales-order-sheet>header{grid-template-columns:auto 1fr}.sales-order-sheet>header>strong{grid-column:2;text-align:left}
   .sales-add-item>div{grid-template-columns:1fr 58px}.sales-add-item button{grid-column:1/-1;min-height:36px}
 }
+
+/* Pendências financeiras vindas da entrega */
+.finance-delivery-alerts{
+  display:grid;
+  gap:7px;
+  margin:10px 0 14px;
+  padding:10px;
+  border:1px solid #e4c69f;
+  border-radius:16px;
+  background:#fff8e8;
+}
+.finance-delivery-alerts>h3{
+  margin:0 0 3px;
+  font:700 17px Georgia,"Times New Roman",serif;
+  color:#8d472b;
+}
+.finance-delivery-alerts article{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid #ecd7ba;
+  border-radius:12px;
+  background:#fffdf8;
+}
+.finance-delivery-alerts article div>b,
+.finance-delivery-alerts article div>small{display:block}
+.finance-delivery-alerts article div>b{margin-top:4px;font-size:10px;color:#174734}
+.finance-delivery-alerts article div>small{margin-top:2px;font-size:8px;color:#776f62}
+.finance-delivery-alerts article>strong{color:#a5442d;font-size:12px}
+.finance-delivery-alerts article>button{
+  min-height:33px;
+  padding:0 9px;
+  border:0;
+  border-radius:9px;
+  background:#a44a2f;
+  color:#fff;
+  font-size:8px;
+  font-weight:900;
+}
+@media(max-width:560px){
+  .finance-delivery-alerts article{grid-template-columns:1fr auto}
+  .finance-delivery-alerts article>strong{grid-column:2}
+  .finance-delivery-alerts article>button{grid-column:1/-1}
+}
