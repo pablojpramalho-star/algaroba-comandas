@@ -84,7 +84,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.40 • BASES/QUEIJOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.41 • BASES/QUEIJOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -141,7 +141,7 @@ const catalog={
 'Espetinhos':[['Frango',6],['Tulipa de Frango',6],['Coxinha de Frango',6],['Moela',6],['Linguiça Toscana de Frango',6],['Pão de Carne de Sol',6],['Queijo Coalho',6],['Linguiça Toscana',6],['Linguiça Calabresa',6],['Pão de Alho',6],['Pão com Creme de Queijo',6],['Carne',7],['Kafta',7],['Coração',7],['Carneiro',7],['Picanha Suína',7],['Língua',7],['Cupim',8],['Medalhão de Frango com Bacon',8],['Medalhão de Carne com Bacon',8],['Queijo Coalho com Bacon',8],['Camarão',8]],
 'Porções':[['Filé com Fritas',30],['Frango com Fritas',25],['Calabresa com Fritas',25],['Língua com Macaxeira',30],['Batata Frita P',12],['Batata Frita G',20],['Macaxeira Frita',15]],
 'Caldos/Sopas':[['Sopa de Costela 500 ml',15],['Caldo da Casa 500 ml',15]],
-'Bases':[['Pastel (base)',1],['Pão na Chapa',2],['Tapioca (base)',3],['Cuscuz (base)',3],['Rap10 (base)',3],['Queijo Muçarela',3],['Queijo Coalho',3],['Queijo Manteiga',3],['Presunto',3],['Calabresa',3],['Carne Moída',3],['Frango recheio',3],['Catupiry',3],['Cheddar',3],['Carne de Sol',4],['Bacon',4],['Ovo Frito',2]],
+'Bases':[['Pastel (base)',1],['Pão na Chapa (base)',2],['Tapioca (base)',3],['Cuscuz (base)',3],['Rap10 (base)',3],['Queijo Muçarela',3],['Queijo Coalho',3],['Queijo Manteiga',3],['Presunto',3],['Calabresa',3],['Carne Moída',3],['Frango recheio',3],['Catupiry',3],['Cheddar',3],['Carne de Sol',4],['Bacon',4],['Ovo Frito',2]],
 'Bebidas':[['KS 290 ml',5],['Refrigerante 1 L',10],['Brahma litrinho',5],['Skol litrinho',5],['Original litrinho',6],['Budweiser long neck',10],['Heineken long neck',12],['Corona Extra long neck',12],['Água sem gás',3],['Água com gás',4],['Café pequeno',1],['Café grande',3],['Café com leite',4],['Suco 400 ml',6]],
 'Shakes':[['Shake 300 ml',7],['Shake 500 ml',10]],
 'Combos':[['Só na Brasa',20],['Combo Algaroba',20],['Combo Casal',40],['Bonde da Algaroba',60]]};
@@ -848,7 +848,14 @@ function inventoryCatalog(){
  return out
 }
 function ensureKitchenInputs(){
+ // 2.9.7.41 — corrige/migra a base Pão na Chapa e garante Queijo Coalho visível no estoque.
  state.inventory=state.inventory||{items:{},movements:[]};state.inventory.items=state.inventory.items||{};
+ if(!state.inventory.baseStockFixV29741){
+   let oldBread=state.inventory.items['Pão na Chapa'],newBread=state.inventory.items['Pão na Chapa (base)'];
+   if(oldBread&&!newBread){state.inventory.items['Pão na Chapa (base)']=oldBread;delete state.inventory.items['Pão na Chapa'];}
+   state.inventory.baseStockFixV29741=true;
+ }
+
  const defs=[
   ['Açúcar',0,500,'Insumos'],['Café em Pó',0,250,'Insumos'],['Leite em Pó',0,500,'Insumos'],['Goma de Tapioca',0,500,'Insumos'],['Garrafa de Café',0,1,'Cafés']
  ];
@@ -863,8 +870,8 @@ function ensureKitchenInputs(){
  let coalho=state.inventory.items['Queijo Coalho'];
  if(!coalho){state.inventory.items['Queijo Coalho']={qty:0,cost:0,min:0,track:true,category:'Bases',cat:'Bases',stockUnit:'un'};}
  else{coalho.category='Bases';coalho.cat='Bases';coalho.stockUnit=coalho.stockUnit||'un';coalho.track=coalho.track!==false;}
- let bread=state.inventory.items['Pão na Chapa'];
- if(!bread){state.inventory.items['Pão na Chapa']={qty:10,cost:1.10,min:5,track:true,category:'Bases',cat:'Bases',stockUnit:'un',initialSeed:true};}
+ let bread=state.inventory.items['Pão na Chapa (base)'];
+ if(!bread){state.inventory.items['Pão na Chapa (base)']={qty:10,cost:1.10,min:5,track:true,category:'Bases',cat:'Bases',stockUnit:'un',initialSeed:true};}
  else{bread.category='Bases';bread.cat='Bases';if(bread.cost===undefined||bread.cost===null)bread.cost=1.10;if(!Number(bread.min))bread.min=5;}
 }
 function consumeRaw(key,grams,reason){ensureKitchenInputs();let x=state.inventory.items[key];if(!x||x.track===false)return;let before=Number(x.qty||0),g=Number(grams||0);x.qty=Math.max(0,before-g);addInvMovement('saida',key,-Math.min(before,g),reason,before,x.qty,Number(x.cost||0)/1000)}
