@@ -1543,7 +1543,7 @@ window.prodUpdate=async(id,pedidoId,status,q)=>{
     const orderItems=rows.filter(x=>x.pedido_id===pedidoId);
     const allDone=orderItems.length&&orderItems.every(x=>["pronto","separado","indisponivel"].includes(x.status_item));    if(allDone){      await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
-      showToast("Pedido pronto e enviado para a Expedição.");    }else{
+      showToast("✓ Pedido pronto e separado • enviado para a Expedição.");    }else{
       state.productionOpenOrder=pedidoId;
       showToast(status==="indisponivel"?"Produto marcado em falta.":"Item concluído.");
     }
@@ -1567,7 +1567,7 @@ window.prodAdjust=async(id,pedidoId,solicitada,atual)=>{
     if(allDone){
       await rpc("producao_finalizar_pedido",{p_pedido_id:pedidoId},true);
       state.productionOpenOrder=null;
-      showToast("Pedido pronto e enviado para a Expedição.");
+      showToast("✓ Pedido pronto e separado • enviado para a Expedição.");
     }else{
       state.productionOpenOrder=pedidoId;
       showToast("Quantidade confirmada.");
@@ -1577,7 +1577,7 @@ window.prodAdjust=async(id,pedidoId,solicitada,atual)=>{
   }catch(e){showToast(e.message)}
 };
 window.prodFinish=async id=>{
-  try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);showToast("Pedido pronto e enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
+  try{await rpc("producao_finalizar_pedido",{p_pedido_id:id},true);showToast("✓ Pedido pronto e separado • enviado para a Expedição.");await renderProduction()}catch(e){showToast(e.message)}
 };
 
 
@@ -1846,19 +1846,33 @@ window.finishRoute=async(execId,initialKm)=>{
 async function renderFinance(){
   loading("Carregando Financeiro...");
   try{
-    const [rows,manual]=await Promise.all([
+    const [rows,manual,deliveryRows]=await Promise.all([
       rpc("financeiro_comprovantes_fila",{},true),
-      rpc("financeiro_pagamentos_pendentes",{},true)
+      rpc("financeiro_pagamentos_pendentes",{},true),
+      rpc("financeiro_pendencias_entrega",{},true)
     ]);
-    const proofs=rows||[],pendingProofs=proofs.filter(x=>["enviado","em_analise"].includes(x.comprovante_status)),manualRows=manual||[];
+    const proofs=rows||[],
+      pendingProofs=proofs.filter(x=>["enviado","em_analise"].includes(x.comprovante_status)),
+      manualRows=manual||[],
+      deliveryPending=deliveryRows||[];
     main.innerHTML=internalShell("financeiro")+`
       <div class="internal-title"><div><span class="internal-eyebrow">FINANCEIRO</span><h1>Pagamentos e liberação</h1><p>Conferência financeira antes da Expedição.</p></div></div>
       <div class="section-head"><div><h2>Painel financeiro</h2><p>Conferência antes da liberação do pedido</p></div><button class="button ghost" onclick="window.logout()">Sair</button></div>
       <div class="kpis" style="margin-bottom:12px">
         <div class="kpi"><b>${pendingProofs.length}</b><small>Pix aguardando análise</small></div>
         <div class="kpi"><b>${manualRows.length}</b><small>Pagamentos manuais</small></div>
-        <div class="kpi"><b>${brl(pendingProofs.reduce((a,x)=>a+Number(x.valor_pendente||0),0)+manualRows.reduce((a,x)=>a+Number(x.valor_pendente||0),0))}</b><small>Saldo aguardando confirmação</small></div>
+        <div class="kpi"><b>${deliveryPending.length}</b><small>Pendências após entrega</small></div>
       </div>
+
+      ${deliveryPending.length?`
+        <div class="section-head"><div><h2>Pendências vindas da rota</h2><p>Entrega concluída, mas o pagamento ficou total ou parcialmente em aberto.</p></div></div>
+        <div class="finance-delivery-alerts">
+          ${deliveryPending.map(x=>`<article>
+            <div><span class="status warn">AÇÃO FINANCEIRA</span><b>${esc(x.numero)} • ${esc(x.cliente_nome)}</b><small>Entregue ${fmtDateTime(x.entregue_em)} • pendente ${brl(x.valor_pendente)}</small></div>
+            <button type="button" onclick="window.financeReceiveDelivery('${x.pedido_id}',${Number(x.valor_pendente)})">Registrar recebimento</button>
+          </article>`).join("")}
+        </div>
+      `:""}
 
       <div class="section-head"><div><h2>Pix / comprovantes</h2><p>${pendingProofs.length} aguardando conferência</p></div></div>
       <div class="panel">${proofs.length?proofs.map(x=>`
@@ -1892,6 +1906,22 @@ async function renderFinance(){
     `;
   }catch(e){main.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
+window.financeReceiveDelivery=async(id,pending)=>{
+  const choice=prompt("Forma recebida: 1 Dinheiro • 2 Pix • 3 Crédito • 4 Débito","1");
+  if(choice===null)return;
+  const method=({"1":"dinheiro","2":"pix","3":"credito","4":"debito"})[choice.trim()];
+  if(!method){showToast("Forma de pagamento inválida.");return}
+  const raw=prompt("Valor recebido:",String(pending).replace(".",","));
+  if(raw===null)return;
+  const value=Number(raw.replace(",","."));
+  if(!Number.isFinite(value)||value<=0||value>pending){showToast("Valor inválido.");return}
+  const obs=prompt("Observação / referência (opcional):")||null;
+  try{
+    await rpc("financeiro_receber_pendencia_entrega",{p_pedido_id:id,p_metodo:method,p_valor:value,p_observacao:obs},true);
+    showToast("Recebimento registrado. Cliente notificado.");
+    await renderFinance();
+  }catch(e){showToast(e.message)}
+};
 window.confirmManualPayment=async(id,pending)=>{
   const raw=prompt("Valor recebido:",String(pending).replace(".",","));
   if(raw===null)return;
