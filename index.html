@@ -84,7 +84,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.46 • BASES + PDF + FILTROS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.47 • GERENTE + PERFIS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -118,7 +118,7 @@ button{color:inherit}
    <label>Perfil</label>
    <select id='newUserRole'>
     <option value='atendimento'>ATENDIMENTO</option>
-    <option value='cozinha'>COZINHA</option>
+    <option value='producao'>PRODUÇÃO</option><option value='cozinha'>COZINHA</option>
     <option value='caixa'>CAIXA</option>
     <option value='estoque'>ESTOQUE</option>
     <option value='gerente'>GERENTE</option>
@@ -155,7 +155,7 @@ const roleViews={
  administrador:['mesas','cozinha','caixa','estoque','relatorios','usuarios'],
  gerente:['mesas','cozinha','caixa','estoque','relatorios'],
  atendimento:['mesas','cozinha'],
- cozinha:['cozinha'],
+ cozinha:['cozinha'],producao:['cozinha'],
  caixa:['caixa'],
  estoque:['estoque']
 };
@@ -284,7 +284,7 @@ async function loadUsersAdmin(){
    d.innerHTML=`<b>${esc(u.nome)}</b><div class="muted">ID: ${esc(u.id)}</div>
    <label>Nome</label><input data-name value="${esc(u.nome)}">
    <label>Perfil</label><select data-role>
-    ${['administrador','gerente','atendimento','cozinha','caixa','estoque'].map(r=>`<option value="${r}" ${u.perfil===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+    ${['administrador','gerente','atendimento','producao','cozinha','caixa','estoque'].map(r=>`<option value="${r}" ${u.perfil===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
    </select>
    <label style="display:flex;gap:8px;align-items:center;margin:10px 0"><input data-active type="checkbox" ${u.ativo?'checked':''} style="width:auto"> Usuário ativo</label>
    <button class="btn primary" data-save>SALVAR ALTERAÇÕES</button>`;
@@ -299,8 +299,9 @@ async function saveAdminUser(id,card){
  if(!nome)return alert('Informe o nome.');
  if(id===authProfile.id && (!ativo || perfil!=='administrador'))return alert('Por segurança, você não pode retirar seu próprio acesso de administrador nesta tela.');
  try{
-  await authFetch('/rest/v1/algaroba_users?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({nome,perfil,ativo})});
-  alert('Usuário atualizado.');
+  let updated=await authFetch('/rest/v1/algaroba_users?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({nome,perfil,ativo})});
+  if(!Array.isArray(updated)||!updated.length||updated[0].perfil!==perfil)throw new Error('O servidor não confirmou a alteração do perfil.');
+  alert('Usuário atualizado para '+perfil.toUpperCase()+'.');
   await loadUsersAdmin();
  }catch(e){alert('Não foi possível atualizar: '+e.message)}
 }
@@ -1046,7 +1047,7 @@ function histSaleLabel(x){return x.ticket?`Balcão ${ticketLabel(x.ticket)}`:(x.
 function histSalePay(x){return (x.payments||[{method:x.payment,value:x.total}]).map(p=>`${p.method||'—'} ${brl(Number(p.value||0))}`).join(' • ')}
 function renderAdminSalesManager(){
  let box=document.getElementById('adminSalesManager');if(!box)return;
- if(!adminOnly()){box.innerHTML='';return}
+ if(!(adminOnly()||authProfile?.perfil==='gerente')){box.innerHTML='';return}
  box.innerHTML=`<div class=panel style="border:2px solid #8d6e63"><h3>🧾 Vendas por Comanda • Administração</h3><div class=muted>Consulte, corrija ou anule vendas finalizadas. Nenhum registro é apagado: toda alteração mantém histórico de auditoria.</div><input id=adminSaleSearch placeholder="Buscar mesa, senha, operador, item ou valor" oninput=renderAdminSalesList()><div id=adminSalesList></div></div>`;
  renderAdminSalesList();
 }
@@ -1059,7 +1060,7 @@ function renderAdminSalesList(){
  box.innerHTML=rows.slice(0,100).map(({x,i})=>`<div class=panel style="${x.voided?'opacity:.65':''}"><div class=cart-row><span><b>${esc(histSaleLabel(x))}</b><div class=muted>${new Date(x.closedAt).toLocaleString('pt-BR')} • 👤 ${esc(x.operator||'')}</div></span><b>${brl(Number(x.total||0))}</b></div><div class=muted>${esc(histSalePay(x))}</div><div>${(x.items||[]).map(it=>`${it.qty}× ${esc(it.name)}`).join(' • ')}</div>${x.voided?`<div style="margin-top:6px"><b>🚫 ${x.voidType==='internal'?'CORRIGIDA PARA CONTA INTERNA':'ANULADA'}</b><div class=muted>${esc(x.voidReason||'')} • ${esc(x.voidedBy||'')}</div>${x.voidType!=='internal'?`<button class=btn style="margin-top:8px" onclick="adminUndoVoidSale(${i})">↩️ DESFAZER ANULAÇÃO</button>`:''}</div>`:`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class=btn onclick="adminViewSale(${i})">VISUALIZAR</button><button class=btn onclick="adminConvertSale(${i})">👤 CORRIGIR → CONTA INTERNA</button><button class="btn danger" onclick="adminVoidSale(${i})">🚫 ANULAR</button></div>`}</div>`).join('')||'<div class=muted>Nenhuma venda encontrada.</div>';
 }
 function adminViewSale(i){
- if(!adminOnly())return;let x=state.history?.[i];if(!x)return;
+ if(!(adminOnly()||authProfile?.perfil==='gerente'))return;let x=state.history?.[i];if(!x)return;
  document.getElementById('modalContent').innerHTML=`<h2>🧾 ${esc(histSaleLabel(x))}</h2><div class=panel><div class=big>${brl(Number(x.total||0))}</div><div class=muted>${new Date(x.closedAt).toLocaleString('pt-BR')} • ${esc(x.operator||'')}</div><div>${esc(histSalePay(x))}</div></div><div class=panel>${(x.items||[]).map(it=>`<div class=cart-row><span>${it.qty}× ${esc(it.name)}</span><b>${brl(Number(it.price||0)*Number(it.qty||0))}</b></div>`).join('')}</div><button class=btn onclick=closeModal()>FECHAR</button>`;
  document.getElementById('modal').classList.remove('hide');
 }
@@ -1252,7 +1253,7 @@ function generateModuleReport(){
  let h=moduleSales(a,b),total=h.reduce((q,x)=>q+Number(x.total||0),0),html='';
  if(k==='sales'){
    let pay={};h.forEach(v=>(v.payments||[{method:v.payment,value:v.total}]).forEach(p=>pay[p.method]=(pay[p.method]||0)+Number(p.value||0)));
-   html=`<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Comandas</div><div class=big>${h.length}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(h.length?total/h.length:0)}</div></div></div><h3>Formas de pagamento</h3><div class=panel>${Object.entries(pay).map(([x,v])=>`<div class=cart-row><span>${x}</span><b>${brl(v)}</b></div>`).join('')||'Sem vendas.'}</div>${adminOnly()?`<h3>Vendas por comanda</h3><div class=panel><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class=btn onclick="toggleAllSalesInPeriod()">☑️ SELECIONAR TODAS</button><button id=bulkVoidBtn class="btn danger" onclick=openBulkVoidSales() disabled>🚫 ANULAR SELECIONADAS</button><b id=bulkSaleSummary>0 selecionadas</b></div></div>${h.slice().reverse().map(x=>{let i=(state.history||[]).indexOf(x);return `<div class=panel><div class=cart-row><span style="display:flex;gap:10px;align-items:flex-start"><input type=checkbox class=admin-sale-check data-index="${i}" ${selectedAdminSales.has(i)?'checked':''} onchange="toggleAdminSaleSelection(${i},this.checked)" style="width:22px;height:22px"><span><b>${esc(histSaleLabel(x))}</b><div class=muted>${new Date(x.closedAt).toLocaleString('pt-BR')} • ${esc(x.operator||'')}</div></span></span><b>${brl(x.total||0)}</b></div><div>${(x.items||[]).map(it=>`${it.qty}× ${esc(it.name)}`).join(' • ')}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class=btn onclick="adminViewSale(${i})">VISUALIZAR</button><button class=btn onclick="adminConvertSale(${i})">👤 CORRIGIR</button><button class="btn danger" onclick="adminVoidSale(${i})">🚫 ANULAR</button></div></div>`}).join('')}`:''}`;
+   html=`<div class=grid><div class=panel><div class=muted>Faturamento</div><div class=big>${brl(total)}</div></div><div class=panel><div class=muted>Comandas</div><div class=big>${h.length}</div></div><div class=panel><div class=muted>Ticket médio</div><div class=big>${brl(h.length?total/h.length:0)}</div></div></div><h3>Formas de pagamento</h3><div class=panel>${Object.entries(pay).map(([x,v])=>`<div class=cart-row><span>${x}</span><b>${brl(v)}</b></div>`).join('')||'Sem vendas.'}</div>${(adminOnly()||authProfile?.perfil==='gerente')?`<h3>Vendas por comanda</h3><div class=panel><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class=btn onclick="toggleAllSalesInPeriod()">☑️ SELECIONAR TODAS</button><button id=bulkVoidBtn class="btn danger" onclick=openBulkVoidSales() disabled>🚫 ANULAR SELECIONADAS</button><b id=bulkSaleSummary>0 selecionadas</b></div></div>${h.slice().reverse().map(x=>{let i=(state.history||[]).indexOf(x);return `<div class=panel><div class=cart-row><span style="display:flex;gap:10px;align-items:flex-start"><input type=checkbox class=admin-sale-check data-index="${i}" ${selectedAdminSales.has(i)?'checked':''} onchange="toggleAdminSaleSelection(${i},this.checked)" style="width:22px;height:22px"><span><b>${esc(histSaleLabel(x))}</b><div class=muted>${new Date(x.closedAt).toLocaleString('pt-BR')} • ${esc(x.operator||'')}</div></span></span><b>${brl(x.total||0)}</b></div><div>${(x.items||[]).map(it=>`${it.qty}× ${esc(it.name)}`).join(' • ')}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class=btn onclick="adminViewSale(${i})">VISUALIZAR</button><button class=btn onclick="adminConvertSale(${i})">👤 CORRIGIR</button><button class="btn danger" onclick="adminVoidSale(${i})">🚫 ANULAR</button></div></div>`}).join('')}`:''}`;
  }else if(k==='cash'){
    let cs=(state.cash?.closures||[]).filter(c=>{let d=new Date(c.closedAt||0);return d>=a&&d<=b});
    html=cs.slice().reverse().map(c=>`<div class=panel><h3>${new Date(c.closedAt).toLocaleString('pt-BR')}</h3><div class=cart-row><span>Abriu</span><b>${esc(c.openedBy||'-')}</b></div><div class=cart-row><span>Fechou</span><b>${esc(c.closedBy||'-')}</b></div><div class=cart-row><span>Abertura</span><b>${brl(c.opening||0)}</b></div><div class=cart-row><span>Vendas</span><b>${brl(c.sales||0)}</b></div>${c.byPayment?Object.entries(c.byPayment).map(([x,v])=>`<div class=cart-row><span>${x}</span><b>${brl(v)}</b></div>`).join(''):''}<div class=cart-row><span>Esperado</span><b>${brl(c.expected||0)}</b></div><div class=cart-row><span>Contado</span><b>${brl(c.counted||0)}</b></div><div class=cart-row><span>Diferença</span><b>${brl(c.difference||0)}</b></div></div>`).join('')||'<div class=panel>Sem fechamento de caixa no período.</div>';
@@ -1279,7 +1280,7 @@ function generateModuleReport(){
    generateFilteredReport();html=document.getElementById('report').innerHTML;document.getElementById('printReport').classList.add('hide');
    holder.querySelectorAll('#repPeriod,#repStart,#repEnd,.repOpt').forEach(x=>x.remove());
  }
- res.innerHTML=`<div class=panel><b>${modulePeriodTitle(a,b)}</b></div>${html}${modulePrintButton()}`;updateBulkSaleSummary();
+ if(k==='sales'&&authProfile?.perfil==='gerente'){html=html.replace(/<input type=checkbox class=admin-sale-check[^>]*>/g,'').replace(/<div class=panel><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">[\s\S]*?id=bulkSaleSummary[\s\S]*?<\/div><\/div>/,'').replace(/<button class=btn onclick="adminConvertSale\([^)]*\)">[\s\S]*?<\/button>/g,'').replace(/<button class="btn danger" onclick="adminVoidSale\([^)]*\)">[\s\S]*?<\/button>/g,'');}res.innerHTML=`<div class=panel><b>${modulePeriodTitle(a,b)}</b></div>${html}${modulePrintButton()}`;updateBulkSaleSummary();
 }
 function toggleAdminSaleSelection(i,on){if(on)selectedAdminSales.add(i);else selectedAdminSales.delete(i);updateBulkSaleSummary()}
 function currentPeriodSaleIndexes(){let [a,b]=moduleDates();return (state.history||[]).map((x,i)=>({x,i})).filter(({x})=>!x.voided&&new Date(x.closedAt)>=a&&new Date(x.closedAt)<=b).map(o=>o.i)}
