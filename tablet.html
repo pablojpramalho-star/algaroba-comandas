@@ -75,6 +75,12 @@ button{color:inherit}
   box-shadow:0 0 0 3px rgba(245,195,76,.24),0 3px 10px rgba(0,0,0,.22)!important;
   transform:translateY(-1px);
 }
+
+/* Linhas espetinhos v2.9.7.57 */
+.skewer-category-tabs{display:flex;gap:8px;flex-wrap:wrap;grid-column:1/-1;margin:4px 0 8px}
+.skewer-category-chip{background:#263428!important;color:#fff!important;border:1px solid #658263!important;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
+.skewer-category-chip.active{background:#137037!important;border-color:#3bde80!important;box-shadow:0 0 0 1px #3bde80}
+.skewer-group-head{grid-column:1/-1;background:linear-gradient(90deg,#68110b,#862619)!important;color:white!important;border-radius:12px;padding:12px 14px;margin-top:10px;font-size:15px;font-weight:900}
 </style><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -84,7 +90,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.56 • PREÇOS ESPETOS SINCRONIZADOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.57 • ESPETOS POR LINHA</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -137,8 +143,7 @@ button{color:inherit}
 <div id='printReport' class='hide'><div id='report'></div></div>
 </section>
 </main><div id='modal' class='modal hide'><div class='sheet'><div id='modalContent'></div></div></div><script>const catalog = {
-    'Espetinhos':[['Frango',6],['Coxinha de Frango',6],['Moela',6],['Linguiça Toscana de Frango',6],['Pão de Carne de Sol',6],['Linguiça Toscana',6],['Linguiça Calabresa',6],['Pão de Alho',6],['Pão com Creme de Queijo',6],['Carne',7],['Kafta',7],['Coração',7],['Carneiro',7],['Picanha Suína',7],['Língua',7],['Tulipa de Frango',7],['Queijo Coalho',7],['Cupim',8],['Medalhão de Frango com Bacon',8],['Medalhão de Carne com Bacon',8],['Queijo Coalho com Bacon',8],['Camarão',8]],
-'Porções': [['Filé com Fritas', 30], ['Frango com Fritas', 25], ['Calabresa com Fritas', 25], ['Língua com Macaxeira', 30], ['Batata Frita P', 12], ['Batata Frita G', 20], ['Macaxeira Frita', 15]],
+    'Espetinhos':[['Pão de Alho',5],['Linguiça Toscana',5],['Linguiça Toscana de Frango',5],['Coxinha de Frango',5],['Linguiça Calabresa',5],['Frango',6],['Moela',6],['Pão de Carne de Sol',6],['Pão com Creme de Queijo',6],['Tulipa de Frango',7],['Queijo Coalho',7],['Carne',7],['Kafta',7],['Coração',7],['Carneiro',7],['Língua',7],['Cupim',8],['Picanha Suína',8],['Medalhão de Frango com Bacon',8],['Medalhão de Carne com Bacon',8],['Queijo Coalho com Bacon',8],['Camarão',8]], 'Porções': [['Filé com Fritas', 30], ['Frango com Fritas', 25], ['Calabresa com Fritas', 25], ['Língua com Macaxeira', 30], ['Batata Frita P', 12], ['Batata Frita G', 20], ['Macaxeira Frita', 15]],
     'Caldos/Sopas': [['Sopa de Costela 500 ml', 15], ['Caldo da Casa 500 ml', 15]],
     'Pastéis Fritos na Hora': [['Pastel de Carne de Sol', 4], ['Pastel de Carne Moída', 4], ['Pastel de Frango', 4], ['Pastel de Queijo', 4]],
     'Bases': [['Base Pastel', 2], ['Pão na Chapa', 2], ['Base Tapioca', 3], ['Base Cuscuz', 3], ['Base Rap10', 3], ['Muçarela', 4], ['Queijo Coalho', 4], ['Queijo Manteiga', 4], ['Presunto', 4], ['Calabresa', 4], ['Carne Moída', 4], ['Frango recheio', 4], ['Catupiry', 4], ['Cheddar', 4], ['Carne de Sol', 5], ['Bacon', 5], ['Ovo Frito', 2]],
@@ -637,11 +642,49 @@ function counterOrderById(id) { return (state.counterQueue || []).find(x => Numb
 function renderTables() { let h = ''; state.tables.forEach(t => { let sum = t.items.reduce((a, x) => a + x.price * x.qty, 0), ps = tableProductionState(t), cls = t.status === 'livre' ? '' : (ps.ready ? 'awaiting' : 'busy'), label = t.status === 'livre' ? 'LIVRE' : (ps.ready ? 'AGUARDANDO ENTREGA' : 'OCUPADA'); h += `<div class="table ${cls}" onclick="openTable(${t.id})"><span class=status>${label}</span><h3>Mesa ${String(t.id).padStart(2, '0')}</h3><div class=money>${brl(sum)}</div><div class=muted>${t.items.length ? t.items.reduce((a, x) => a + x.qty, 0) + ' itens' : 'Toque para abrir'}</div>${ps.ready ? '<div class=awaiting-note>✓ Há item pronto aguardando entrega</div>' : ''}</div>`; }); let c = state.counter, sum = c.items.reduce((a, x) => a + x.price * x.qty, 0), q = state.counterQueue || [], ready = q.filter(x => tableProductionState(x).ready).length; h += `<div class="table full ${q.length ? 'busy' : ''}" onclick="openTable('counter')"><span class=status>${q.length ? q.length + ' PEDIDO(S)' : 'LIVRE'}</span><h3>🛍 Balcão / Retirada</h3><div class=money>${q.length ? ready + ' pronto(s)' : 'Novo pedido'}</div><div class=muted>${q.length ? 'Senhas: ' + q.map(x => ticketLabel(x.ticket)).join(' • ') : 'Toque para abrir'}</div>${ready ? '<div class=awaiting-note>✓ Há pedido pronto para retirada</div>' : ''}</div>`; document.getElementById('tables').innerHTML = h; }
 function getT() { return current === 'counter' ? state.counter : state.tables.find(x => x.id === current); }
 function openTable(id) { current = id; cart = []; document.getElementById('mesas').classList.add('hide'); document.getElementById('comanda').classList.remove('hide'); document.getElementById('tableTitle').textContent = id === 'counter' ? 'Balcão / Retirada' : 'Mesa ' + String(id).padStart(2, '0'); document.getElementById('transferBtn').style.display = id === 'counter' ? 'none' : 'inline-block'; const catsEl = document.getElementById('cats'); catsEl.innerHTML = ''; Object.keys(catalog).forEach((c, i) => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn' + (i === 0 ? ' primary' : ''); btn.textContent = c; btn.addEventListener('click', () => showCat(c, btn)); catsEl.appendChild(btn); }); showCat(Object.keys(catalog)[0]); renderCart(); }
-function showCat(c, b) { if (b) {
-    document.querySelectorAll('#cats button').forEach(x => x.classList.remove('primary'));
-    b.classList.add('primary');
-} const productsEl = document.getElementById('products'); productsEl.innerHTML = ''; const visibleProducts = (c === 'Bases' ? catalog[c].slice(0, 4) : catalog[c]); visibleProducts.forEach((p, i) => { const row = document.createElement('div'); row.className = 'product'; const info = document.createElement('div'); const title = document.createElement('b'); title.textContent = p[0]; const val = document.createElement('div'); val.className = 'muted'; val.textContent = brl(p[1]); info.append(title, val); const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '+ ADICIONAR'; btn.addEventListener('click', () => add(c, i)); row.append(info, btn); productsEl.appendChild(row); }); }
-function pushCart(name, price, components = null) { let comps = components || [stockKey(name)]; let cost = comps.reduce((a, k) => a + Number((state.inventory.items[k] || {}).cost || 0), 0); let x = cart.find(x => x.name === name && x.price === price); x ? x.qty++ : cart.push({ name, price, qty: 1, cost, stockComponents: comps }); renderCart(); }
+
+const skewerLines=[{name:'Arretada',price:5},{name:'Arrochada',price:6},{name:'Danada',price:7},{name:'Cabra da Peste',price:8}];
+let selectedSkewerLine='Todas';
+function skewerLineForName(full){
+ const name=String(full||'').split(' • ')[0].trim();
+ const p=catalog['Espetinhos'].find(p=>p[0]===name);
+ const group=p&&skewerLines.find(g=>g.price===Number(p[1]));
+ return group?'Linha '+group.name:'';
+}
+
+function showCat(c,b){
+ if(b){document.querySelectorAll('#cats button').forEach(x=>x.classList.remove('primary'));b.classList.add('primary');}
+ const productsEl=document.getElementById('products');productsEl.innerHTML='';
+ const renderRow=(p,i)=>{
+  const row=document.createElement('div');row.className='product';
+  const info=document.createElement('div'),title=document.createElement('b'),price=document.createElement('div');
+  title.textContent=p[0];price.className='muted';price.textContent=brl(p[1]);info.append(title,price);
+  const btn=document.createElement('button');btn.type='button';btn.textContent='+ ADICIONAR';
+  btn.addEventListener('click',()=>add(c,i));row.append(info,btn);productsEl.appendChild(row);
+ };
+ if(c!=='Espetinhos'){(c==='Bases'?catalog[c].slice(0,5):catalog[c]).forEach((p,i)=>renderRow(p,i));return;}
+ const tabs=document.createElement('div');tabs.className='skewer-category-tabs';
+ const items=[{name:'Todas',price:null},...skewerLines];
+ const btns=[];
+ const redraw=()=>{
+  productsEl.innerHTML='';productsEl.appendChild(tabs);
+  for(const group of skewerLines.filter(g=>selectedSkewerLine==='Todas'||g.name===selectedSkewerLine)){
+   const head=document.createElement('div');head.className='skewer-group-head';
+   head.textContent='🔥 LINHA '+group.name.toUpperCase()+' — '+brl(group.price);
+   productsEl.appendChild(head);
+   catalog['Espetinhos'].forEach((p,i)=>{if(Number(p[1])===group.price)renderRow(p,i)});
+  }
+  btns.forEach(o=>o.btn.classList.toggle('active',o.name===selectedSkewerLine));
+ };
+ for(const group of items){
+  const btn=document.createElement('button');btn.type='button';btn.className='skewer-category-chip';
+  btn.textContent=group.name==='Todas'?'⭐ Todas':group.name+' • '+brl(group.price);
+  btn.addEventListener('click',()=>{selectedSkewerLine=group.name;redraw()});
+  tabs.appendChild(btn);btns.push({btn,name:group.name});
+ }
+ redraw();
+}
+function pushCart(name, price, components = null) { let comps = components || [stockKey(name)]; let cost = comps.reduce((a, k) => a + Number((state.inventory.items[k] || {}).cost || 0), 0); let x = cart.find(x => x.name === name && x.price === price); x ? x.qty++ : cart.push({name,price,qty:1,cost,stockComponents:comps,skewerLine:skewerLineForName(name)}); renderCart(); }
 function closeModal() { document.getElementById('modal').classList.add('hide'); document.getElementById('modalContent').innerHTML = ''; }
 function add(c, i) { let p = catalog[c][i], name = p[0], price = p[1]; if (c === 'Combos') return chooseCombo(name, price); if (c === 'Shakes')
     return chooseShake(name, price); if (c === 'Bases' && name.includes('(base)'))
@@ -669,7 +712,7 @@ function chooseCombo(name,price){
  if(name==='Bonde da Algaroba')return comboPickSkewers({name,count:10,maxPrice:6},sk=>openChoiceModal('🥤 Bonde da Algaroba','Escolha a Coca-Cola 1 L',[{label:'Coca-Cola Original',action:()=>finish(sk,'Refrigerante 1 L • Coca-Cola Original',['Refrigerante 1 L • Coca-Cola Original'])},{label:'Coca-Cola Zero',action:()=>finish(sk,'Refrigerante 1 L • Coca-Cola Zero',['Refrigerante 1 L • Coca-Cola Zero'])}]));
  pushCart(name,price)
 }
-function choosePoint(name, price) { openChoiceModal('🔥 ' + name, 'Escolha o ponto do espetinho', [{ label: '🔥 Ao ponto', action: () => pushCart(name + ' • Ao ponto', price) }, { label: '🔥 Bem passado', action: () => pushCart(name + ' • Bem passado', price) }]); }
+function choosePoint(name, price) { openChoiceModal('🔥 '+skewerLineForName(name)+' • '+name,'Escolha o ponto do espetinho', [{ label: '🔥 Ao ponto', action: () => pushCart(name + ' • Ao ponto', price) }, { label: '🔥 Bem passado', action: () => pushCart(name + ' • Bem passado', price) }]); }
 function addWithServiceMode(name, price) { openChoiceModal('📦 Forma de consumo', 'Este item será consumido no local ou será para delivery/viagem?', [{ label: '🍽️ PRESENCIAL / LOCAL', action: () => { pushCart(name, price); cart[cart.length - 1].takeaway = false; renderCart(); } }, { label: '🛍️ DELIVERY / PARA VIAGEM', action: () => { pushCart(name, price); cart[cart.length - 1].takeaway = true; renderCart(); } }]); }
 function chooseShake(name, price) { openChoiceModal('🥤 ' + name, 'Toque no sabor desejado', shakeFlavors.map(flavor => ({ label: flavor, action: () => setTimeout(() => addWithServiceMode(name + ' • ' + flavor, price), 0) }))); }
 function chooseKS(name, price) { let opts = ['Coca-Cola Original', 'Coca-Cola Zero', 'Fanta Laranja', 'Guaraná Kuat', 'Sprite', 'Schweppes']; openChoiceModal('🥤 Refrigerante KS • 290 ml', 'Escolha o refrigerante', opts.map(v => ({ label: v, action: () => pushCart(name + ' • ' + v, price) }))); }
@@ -687,7 +730,7 @@ catch (err) {
 function toggleFilling(j, btn) { const k = selectedFillings.indexOf(j); k >= 0 ? selectedFillings.splice(k, 1) : selectedFillings.push(j); btn.classList.toggle('selected'); const opts = catalog['Bases'].slice(5), total = fillingContext.price + selectedFillings.reduce((a, x) => a + opts[x][1], 0); document.getElementById('fillTotal').textContent = brl(total); }
 function confirmFillings() { if (!fillingContext)
     return; const opts = catalog['Bases'].slice(5); let finalName = fillingContext.name.replace(' (base)', ''), price = fillingContext.price; let comps = [fillingContext.name]; selectedFillings.forEach(j => { finalName += ' + ' + opts[j][0]; price += opts[j][1]; comps.push(opts[j][0]); }); pushCart(finalName, price, comps); fillingContext = null; selectedFillings = []; closeModal(); }
-function renderCart() { let t = getT(); let sent = t.items.map((x, i) => `<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Já enviado${x.takeaway ? ' • 🛍️ Para viagem' : ' • 🍽️ Local'}</small></span><span><b>${brl(x.qty * x.price)}</b> <button class='mini danger' onclick='cancelSent(${i})'>Cancelar</button></span></div>`).join(''); let pending = cart.map((x, i) => `<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Aguardando envio</small><br>${cartTakeawayControl(x, i)}</span><span><b>${brl(x.qty * x.price)}</b><span class=qtyctl><button class=mini onclick='changeCart(${i},-1)'>−</button><button class=mini onclick='changeCart(${i},1)'>+</button><button class='mini danger' onclick='removeCart(${i})'>×</button></span></span></div>`).join(''); document.getElementById('cart').innerHTML = (sent + pending) || '<div class=muted>Nenhum item lançado.</div>'; document.getElementById('total').textContent = brl([...t.items, ...cart].reduce((a, x) => a + x.price * x.qty, 0)); }
+function renderCart() { let t = getT(); let sent = t.items.map((x, i) => `<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Já enviado${x.skewerLine?' • '+x.skewerLine:''}${x.takeaway ? ' • 🛍️ Para viagem' : ' • 🍽️ Local'}</small></span><span><b>${brl(x.qty * x.price)}</b> <button class='mini danger' onclick='cancelSent(${i})'>Cancelar</button></span></div>`).join(''); let pending = cart.map((x, i) => `<div class=cart-row><span>${x.qty}× ${x.name}<br><small class=muted>Aguardando envio${x.skewerLine?' • '+x.skewerLine:''}</small><br>${cartTakeawayControl(x, i)}</span><span><b>${brl(x.qty * x.price)}</b><span class=qtyctl><button class=mini onclick='changeCart(${i},-1)'>−</button><button class=mini onclick='changeCart(${i},1)'>+</button><button class='mini danger' onclick='removeCart(${i})'>×</button></span></span></div>`).join(''); document.getElementById('cart').innerHTML = (sent + pending) || '<div class=muted>Nenhum item lançado.</div>'; document.getElementById('total').textContent = brl([...t.items, ...cart].reduce((a, x) => a + x.price * x.qty, 0)); }
 function changeCart(i, d) { cart[i].qty += d; if (cart[i].qty <= 0)
     cart.splice(i, 1); renderCart(); }
 function removeCart(i) { cart.splice(i, 1); renderCart(); }
