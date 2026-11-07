@@ -167,7 +167,7 @@
      else{match=raw.match(/paymentModalCounter\((\d+)\)/);if(match)target={type:'counterQueue',id:Number(match[1])};}
      if(!target)continue;
      const btn=document.createElement('button');btn.className='btn';btn.type='button';btn.dataset.conferPreview='true';btn.textContent='🧾 CONFERIR / IMPRIMIR CONTA';
-     btn.onclick=()=>openBillPreview(target,()=>link.click());
+     btn.onclick=()=>openBillPreview(target,()=>{if(target.type==='table')return paymentEntry('Mesa '+String(target.id).padStart(2,'0'));return paymentModalCounter(target.id);});
      link.insertAdjacentElement('afterend',btn);
    }
  }
