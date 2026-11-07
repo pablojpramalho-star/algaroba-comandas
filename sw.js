@@ -1,10 +1,11 @@
-const CACHE = 'algaroba-shell-2.9.7.58-pwa5';
+const CACHE = 'algaroba-shell-2.9.7.59-pwa6';
 
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './mesa-clientes.js',
+  './conferencias.js',
   './icon-192.png',
   './icon-512.png'
 ];
