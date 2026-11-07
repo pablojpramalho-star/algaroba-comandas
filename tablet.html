@@ -81,6 +81,17 @@ button{color:inherit}
 .skewer-category-chip{background:#263428!important;color:#fff!important;border:1px solid #658263!important;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
 .skewer-category-chip.active{background:#137037!important;border-color:#3bde80!important;box-shadow:0 0 0 1px #3bde80}
 .skewer-group-head{grid-column:1/-1;background:linear-gradient(90deg,#68110b,#862619)!important;color:white!important;border-radius:12px;padding:12px 14px;margin-top:10px;font-size:15px;font-weight:900}
+
+/* V2.9.7.58 — Pessoas por mesa */
+#tableClientPicker{background:#15251a;border:1px solid #4a6f52;border-radius:14px;padding:14px;margin:14px 0}
+.client-pills{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.client-chip{border-radius:10px;padding:11px 12px;border:1px solid #64846b!important;background:#2b362e!important;color:#fff!important;font-weight:850;cursor:pointer}
+.client-chip.on{background:#166938!important;border:2px solid #7bf1a3!important}
+.client-chip.add{border:1px dashed #9cd5aa!important}
+#tableClientTotals{margin:16px 0;border-radius:14px;border:1px solid #4b6a50;padding:12px}
+.client-bill{padding:12px;border:1px solid #475e4d;border-radius:12px;margin:10px 0;background:#1d271e}
+.client-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.client-inline{color:#a3e5b3;font-size:12px;margin:4px 0;display:flex;align-items:center;gap:7px;font-weight:bold;flex-wrap:wrap}
 </style><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -90,7 +101,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.57 • ESPETOS POR LINHA</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.58 • CONTAS INDIVIDUAIS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -736,7 +747,7 @@ function changeCart(i, d) { cart[i].qty += d; if (cart[i].qty <= 0)
 function removeCart(i) { cart.splice(i, 1); renderCart(); }
 function cancelSent(i) { let t = getT(), it = t.items[i]; if (!it)
     return; let reason = prompt('Motivo do cancelamento de ' + it.name + ':'); if (reason === null || !reason.trim())
-    return alert('Informe o motivo do cancelamento.'); reason = reason.trim(); let cancelledAt = new Date().toISOString(); state.cancellations = state.cancellations || []; state.cancellations.push({ at: cancelledAt, table: current === 'counter' ? 'Balcão' : 'Mesa ' + String(current).padStart(2, '0'), item: Object.assign({}, it), reason, operator: state.activeOperator }); let remaining = it.qty; t.orders.forEach(o => { o.items.forEach(oi => { if (remaining > 0 && oi.name === it.name && !oi.cancelled) {
+    return alert('Informe o motivo do cancelamento.'); reason = reason.trim(); let cancelledAt = new Date().toISOString(); state.cancellations = state.cancellations || []; state.cancellations.push({ at: cancelledAt, table: current === 'counter' ? 'Balcão' : 'Mesa ' + String(current).padStart(2, '0'), item: Object.assign({}, it), reason, operator: state.activeOperator }); let remaining = it.qty; t.orders.forEach(o => { o.items.forEach(oi => { if (remaining > 0 && oi.name===it.name&&window.customerOwnerId(oi)===window.customerOwnerId(it)&&!oi.cancelled) {
     let q = Math.min(oi.qty, remaining);
     if (q === oi.qty) {
         oi.cancelled = true;
@@ -798,7 +809,7 @@ function sendOrder() {
         return;
     }
     t.orders.push(order);
-    cart.forEach(n => { let x = t.items.find(i => i.name === n.name); x ? x.qty += n.qty : t.items.push(Object.assign({}, n)); });
+    cart.forEach(n => { let x=t.items.find(i=>i.name===n.name&&i.price===n.price&&window.customerOwnerId(i)===window.customerOwnerId(n)); x ? x.qty += n.qty : t.items.push(Object.assign({}, n)); });
     t.status = 'ocupada';
     cart = [];
     save();
@@ -2779,4 +2790,4 @@ if ('serviceWorker' in navigator) {
         }
     });
 }
-</script></body></html>
+</script><script src="./mesa-clientes.js"></script></body></html>
