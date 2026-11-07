@@ -63,7 +63,7 @@
     head.innerHTML=`<h3>👥 Clientes da Mesa ${String(t.id).padStart(2,'0')}</h3><div class="muted">Selecione o cliente antes de adicionar o pedido.</div><div class="client-pills">${all.map(g=>`<button class="client-chip ${selected===g.id?'on':''}" onclick="selectCustomerOnTable('${g.id}')">${esc(g.name)}</button>`).join('')}<button class="client-chip add" onclick="addCustomerOnTable()">＋ ADICIONAR PESSOA</button></div><div class="muted">Pedido atual para: <b>${esc(clientName(t,selected))}</b></div>`;
     totals.innerHTML=`<h3>Contas individuais</h3>${all.map(g=>{
       if(!g.subtotal&&!g.waiting&&!g.settled)return '';
-      return `<div class="client-bill"><div class="cart-row"><b>${esc(g.name)}</b><b>${brl(g.subtotal+g.waiting)}</b></div><div class="muted">${[...g.sent,...g.pending].map(x=>`${x.qty}× ${esc(x.name)}`).join(' • ')||'Sem consumo em aberto'}</div>${g.waiting?`<div class="muted">⏳ A enviar: ${brl(g.waiting)}</div>`:''}${g.settled?`<div class="muted">✅ Pago anteriormente: ${brl(g.settled)}</div>`:''}<div class="client-actions"><button class="btn" onclick="showClientBill('${g.id}')">👁 VER CONTA</button>${g.subtotal?`<button class="btn primary" onclick="payClientBill(${t.id},'${g.id}')">💳 RECEBER</button>`:''}</div></div>`;
+      return `<div class="client-bill"><div class="cart-row"><b>${esc(g.name)}</b><b>${brl(g.subtotal+g.waiting)}</b></div><div class="muted">${[...g.sent,...g.pending].map(x=>`${x.qty}× ${esc(x.name)}`).join(' • ')||'Sem consumo em aberto'}</div>${g.waiting?`<div class="muted">⏳ A enviar: ${brl(g.waiting)}</div>`:''}${g.settled?`<div class="muted">✅ Pago anteriormente: ${brl(g.settled)}</div>`:''}<div class="client-actions"><button class="btn" onclick="showClientBill('${g.id}')">👁 VER CONTA</button>${(canView('caixa')&&state.cash?.open&&g.subtotal)?`<button class="btn primary" onclick="payClientBill(${t.id},'${g.id}')">💳 RECEBER</button>`:''}</div></div>`;
     }).join('')}<div class="cart-row"><b>TOTAL PENDENTE DA MESA</b><b>${brl([...t.items,...cart].reduce((v,x)=>v+x.price*x.qty,0))}</b></div>`;
     document.querySelectorAll('#cart > .cart-row').forEach((row,i)=>{
       let tCount=t.items.length,it=i<tCount?t.items[i]:cart[i-tCount];if(!it)return;
@@ -85,6 +85,8 @@
     openPrintableReport('Conta de '+g.name,`<h1>Algaroba Shakes Grills</h1><h2>Mesa ${String(t.id).padStart(2,'0')} • ${esc(g.name)}</h2><p>Conferência de consumo — não é documento fiscal</p>${[...g.sent,...g.pending].map(x=>`<div class="r"><span>${x.qty}× ${esc(x.name)}</span><b>${brl(x.qty*x.price)}</b></div>`).join('')}<div class="r"><b>Em aberto</b><b>${brl(g.subtotal+g.waiting)}</b></div>${g.settled?`<p>Pagamentos anteriores: ${brl(g.settled)}</p>`:''}`);
   }
   function paymentForClient(tableId,id){
+    if(!canView('caixa'))return alert('Somente quem tem acesso ao Caixa pode receber pagamentos.');
+    if(!state.cash?.open)return alert('Abra o caixa antes de receber.');
     let t=state.tables.find(x=>x.id===Number(tableId));if(!t)return;
     if(current===t.id&&cart.length)return alert('Envie primeiro os pedidos em espera antes do pagamento.');
     let items=t.items.filter(x=>owner(x)===id),sum=items.reduce((a,x)=>a+x.price*x.qty,0);
@@ -93,12 +95,16 @@
     payments=[];renderPaymentModal();
   }
   function paymentForWhole(tableId){
+    if(!canView('caixa'))return alert('Acesso ao Caixa necessário.');
+    if(!state.cash?.open)return alert('Abra o caixa antes de receber.');
     let t=state.tables.find(x=>x.id===Number(tableId));if(!t)return;
     if(current===t.id&&cart.length)return alert('Envie primeiro os pedidos em espera.');
     payCtx={name:'Mesa '+String(t.id).padStart(2,'0'),tableId:t.id,sum:t.items.reduce((a,x)=>a+x.price*x.qty,0),items:t.items.map(x=>({...x}))};
     payments=[];renderPaymentModal();
   }
   function choosePayment(tableId){
+    if(!canView('caixa'))return alert('Acesso ao Caixa necessário.');
+    if(!state.cash?.open)return alert('Abra o caixa antes de receber.');
     let t=state.tables.find(x=>x.id===Number(tableId));if(!t)return;
     if(current===t.id&&cart.length)return alert('Envie primeiro os pedidos em espera.');
     document.getElementById('modalContent').innerHTML=`<h2>💳 Mesa ${String(t.id).padStart(2,'0')}</h2><p class="muted">Selecione uma pessoa ou receba toda a mesa.</p>${groups(t).filter(g=>g.subtotal>0).map(g=>`<div class="cart-row"><b>${esc(g.name)}</b><button class="btn primary" onclick="payClientBill(${t.id},'${g.id}')">${brl(g.subtotal)} • RECEBER</button></div>`).join('')}<div class="sheet-actions"><button class="btn" onclick="closeModal()">VOLTAR</button><button class="btn primary" onclick="payWholeBill(${t.id})">PAGAR TUDO</button></div>`;
@@ -138,6 +144,7 @@
       return;
     }
     if(busy)return;
+    if(!canView('caixa')||!state.cash?.open)return alert('Abra o Caixa com um perfil autorizado para receber.');
     let ctx=payCtx,paid=payments.reduce((a,x)=>a+Number(x.value||0),0),left=ctx.sum-paid;
     if(left>.01){
       let val=parseFloat(document.getElementById('payValue')?.value||0);
