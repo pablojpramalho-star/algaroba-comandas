@@ -84,7 +84,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.54 • COMBOS ATUALIZADOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.55 • ESTOQUE ESPETINHOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
@@ -368,7 +368,7 @@ function openChoiceModal(title,subtitle,choices){const m=document.getElementById
 function comboEligible(maxPrice){return catalog['Espetinhos'].filter(p=>Number(p[1])<=maxPrice)}
 function comboPickSkewers(ctx,done){const opts=comboEligible(ctx.maxPrice),picked=[];function next(){if(picked.length>=ctx.count)return done(picked);openChoiceModal('🔥 '+ctx.name,'Escolha o espetinho '+(picked.length+1)+' de '+ctx.count,opts.map(p=>({label:p[0]+' — '+brl(p[1]),action:()=>{picked.push(p[0]);setTimeout(next,0)}})))}next()}
 function chooseCombo(name,price){
- const finish=(skewers,drink,extraComps=[])=>{const counts={};skewers.forEach(x=>counts[x]=(counts[x]||0)+1);let parts=Object.entries(counts).map(([k,q])=>(q>1?q+'× ':'')+k);let label=name+' • '+parts.join(', ')+(drink?' • '+drink:'');pushCart(label,price,[...skewers,...extraComps]);};
+ const finish=(skewers,drink,extraComps=[])=>{skewers=skewers.map(x=>x==='Queijo Coalho'?'Espetinho Queijo Coalho':x);const counts={};skewers.forEach(x=>counts[x]=(counts[x]||0)+1);let parts=Object.entries(counts).map(([k,q])=>(q>1?q+'× ':'')+k);let label=name+' • '+parts.join(', ')+(drink?' • '+drink:'');pushCart(label,price,[...skewers,...extraComps]);};
  if(name==='Resenha')return comboPickSkewers({name,count:2,maxPrice:6},sk=>{let drinks=[];function pick(){if(drinks.length===2)return finish(sk,drinks.join(' + '),drinks);openChoiceModal('🍺 Resenha','Escolha a cerveja '+(drinks.length+1)+' de 2',[{label:'Brahma litrinho',action:()=>{drinks.push('Brahma litrinho');setTimeout(pick,0)}},{label:'Skol litrinho',action:()=>{drinks.push('Skol litrinho');setTimeout(pick,0)}}])}pick()});
  if(name==='Sossego')return comboPickSkewers({name,count:3,maxPrice:7},sk=>openChoiceModal('🍺 Sossego','Escolha a cerveja',[{label:'Brahma litrinho',action:()=>finish(sk,'Brahma litrinho',['Brahma litrinho'])},{label:'Skol litrinho',action:()=>finish(sk,'Skol litrinho',['Skol litrinho'])}]));
  if(name==='Companheiro')return comboPickSkewers({name,count:2,maxPrice:6},sk=>{let drinks=[];function pick(){if(drinks.length===2)return finish(sk,drinks.join(' + '),drinks.map(x=>'KS 290 ml • '+x));let opts=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja','Guaraná Kuat','Sprite','Schweppes'];openChoiceModal('🥤 Companheiro','Escolha o KS '+(drinks.length+1)+' de 2',opts.map(v=>({label:v,action:()=>{drinks.push(v);setTimeout(pick,0)}})))}pick()});
@@ -835,6 +835,7 @@ function generateClosurePDF(){let c=window.lastCashClosure;if(!c)return alert('F
 async function shareClosureWhatsApp(){let c=window.lastCashClosure;if(!c)return alert('Fechamento não localizado.');let t=closureReportText(c);if(navigator.share){try{await navigator.share({title:'Fechamento de Caixa - Algaroba',text:t});return}catch(e){if(e.name==='AbortError')return}}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 function stockKey(name){
  let full=String(name||'').trim();
+ if(/^Queijo Coalho(?: •|$)/.test(full))return 'Espetinho Queijo Coalho';
  if(full.startsWith('KS 290 ml • '))return full;
  if(full.startsWith('Refrigerante 1 L • '))return full;
  if(full.startsWith('Suco 400 ml • ')){
@@ -848,7 +849,7 @@ function stockKey(name){
 }
 function inventoryCatalog(){
  let out=[];
- const add=(key,cat,price)=>{let existing=out.find(x=>x.key===key);if(existing){if(cat==='Bases'){existing.cat='Bases';existing.price=price;}return;}out.push({key,cat,price})};
+ const add=(key,cat,price)=>{let existing=out.find(x=>x.key===key);if(existing){if(cat==='Espetinhos'){existing.cat='Espetinhos';existing.price=price;}else if(cat==='Bases'&&existing.cat!=='Espetinhos'){existing.cat='Bases';existing.price=price;}return;}out.push({key,cat,price})};
  const ks=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja','Guaraná Kuat','Sprite','Schweppes'];
  const litro=['Coca-Cola Original','Coca-Cola Zero','Fanta Laranja'];
  const sucos=['Acerola','Cajá','Uva','Mangaba','Maracujá','Goiaba','Caju','Manga','Graviola','Tamarindo'];
@@ -902,6 +903,10 @@ function ensureKitchenInputs(){
  let oldM=state.inventory.items['Muçarela'],newM=state.inventory.items['Queijo Muçarela'];
  if(oldM&&!newM){state.inventory.items['Queijo Muçarela']=oldM;delete state.inventory.items['Muçarela'];newM=state.inventory.items['Queijo Muçarela'];}
  if(newM){newM.category='Bases';newM.cat='Bases';newM.stockUnit=newM.stockUnit||'un';newM.track=newM.track!==false;}
+ // 2.9.7.55 — separa o estoque do espetinho de queijo coalho do recheio/base de queijo coalho.
+ let espCoalho=state.inventory.items['Espetinho Queijo Coalho'];
+ if(!espCoalho)state.inventory.items['Espetinho Queijo Coalho']={qty:0,cost:0,min:0,track:true,category:'Espetinhos',cat:'Espetinhos',stockUnit:'un'};
+ else{espCoalho.category='Espetinhos';espCoalho.cat='Espetinhos';espCoalho.stockUnit=espCoalho.stockUnit||'un';espCoalho.track=espCoalho.track!==false;}
  let coalho=state.inventory.items['Queijo Coalho'];
  if(!coalho){state.inventory.items['Queijo Coalho']={qty:0,cost:0,min:0,track:true,category:'Bases',cat:'Bases',stockUnit:'un'};}
  else{coalho.category='Bases';coalho.cat='Bases';coalho.stockUnit=coalho.stockUnit||'un';coalho.track=coalho.track!==false;}
