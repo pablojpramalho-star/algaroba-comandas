@@ -92,6 +92,26 @@ button{color:inherit}
 .client-bill{padding:12px;border:1px solid #475e4d;border-radius:12px;margin:10px 0;background:#1d271e}
 .client-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .client-inline{color:#a3e5b3;font-size:12px;margin:4px 0;display:flex;align-items:center;gap:7px;font-weight:bold;flex-wrap:wrap}
+
+/* Relatórios de conferência v2.9.7.59 */
+.confer-report{font-size:14px;line-height:1.4;color:#fff}
+.confer-brand{font-weight:900;font-size:16px;margin:8px 0;color:#81d99c}
+.confer-report h2{margin:4px 0 9px;font-size:20px;color:#fff}
+.confer-report .muted{font-size:12px}
+.confer-warning{background:#3a2a1c;color:#ffd9a1;border:1px solid #9f7736;border-radius:12px;padding:12px;margin:12px 0;font-weight:800;font-size:12px}
+.confer-group{background:#18241a;border:1px solid #456d4d;border-radius:13px;padding:12px;margin:12px 0}
+.confer-group-name{display:flex;justify-content:space-between;gap:8px;padding-bottom:9px;margin-bottom:3px;border-bottom:1px solid #4b7351;flex-wrap:wrap}
+.confer-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dotted #55705a;align-items:flex-start}
+.confer-row span{min-width:0;flex:1}
+.confer-row small{display:block;font-size:12px;color:#bdcfc1;margin-top:3px}
+.confer-row b:last-child{white-space:nowrap}
+.confer-group-total{display:flex;justify-content:space-between;gap:8px;padding-top:11px}
+.confer-grand{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 6px;border-top:2px solid #56b76d;padding:15px 0;font-size:18px;font-weight:950}
+.confer-grand b{font-size:22px;color:#a6f7ba;white-space:nowrap}
+.confer-paid{display:flex;justify-content:space-between;gap:6px;padding:7px 0;color:#dce9df;flex-wrap:wrap;font-size:12px}
+.confer-note{font-size:12px;color:#b4c1b8}
+.confer-actions{position:sticky;bottom:0;background:#131b15;padding:12px 0 5px;border-top:1px solid #456449;display:flex;flex-wrap:wrap;gap:8px}
+.confer-actions button{flex:1 1 135px;white-space:normal;min-height:44px}
 </style><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -101,10 +121,10 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.58 • CONTAS INDIVIDUAIS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.59 • CONFERÊNCIAS DA COMANDA</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
-<section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>ENVIAR PEDIDO</button></div></section>
+<section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>🧾 CONFERIR E ENVIAR PEDIDO/button></div></section>
 <section id='cozinha' class='hide'><h2>🔥 Produção</h2><div class='prod-tabs' id='prodTabs'></div><div id='kitchen'></div></section>
 <section id='caixa' class='hide'><h2>💰 Caixa</h2><div id='cashStatus'></div>
 <div class='grid'>
@@ -1494,4 +1514,4 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-</script><script src="./mesa-clientes.js"></script></body></html>
+</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script></body></html>
