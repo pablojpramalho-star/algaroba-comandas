@@ -761,8 +761,7 @@ function cancelSent(i) { let t = getT(), it = t.items[i]; if (!it)
         o.items.push(Object.assign(Object.assign({}, oi), { qty: q, cancelled: true, cancelReason: reason, cancelledAt, cancelledBy: state.activeOperator }));
         remaining -= q;
     }
-} }); }); inventoryReturn(it, 'cancelamento'); returnDisposableForItem(it); t.items.splice(i, 1); if (!t.items.length && !cart.length)
-    t.status = 'livre'; save(); renderCart(); alert('Item cancelado. Ele continuará visível na Produção em vermelho, com o motivo.'); }
+} }); }); inventoryReturn(it, 'cancelamento'); returnDisposableForItem(it); t.items.splice(i, 1); if(!t.items.length&&!cart.length){t.status='livre';t.customers=[];t.customerPayments=[];} save(); renderCart(); alert('Item cancelado. Ele continuará visível na Produção em vermelho, com o motivo.'); }
 function sendOrder() {
     if (!cart.length)
         return alert('Adicione algum produto.');
@@ -942,11 +941,7 @@ async function confirmCancelCashComanda() {
     }
     if (c.kind === 'counter')
         state.counterQueue = (state.counterQueue || []).filter(x => Number(x.id) !== Number(c.id));
-    else {
-        t.items = [];
-        t.orders = [];
-        t.status = 'livre';
-    }
+    else{t.items=[];t.orders=[];t.status='livre';t.customers=[];t.customerPayments=[];}
     localStorage.setItem('algarobaState', JSON.stringify(state));
     try {
         if (cloudReady) {
