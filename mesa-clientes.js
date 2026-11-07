@@ -10,7 +10,7 @@
     return ids.map(id=>{
       const sent=t.items.filter(x=>owner(x)===id),pending=current===t.id?cart.filter(x=>owner(x)===id):[],paid=(t.customerPayments||[]).filter(x=>x.customerId===id);
       return {id,name:clientName(t,id),sent,pending,paid,subtotal:sent.reduce((v,x)=>v+x.qty*x.price,0),waiting:pending.reduce((v,x)=>v+x.qty*x.price,0),settled:paid.reduce((v,x)=>v+x.total,0)};
-    }).filter(g=>g.id!=='geral'||g.subtotal||g.waiting||g.settled||selected==='geral');
+    });
   }
   function addCustomer(){
     if(current==='counter')return;
