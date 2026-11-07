@@ -1,6 +1,7 @@
 (function installConferencesV59(){
  const productionSend=sendOrder;
  const paymentEntry=paymentModal;
+ const counterPaymentEntry=paymentModalCounter;
  const individualPayment=window.payClientBill;
  const wholePayment=window.payWholeBill;
  const beforeRenderCart=renderCart;
@@ -44,7 +45,7 @@
      <p class="muted">${esc(subject)} • ${new Date().toLocaleString('pt-BR')}<br>Atendente: ${esc(state.activeOperator||'Não identificado')}</p>
      ${notes}${groupedHtml(items,t)}
      <div class="confer-grand"><span>${kind==='before-production'?'TOTAL DESTE PEDIDO':'TOTAL A PAGAR'}</span><b>${money(subtotal)}</b></div>
-     ${kind==='before-payment'&&alreadyPaid>0?`<div class="confer-paid">✅ Valores já pagos anteriormente na mesa: <b>${money(alreadyPaid)}</b></div><div class="confer-paid">Consumo acumulado desta mesa: <b>${money(subtotal+alreadyPaid)}</b></div>`:''}
+     ${kind==='before-payment'&&alreadyPaid>0?`<div class="confer-paid">✅ Valores já pagos anteriormente na mesa: <b>${money(alreadyPaid)}</b></div><div class="confer-paid">Consumo acumulado desta conta: <b>${money(subtotal+alreadyPaid)}</b></div>`:''}
      <p class="confer-note">Relatório para conferência com o cliente. Não é documento fiscal.</p>
    </div>`;
  }
@@ -167,7 +168,7 @@
      else{match=raw.match(/paymentModalCounter\((\d+)\)/);if(match)target={type:'counterQueue',id:Number(match[1])};}
      if(!target)continue;
      const btn=document.createElement('button');btn.className='btn';btn.type='button';btn.dataset.conferPreview='true';btn.textContent='🧾 CONFERIR / IMPRIMIR CONTA';
-     btn.onclick=()=>openBillPreview(target,()=>{if(target.type==='table')return paymentEntry('Mesa '+String(target.id).padStart(2,'0'));return paymentModalCounter(target.id);});
+     btn.onclick=()=>openBillPreview(target,()=>{if(target.type==='table')return paymentEntry('Mesa '+String(target.id).padStart(2,'0'));return counterPaymentEntry(target.id);});
      link.insertAdjacentElement('afterend',btn);
    }
  }
@@ -188,6 +189,9 @@
    checkTableBillV59:checkTableBill,previewCashBillV59:previewCashBill
  });
  sendOrder=showOrderPreview;
+ paymentModalCounter=function(id){
+   return openBillPreview({type:'counterQueue',id:Number(id)},()=>counterPaymentEntry(id));
+ };
  paymentModal=function(name){
    const id=name==='Balcão'?'counter':Number(String(name).replace(/\D/g,''));
    if(id==='counter')return openBillPreview({type:'counter'},()=>paymentEntry(name));
