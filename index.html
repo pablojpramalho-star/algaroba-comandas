@@ -1097,6 +1097,8 @@ function shakeFlavorNamesFromProducts(){
  // Known Algaroba flavor catalog, used only to ensure stock rows exist even if variants are rendered dynamically.
  const known=['Abacaxi','Abacaxi com Hortelã','Açaí','Banana','Banana com Canela','Baunilha aos Quatro Leites','Beijinho','Bombom Supreme','Brigadeiro','Café','Cajá','Capuccino','Cartola','Chiclete','Chiclete com Banana','Chocomalt (Ovomaltine)','Chocomenta','Chocolate','Chocolate Branco','Coco','Coco Queimado','Cupuaçu','Doce de Leite','Flocos','Frutas Tropicais','Goiaba','Graviola','Kiwi','Leite Condensado','Limão','Maracujá','Mega Shake','Mentol','Milho Verde','Morango','Danoninho','Nata Goiaba','Biscoito (Oreo)','Pedacinho do Céu','Pistache','Power Milk (Leite Ninho)','Prestígio','Sensações','Tradicional com Açúcar Mascavo','Tradicional Zero Açúcar','Uva'];
  known.forEach(n=>names.add(n));
+ // Catálogo e estoque precisam usar os mesmos sabores, inclusive novos lançamentos.
+ (typeof shakeFlavors!=='undefined'?shakeFlavors:[]).forEach(n=>names.add(n));
  return [...names];
 }
 function ensureShakeFlavorInventory(){
