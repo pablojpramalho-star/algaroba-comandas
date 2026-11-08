@@ -117,6 +117,13 @@
    ensureInventory();ensureShakeFlavorInventory();
    let all=inventoryCatalog();
    let source=stockDetails();
+   // A lista de ingredientes do cardápio não contém os sabores individuais de shake.
+   // Incluí-los para que a auditoria cubra integralmente a operação.
+   const flavors=shakeFlavorNamesFromProducts();
+   for(const flavor of flavors)if(!all.some(p=>p.key===flavor))all.push({key:flavor,cat:'Shakes',price:0});
+   for(const key of ['Leite em Pó','Açúcar','Goma de Tapioca','Garrafa de Café']){
+     if(!all.some(p=>p.key===key)&&source[key])all.push({key,cat:source[key].cat||source[key].category||'Insumos',price:0});
+   }
    const keys=new Set(all.map(x=>x.key));
    // Produtos com estoque, mas sem associação ao catálogo atual, são exibidos separadamente.
    let unlinked=Object.entries(source).filter(([key,x])=>!keys.has(key)&&Number(x.qty||0)>0&&
