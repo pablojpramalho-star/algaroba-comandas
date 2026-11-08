@@ -1733,7 +1733,7 @@ async function editInventory(key) { ensureInventory(); let x = state.inventory.i
     return alert('Informe apenas valores numéricos.'); let before = Number(x.qty || 0), oldCost = Number(x.cost || 0); x.qty = q; x.cost = c; x.min = m; x.track = true; addInvMovement('ajuste', key, q - before, 'Cadastro/ajuste manual' + (oldCost !== c ? ' • custo ' + brl(oldCost) + ' → ' + brl(c) : ''), before, q, inventoryCostPerStockUnit(x)); localStorage.setItem('algarobaState', JSON.stringify(state)); renderInventory(); try {
     await saveInventoryNow();
     renderInventory();
-    alert('Estoque atualizado e sincronizado: ' + key);
+    alert('Estoque atualizado: ' + key);
 }
 catch (e) {
     alert('O estoque foi salvo neste aparelho, mas houve erro ao sincronizar.');
@@ -1807,7 +1807,7 @@ async function inventoryEntry() { ensureInventory(); let keys = inventoryCatalog
 } x.qty = before + q; addInvMovement('entrada', key, q, 'Entrada de estoque', before, x.qty, inventoryCostPerStockUnit(x)); renderInventory(); try {
     await saveInventoryNow();
     renderInventory();
-    alert('Entrada registrada e sincronizada: +' + q + ' ' + key);
+    alert('Entrada registrada: +' + q + ' ' + key);
 }
 catch (e) {
     alert('Entrada salva neste aparelho, mas houve erro ao sincronizar.');
