@@ -129,6 +129,9 @@
    let unlinked=Object.entries(source).filter(([key,x])=>!keys.has(key)&&Number(x.qty||0)>0&&
       x.cat!=='Shakes'&&!['Insumos','Descartáveis','Cafés'].includes(x.cat||x.category));
    const count=all.length;
+   const readyCoffee=Number(source['Garrafa de Café']?.qty||0);
+   const coffeeVariants=['Café pequeno','Café grande','Café com leite'].filter(k=>source[k]);
+   const disconnectedCoffee=readyCoffee>0&&coffeeVariants.some(k=>Number(source[k].qty||0)<=0);
    const rows=all.map(p=>{
      const x=source[p.key]||{};
      const q=Number(x.qty||0),tracked=x.track!==false;
@@ -136,7 +139,7 @@
    });
    const byCat={};for(const row of rows)(byCat[row.cat]=byCat[row.cat]||[]).push(row);
    const html=Object.entries(byCat).map(([cat,products])=>`<details class="panel"><summary><b>${esc(cat)}</b> • ${products.length} produtos</summary>${products.map(p=>`<div class="cart-row"><span>${esc(p.key)}</span><span>${p.tracked?formatAmount(p.qty,p.unit):'Sem controle'} ${p.qty<=0&&p.tracked?'⚠️':''}</span></div>`).join('')}</details>`).join('');
-   document.getElementById('modalContent').innerHTML=`<h2>🔎 Auditoria Estoque × Cardápio</h2><div class="muted">${count} registros de produtos/variantes vinculados à comanda. A conferência mostra o saldo cadastrado neste aparelho, não necessariamente o saldo físico.</div>${html}${unlinked.length?'<div class="panel"><b>⚠️ Saldo em cadastro fora do cardápio atual</b>'+unlinked.slice(0,30).map(([k,x])=>`<div class="cart-row"><span>${esc(k)}</span><b>${formatAmount(x.qty,x.stockUnit)}</b></div>`).join('')+'</div>':''}<div class="sheet-actions"><button class="btn primary" onclick="closeModal()">FECHAR AUDITORIA</button></div>`;
+   document.getElementById('modalContent').innerHTML=`<h2>🔎 Auditoria Estoque × Cardápio</h2><div class="muted">${count} registros de produtos/variantes vinculados à comanda. A conferência mostra o saldo cadastrado neste aparelho, não necessariamente o saldo físico.</div>${disconnectedCoffee?'<div class="panel"><b>⚠️ Café pronto e cafés vendidos usam cadastros diferentes</b><div class="muted">A Garrafa de Café possui '+formatAmount(readyCoffee,'g').replace(' g',' ml')+', mas um ou mais cafés vendidos por unidade estão zerados. É necessário definir o volume em ml de cada porção antes de vincular automaticamente, para não gerar baixa incorreta.</div></div>':''}${html}${unlinked.length?'<div class="panel"><b>⚠️ Saldo em cadastro fora do cardápio atual</b>'+unlinked.slice(0,30).map(([k,x])=>`<div class="cart-row"><span>${esc(k)}</span><b>${formatAmount(x.qty,x.stockUnit)}</b></div>`).join('')+'</div>':''}<div class="sheet-actions"><button class="btn primary" onclick="closeModal()">FECHAR AUDITORIA</button></div>`;
    document.getElementById('modal').classList.remove('hide');
  }
  function addInventoryAuditButton(){
