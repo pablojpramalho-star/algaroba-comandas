@@ -415,14 +415,14 @@
    let onlineError=null;
    if(cloudReady){
      clearTimeout(cloudTimer);
-     const row=stateRecords(state).find(r=>r.record_key==='meta');
-     const payload={...row,updated_at:new Date().toISOString()};
+     const rows=stateRecords(state).filter(r=>['meta','credit_accounts'].includes(r.record_key));
+     const payload=rows.map(r=>({...r,updated_at:new Date().toISOString()}));
      try{
        await cloudRequest('algaroba_records?on_conflict=record_key',{
          method:'POST',prefer:'resolution=merge-duplicates,return=minimal',
-         body:JSON.stringify([payload])
+         body:JSON.stringify(payload)
        });
-       cloudSnapshot.meta=JSON.stringify(row.data);
+       for(const row of rows)cloudSnapshot[row.record_key]=JSON.stringify(row.data);
        cloudLastError='';cloudFailures=0;setSyncStatus('online','ONLINE');
      }catch(e){
        onlineError=e;console.error('Recebimento conta cliente',e);setSyncStatus('error','ERRO: TOQUE AQUI');
