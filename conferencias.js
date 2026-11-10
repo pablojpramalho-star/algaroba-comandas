@@ -67,7 +67,7 @@
    openPrintableReport(viewTitle,printCss+markup);
  }
  function activeOrderTitle(id){
-   return id==='counter'?'Balcão / Retirada':'Mesa '+String(id).padStart(2,'0');
+   return id==='counter'?'Balcão / Retirada'+(typeof window.creditCustomerNameV67==='function'&&window.creditCustomerNameV67()?' • Cliente: '+window.creditCustomerNameV67():''):'Mesa '+String(id).padStart(2,'0');
  }
  function showOrderPreview(){
    if(!cart.length)return alert('Adicione algum produto.');
