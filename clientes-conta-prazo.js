@@ -37,7 +37,7 @@
    cloudPausePullUntil=Date.now()+7000;
    save();
  }
- function accountLineItems(charges,payments){
+ function accountLineItems(charges,payments,accountId=''){
    const events=[];
    for(const q of charges)events.push({day:dateParts(q.at),at:q.at,type:'charge',record:q});
    for(const p of payments)events.push({day:dateParts(p.at),at:p.at,type:'receipt',record:p});
@@ -59,7 +59,8 @@
          '</span><span>'+money(Number(p.qty||1)*Number(p.price||0))+'</span></div>').join('');
        return '<div class="credit-entry"><div class="cart-row"><span><b>🧾 Consumo '+(q.ticket?'#'+esc(q.ticket):'')+'</b><small class="muted">'+
          safeDate(q.at)+' • '+esc(q.operator||'-')+
-         (q.voided?' • CANCELADO: '+esc(q.voidReason||''):'')+'</small></span><b>'+money(q.total)+'</b></div>'+detail+'</div>';
+         (q.voided?' • CANCELADO: '+esc(q.voidReason||''):'')+'</small></span><b>'+money(q.total)+'</b></div>'+detail+
+         (accountId&&!q.voided&&canCancelCashComanda()?'<button class="btn danger" style="margin:7px 0" onclick="startCreditCancellationV67(\''+escapeId(accountId)+'\',\''+escapeId(q.id)+'\')">🚫 ANULAR CONSUMO</button>':'')+'</div>';
      }).join('')+
      '<div class="cart-row credit-day-total"><span><b>Consumos: '+money(g.charges)+'</b></span><b>Recebido: '+money(g.received)+'</b></div></div>'
    ).join('')||'<div class="panel muted">Nenhum consumo ou pagamento registrado neste período.</div>';
@@ -74,7 +75,7 @@
     '<div><small>Pagamentos recebidos</small><b>'+money(paidTotal(a))+'</b></div>'+
     '<div><small>Saldo pendente</small><b>'+money(balance(a))+'</b></div>'+
     '<div><small>Situação</small><b>'+(balance(a)>.009?'EM ABERTO':'QUITADA')+'</b></div></div></div>'+
-    '<h3>Extrato detalhado por dia</h3>'+accountLineItems(charges,payments)+
+    '<h3>Extrato detalhado por dia</h3>'+accountLineItems(charges,payments,a.id)+
     '<div class="panel credit-total"><div class="cart-row"><span>Saldo atual a pagar</span><b>'+money(balance(a))+'</b></div></div>'+
     '<p class="muted">Documento de conferência do cliente. Não substitui nota fiscal. Consumos entram no extrato na hora do pedido; recebimentos entram no caixa somente quando pagos.</p>';
  }
@@ -278,7 +279,7 @@
  const oldCancelCash=cancelCashComanda;
  cancelCashComanda=function(kind,orderId){
    if(kind==='counter'&&counterOrderById(orderId)?.creditAccountId)
-     return alert('Este pedido está vinculado a uma conta de cliente. Consulte o extrato; não feche como venda comum.');
+     return window.startCreditCancellationV67(escapeId(counterOrderById(orderId).creditAccountId),escapeId(counterOrderById(orderId).creditChargeId));
    return oldCancelCash(kind,orderId);
  };
  // Um pedido entregue sai da fila temporária, mas o débito continua registrado.
@@ -308,7 +309,7 @@
      totalCharged+=charge.filter(x=>!x.voided).reduce((v,x)=>v+amount(x.total),0);
      totalReceived+=received.reduce((v,x)=>v+amount(x.value),0);
      return '<div class="panel"><div class="cart-row"><b>👤 '+esc(customer.name)+'</b><b>Pendente: '+money(balance(customer))+'</b></div>'+
-       accountLineItems(charge,received)+
+       accountLineItems(charge,received,customer.id)+
        '<button class="btn" onclick="openCreditAccountV67(\''+escapeId(customer.id)+'\')">ABRIR EXTRATO COMPLETO</button></div>';
    }).join('');
    container.innerHTML='<div class="panel"><h3>👥 Clientes a Prazo — '+dateParts(a).title+' até '+dateParts(b).title+'</h3>'+
@@ -318,6 +319,65 @@
      '</div>'+ (rows||'<div class="panel">Sem movimentações de clientes neste período.</div>')+
      '<button class="btn" onclick="openCreditAccountsV67()">GERENCIAR TODAS AS CONTAS</button>'+modulePrintButton();
  };
+ 
+ window.startCreditCancellationV67=function(accountValue,chargeValue){
+   if(!canCancelCashComanda())return alert('Somente Administrador ou Gerente pode anular consumo de cliente.');
+   const a=accountById(decodeId(accountValue));
+   const charge=a?.charges?.find(c=>c.id===decodeId(chargeValue)&&!c.voided);
+   if(!a||!charge)return alert('Lançamento não localizado ou já anulado.');
+   const available=chargesTotal(a)-amount(charge.total)-paidTotal(a);
+   if(available<-.009)return alert('Este consumo não pode ser anulado porque existem pagamentos já recebidos que ultrapassariam o novo total da conta. Faça uma conciliação administrativa antes.');
+   const q=counterOrderById(charge.orderId);
+   const delivered=!q||q.orders?.every(o=>o.status==='ENTREGUE');
+   document.getElementById('modalContent').innerHTML=
+     '<h2>🚫 Anular consumo de cliente</h2>'+
+     '<div class="panel"><b>'+esc(a.name)+'</b><div class="muted">Pedido '+esc(charge.ticket)+' • '+safeDate(charge.at)+'</div>'+
+     '<div class="big">'+money(charge.total)+'</div>'+
+     (charge.items||[]).map(it=>'<div class="cart-row"><span>'+it.qty+'× '+esc(it.name)+'</span><b>'+money(Number(it.qty||0)*Number(it.price||0))+'</b></div>').join('')+'</div>'+
+     '<label>Motivo obrigatório</label><input id="creditCancelReasonV67" maxlength="200" placeholder="Ex.: erro de lançamento, cliente desistiu">'+
+     '<label>Situação da produção</label><select id="creditCancelProducedV67">'+
+     '<option value="yes">PRODUZIDO / ENTREGUE — registrar perda, sem devolver estoque</option>'+
+     (delivered?'':'<option value="no">NÃO PRODUZIDO — devolver itens e embalagens ao estoque</option>')+
+     '</select>'+
+     '<div class="panel muted">O lançamento continuará visível no extrato, marcado como cancelado. Apenas seu valor será retirado do saldo pendente.</div>'+
+     '<div class="sheet-actions"><button class="btn" onclick="openCreditAccountV67(\''+escapeId(a.id)+'\')">VOLTAR</button>'+
+     '<button class="btn danger" onclick="confirmCreditCancellationV67(\''+escapeId(a.id)+'\',\''+escapeId(charge.id)+'\')">CONFIRMAR ANULAÇÃO</button></div>';
+   document.getElementById('modal').classList.remove('hide');
+ };
+ window.confirmCreditCancellationV67=function(accountValue,chargeValue){
+   if(!canCancelCashComanda())return alert('Sem permissão para anular.');
+   const a=accountById(decodeId(accountValue));
+   const c=a?.charges?.find(x=>x.id===decodeId(chargeValue)&&!x.voided);
+   if(!a||!c)return alert('Consumo já anulado ou inexistente.');
+   if(chargesTotal(a)-amount(c.total)-paidTotal(a)<-.009)return alert('Há pagamentos que impedem esta anulação; confira a conta.');
+   const reason=(document.getElementById('creditCancelReasonV67')?.value||'').trim();
+   if(!reason)return alert('Descreva o motivo da anulação.');
+   const q=counterOrderById(c.orderId);
+   const delivered=!q||q.orders?.every(o=>o.status==='ENTREGUE');
+   const produced=delivered||document.getElementById('creditCancelProducedV67')?.value!=='no';
+   if(!confirm('Confirmar anulação de '+money(c.total)+' na conta de '+a.name+
+      '?\n\n'+(produced?'Os produtos NÃO voltarão ao estoque.':'Os produtos SERÃO devolvidos ao estoque.')))return;
+   const now=new Date().toISOString();
+   c.voided=true;c.voidedAt=now;c.voidReason=reason;c.voidedBy=state.activeOperator;c.produced=produced;
+   state.cancellations=state.cancellations||[];
+   state.cancellations.push({id:id('cancelamento'),type:'conta_cliente',at:now,table:'Conta a prazo • '+a.name,
+     total:c.total,reason,produced,operator:state.activeOperator,items:c.items.map(it=>({...it})),chargeId:c.id,accountId:a.id});
+   if(!produced){
+     for(const item of c.items||[]){
+       inventoryReturn(item,'Anulação conta cliente • '+reason);
+       returnDisposableForItem(item);
+     }
+   }
+   if(q){
+     state.counterQueue=(state.counterQueue||[]).filter(x=>x.id!==q.id);
+   }
+   markDirty();
+   renderTables();
+   renderCash();
+   showAccount(a.id);
+   alert('Consumo anulado com histórico preservado.\nSaldo pendente: '+money(balance(a)));
+ };
+ 
  window.startCreditPaymentV67=function(value){
    const a=accountById(decodeId(value));if(!a)return alert('Conta não localizada.');
    if(!canCollect())return alert('Abra o Caixa com um perfil de Caixa ou Gerente para receber.');
