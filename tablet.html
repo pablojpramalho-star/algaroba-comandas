@@ -133,7 +133,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.63 • BEBIDAS E CALDOS 300 ML</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.64 • PREÇOS DO CARDÁPIO DIGITAL</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>🧾 CONFERIR E ENVIAR PEDIDO/button></div></section>
@@ -186,7 +186,7 @@ button{color:inherit}
 <div id='printReport' class='hide'><div id='report'></div></div>
 </section>
 </main><div id='modal' class='modal hide'><div class='sheet'><div id='modalContent'></div></div></div><script>const catalog = {
-    'Espetinhos':[['Pão de Alho',5],['Linguiça Toscana',5],['Linguiça Toscana de Frango',5],['Coxinha de Frango',5],['Linguiça Calabresa',5],['Frango',6],['Moela',6],['Pão de Carne de Sol',6],['Pão com Creme de Queijo',6],['Tulipa de Frango',7],['Queijo Coalho',7],['Carne',7],['Kafta',7],['Coração',7],['Carneiro',7],['Língua',7],['Cupim',8],['Picanha Suína',8],['Medalhão de Frango com Bacon',12],['Medalhão de Carne com Bacon',12],['Medalhão de Queijo Coalho com Bacon',12],['Camarão',8]], 'Porções': [['Filé com Fritas', 30], ['Frango com Fritas', 25], ['Calabresa com Fritas', 25], ['Língua com Macaxeira', 30], ['Batata Frita P', 12], ['Batata Frita G', 20], ['Macaxeira Frita', 15]],
+    'Espetinhos':[['Pão de Alho',5],['Linguiça Toscana',5],['Linguiça Toscana de Frango',5],['Coxinha de Frango',5],['Linguiça Calabresa',5],['Frango',6],['Moela',6],['Pão de Carne de Sol',6],['Pão com Creme de Queijo',6],['Tulipa de Frango',7],['Queijo Coalho',7],['Carne',7],['Kafta',7],['Coração',7],['Língua',7],['Cupim',8],['Picanha Suína',8],['Camarão',8],['Maçã da Língua',8],['Carneiro',8],['Medalhão de Carne com Bacon',12],['Medalhão de Frango com Bacon',12],['Medalhão de Queijo Coalho',12]], 'Porções': [['Filé com Fritas', 30], ['Frango com Fritas', 25], ['Calabresa com Fritas', 25], ['Língua com Macaxeira', 30], ['Batata Frita P', 12], ['Batata Frita G', 20], ['Macaxeira Frita', 15]],
     'Caldos/Sopas': [['Sopa de Costela 500 ml', 15], ['Caldo da Casa 500 ml', 15]],
     'Pastéis Fritos na Hora': [['Pastel de Carne de Sol', 4], ['Pastel de Carne Moída', 4], ['Pastel de Frango', 4], ['Pastel de Queijo', 4]],
     'Bases': [['Base Pastel', 2], ['Pão na Chapa', 2], ['Base Tapioca', 3], ['Base Cuscuz', 3], ['Base Rap10', 3], ['Muçarela', 4], ['Queijo Coalho', 4], ['Queijo Manteiga', 4], ['Presunto', 4], ['Calabresa', 4], ['Carne Moída', 4], ['Frango recheio', 4], ['Catupiry', 4], ['Cheddar', 4], ['Carne de Sol', 5], ['Bacon', 5], ['Ovo Frito', 2]],
@@ -686,7 +686,7 @@ function renderTables() { let h = ''; state.tables.forEach(t => { let sum = t.it
 function getT() { return current === 'counter' ? state.counter : state.tables.find(x => x.id === current); }
 function openTable(id) { current = id; cart = []; document.getElementById('mesas').classList.add('hide'); document.getElementById('comanda').classList.remove('hide'); document.getElementById('tableTitle').textContent = id === 'counter' ? 'Balcão / Retirada' : 'Mesa ' + String(id).padStart(2, '0'); document.getElementById('transferBtn').style.display = id === 'counter' ? 'none' : 'inline-block'; const catsEl = document.getElementById('cats'); catsEl.innerHTML = ''; Object.keys(catalog).forEach((c, i) => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn' + (i === 0 ? ' primary' : ''); btn.textContent = c; btn.addEventListener('click', () => showCat(c, btn)); catsEl.appendChild(btn); }); showCat(Object.keys(catalog)[0]); renderCart(); }
 
-const skewerLines=[{name:'Arretada',price:5},{name:'Arrochada',price:6},{name:'Danada',price:7},{name:'Cabra da Peste',price:8},{name:'Medalhões',price:12}];
+const skewerLines=[{name:'Arretada',price:5},{name:'Arrochada',price:6},{name:'Assanhada',price:7},{name:'Avexada',price:8},{name:'Atrevida',price:12}];
 let selectedSkewerLine='Todas';
 function skewerLineForName(full){
  const name=String(full||'').split(' • ')[0].trim();
@@ -842,7 +842,7 @@ function sendOrder() {
     renderCart();
     alert('Pedido enviado para produção!');
 }
-function stationOf(name) { if(catalog['Espetinhos'].some(p=>name.startsWith(p[0]))||/^Queijo Coalho com Bacon(?: •|$)/.test(name))
+function stationOf(name) { if(catalog['Espetinhos'].some(p=>name.startsWith(p[0]))||/^(?:Queijo Coalho com Bacon|Medalhão de Queijo Coalho com Bacon)(?: •|$)/.test(name))
     return '🔥 Churrasqueira'; if (name.startsWith('Shake') || catalog['Bebidas'].some(p => name.startsWith(p[0])))
     return '🥤 Bebidas & Shakes'; return '🍳 Cozinha'; }
 function elapsed(o) { let mins = Math.max(0, Math.floor((Date.now() - (o.createdAt || Date.now())) / 60000)); return mins < 1 ? 'agora' : mins + ' min'; }
@@ -1565,7 +1565,7 @@ async function shareClosureWhatsApp() { let c = window.lastCashClosure; if (!c)
 } window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank'); }
 function stockKey(name) {
     let full = String(name || '').trim();
- if(/^Medalhão de Queijo Coalho com Bacon(?: •|$)/.test(full))return 'Queijo Coalho com Bacon';
+ if(/^Medalhão de Queijo Coalho(?: com Bacon)?(?: •|$)/.test(full))return 'Queijo Coalho com Bacon';
     if (/^Queijo Coalho(?: •|$)/.test(full)) return 'Espetinho Queijo Coalho';
     if (full.startsWith('KS 290 ml • '))
         return full;
@@ -1591,7 +1591,7 @@ function inventoryCatalog() {
     for (const [cat, arr] of Object.entries(catalog)) {
         for (const p of arr) {
             let k = p[0], price = p[1];
-     if(cat==='Espetinhos'&&k==='Medalhão de Queijo Coalho com Bacon'){add('Queijo Coalho com Bacon',cat,price);continue;}
+     if(cat==='Espetinhos'&&k==='Medalhão de Queijo Coalho'){add('Queijo Coalho com Bacon',cat,price);continue;}
             if (cat === 'Bebidas' && k === 'KS 290 ml') {
                 ks.forEach(v => add('KS 290 ml • ' + v, cat, price));
                 continue;
@@ -2652,7 +2652,7 @@ function renderReports() { if (reportUiState.module) {
 else
     renderReportHome(); }
 function reportItemBaseName(name) { return String(name || '').split(' • Obs:')[0].trim(); }
-function reportCategory(name) { let base = reportItemBaseName(name); if(/^Queijo Coalho com Bacon(?: •|$)/.test(base))return 'Espetinhos'; for (const [cat, arr] of Object.entries(catalog || {})) {
+function reportCategory(name) { let base = reportItemBaseName(name); if(/^(?:Queijo Coalho com Bacon|Medalhão de Queijo Coalho com Bacon)(?: •|$)/.test(base))return 'Espetinhos'; for (const [cat, arr] of Object.entries(catalog || {})) {
     if ((arr || []).some(p => p[0] === base))
         return cat;
 } if (base.startsWith('Shake '))
