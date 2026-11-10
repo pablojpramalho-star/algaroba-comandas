@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.64-pwa11';
+const CACHE = 'algaroba-shell-2.9.7.65-pwa12';
 
 const SHELL = [
   './',
@@ -9,6 +9,7 @@ const SHELL = [
   './estoque-queijo-coalho.js',
   './estoque-pedidos-auditoria.js',
   './bebidas-caldos-v63.js',
+  './caixa-turnos.js',
   './icon-192.png',
   './icon-512.png'
 ];
