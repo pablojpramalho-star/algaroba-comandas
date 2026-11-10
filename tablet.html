@@ -124,6 +124,23 @@ button{color:inherit}
 /* v2.9.7.63 — Bebidas organizadas por tipo */
 .beverage-tabs{margin:8px 0}
 .beverage-group-head{grid-column:1/-1;background:linear-gradient(90deg,#1b3424,#26643a);border:1px solid #488c5d;border-radius:12px;color:#fff;font-size:15px;font-weight:900;padding:11px 13px;margin:10px 0 4px}
+
+/* 2.9.7.65 - Conferência de caixa por turnos */
+.cash-shift-summary{margin-top:10px}
+.cash-shift-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0}
+.cash-shift-card{border:1px solid #447b56;background:#192b20;border-radius:12px;overflow-wrap:anywhere}
+.cash-shift-card h3{font-size:16px;margin:0 0 8px;color:#b8f2ca}
+.cash-shift-card .cart-row{font-size:13px;gap:8px;align-items:center}
+.cash-shift-card .cart-row b{white-space:nowrap}
+.cash-shift-payments{padding:3px 0;border-top:1px solid #375d44;border-bottom:1px solid #375d44}
+.cash-shift-mini{border:1px solid #4d8761;margin:4px 0;padding:12px}
+.cash-shift-mini b{display:block;font-size:21px;color:#9de9b4;margin:5px 0}
+.cash-shift-mini .muted{margin:4px 0}
+.cash-shift-total{border-top:2px solid #56bd72;font-weight:850;color:#aeedc3}
+.cash-shift-closure{border:1px solid #397b55}
+.cash-shift-overall{border-top:1px solid #558567;padding-top:12px;margin-top:12px;font-size:13px}
+.cash-shift-card details{margin-top:10px}.cash-shift-card summary{cursor:pointer;padding:7px 0}
+@media(max-width:660px){.cash-shift-wrap{grid-template-columns:1fr}}
 </style><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -133,7 +150,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.64 • PREÇOS DO CARDÁPIO DIGITAL</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.65 • CAIXA POR TURNOS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>🧾 CONFERIR E ENVIAR PEDIDO/button></div></section>
@@ -1319,7 +1336,7 @@ function closeCash() {
         return alert('O caixa já está fechado.');
     let expected = expectedCash(), bp = cashByPayment(), mt = cashMoveTotals();
     document.getElementById('modalContent').innerHTML = `<h2>🔒 Fechar Caixa</h2>
- <div class=panel><div class=cart-row><span>Abertura</span><b>${brl(state.cash.opening || 0)}</b></div><div class=cart-row><span>Vendas do turno</span><b>${brl(cashSales())}</b></div><div class=cart-row><span>Entradas</span><b>${brl(mt.entries)}</b></div><div class=cart-row><span>Saídas / sangrias</span><b>${brl(mt.outflows)}</b></div><div class=cart-row><span>Esperado em dinheiro</span><b>${brl(expected)}</b></div></div>
+ <div class=panel><div class=cart-row><span>Abertura</span><b>${brl(state.cash.opening || 0)}</b></div><div class=cart-row><span>Vendas dos dois turnos</span><b>${brl(cashSales())}</b></div><div class=cart-row><span>Entradas</span><b>${brl(mt.entries)}</b></div><div class=cart-row><span>Saídas / sangrias</span><b>${brl(mt.outflows)}</b></div><div class=cart-row><span>Esperado em dinheiro</span><b>${brl(expected)}</b></div></div>
  <label>Quanto você contou fisicamente em dinheiro?</label><input id=cashCounted type=number inputmode=decimal step=.01 min=0 placeholder="R$ 0,00" oninput=previewCashDifference()>
  <div id=cashDiffPreview class=panel><div class=muted>Informe o valor contado para conferir a diferença.</div></div>
  <div class='panel close-replenishment-reminder'><b>📦 Lembrete do último caixa</b><div class=muted style='margin-top:6px'>Se este for o último caixa do dia, confira e envie a reposição para as compras do próximo expediente.</div><div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px'><button class='btn' onclick='showReplenishmentPreview(false)'>👁️ VER REPOSIÇÃO</button><button class='btn' onclick='shareReplenishmentWhatsApp()'>📲 WHATSAPP</button></div><label class='confirm-replenishment'><input id='replenishmentChecked' type='checkbox'> <span>Já conferi a reposição.</span></label><label class='confirm-replenishment'><input id='lastCashOfDay' type='checkbox'> <span>🌙 Este é o último caixa do dia — descartar automaticamente a sobra de café.</span></label></div>
@@ -1350,7 +1367,9 @@ async function confirmCloseCash() {
         return;
     let closure = { closedAt: new Date().toISOString(), openedAt: state.cash.openedAt, openedBy: state.cash.openedBy || 'Não identificado', closedBy: state.activeOperator, opening: state.cash.opening, sales: cashSales(), byPayment: bp, expected, counted, difference: diff, movements: (state.cash.movements || []).map(x => (Object.assign({}, x))) };
     state.cash.closures = state.cash.closures || [];
-    state.cash.closures.push(closure);
+    closure.shiftBreakdown=window.cashShiftBreakdownV65(state.cash,new Date(closure.closedAt),state.history||[],state.internalAccounts?.settlements||[]);
+ closure.businessDate=closure.shiftBreakdown?.businessDate||null;
+ state.cash.closures.push(closure);
     window.lastCashClosure = closure;
     state.cash.open = false;
     state.cash.openedAt = null;
@@ -2816,4 +2835,4 @@ if ('serviceWorker' in navigator) {
         }
     });
 }
-</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script></body></html>
+</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script><script src="./caixa-turnos.js"></script></body></html>
