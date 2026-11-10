@@ -141,6 +141,28 @@ button{color:inherit}
 .cash-shift-overall{border-top:1px solid #558567;padding-top:12px;margin-top:12px;font-size:13px}
 .cash-shift-card details{margin-top:10px}.cash-shift-card summary{cursor:pointer;padding:7px 0}
 @media(max-width:660px){.cash-shift-wrap{grid-template-columns:1fr}}
+
+/* 2.9.7.67 — clientes com conta a prazo e extratos por dia */
+.credit-dashboard-tile{border-color:#5a9264!important;background:linear-gradient(130deg,#20382b,#172a20);cursor:pointer}
+.credit-client-banner{background:#1b3527;border:1px solid #6cac7d;padding:14px;margin:10px 0}
+.credit-client-banner>b{display:block;font-size:15px;color:#c6f9d4}
+.credit-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.credit-actions>.btn{flex:1 1 160px;white-space:normal}
+.credit-day{border:1px solid #53735b;margin:10px 0;padding:11px}
+.credit-day>h3{font-size:15px;color:#b0edc5;margin:0 0 8px}
+.credit-entry{padding:6px 0 8px;border-bottom:1px solid #42604a;margin:6px 0}
+.credit-entry:last-child{border-bottom:0}
+.credit-product{padding-left:14px;font-size:13px;border-bottom:1px dotted #536957}
+.credit-product>span:last-child{white-space:nowrap}
+.credit-summary .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.credit-summary .grid>div{display:flex;flex-direction:column;border:1px solid #40654a;border-radius:9px;padding:10px;gap:4px}
+.credit-summary .grid b{font-size:17px;color:#d5ffdf}
+.credit-summary .grid small{color:#b1bfb4}
+.credit-day-total{font-size:13px;flex-wrap:wrap}
+.credit-total{border:2px solid #5bbf74}
+.credit-cash-summary{margin-top:12px;border:1px solid #498a60}
+.credit-person-card{border:1px solid #3e7751;margin:8px 0}
+.credit-person-card small{display:block;margin-top:3px}
 </style><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -150,7 +172,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.66 • CERVEJAS LITRINHO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.67 • CLIENTES A PRAZO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>🧾 CONFERIR E ENVIAR PEDIDO/button></div></section>
@@ -548,11 +570,11 @@ async function cloudRequest(path, opts = {}) { let cfg = cloudConfig(); if (!cfg
 finally {
     clearTimeout(tm);
 } }
-function stateRecords(s) { let rows = []; (s.tables || []).forEach(t => rows.push({ record_key: 'table:' + t.id, data: t })); rows.push({ record_key: 'counter', data: s.counter || { items: [], orders: [], status: 'livre' } }); rows.push({ record_key: 'inventory', data: s.inventory || { items: {}, movements: [] } }); let meta = { revenue: s.revenue || 0, history: s.history || [], cash: s.cash || { open: false, openedAt: null, opening: 0, movements: [], closures: [] }, cancellations: s.cancellations || [], operators: s.operators || ['Pablo', 'Cláudia', 'Claudevânia'], transfers: s.transfers || [], internalAccounts: s.internalAccounts || { withdrawals: [], settlements: [] }, counterQueue: s.counterQueue || [], counterTicket: s.counterTicket || { date: '', last: 0 } }; rows.push({ record_key: 'meta', data: meta }); return rows; }
+function stateRecords(s) { let rows = []; (s.tables || []).forEach(t => rows.push({ record_key: 'table:' + t.id, data: t })); rows.push({ record_key: 'counter', data: s.counter || { items: [], orders: [], status: 'livre' } }); rows.push({ record_key: 'inventory', data: s.inventory || { items: {}, movements: [] } }); let meta = { revenue: s.revenue || 0, history: s.history || [], cash: s.cash || { open: false, openedAt: null, opening: 0, movements: [], closures: [] }, cancellations: s.cancellations || [], operators: s.operators || ['Pablo', 'Cláudia', 'Claudevânia'], transfers: s.transfers || [], internalAccounts: s.internalAccounts || { withdrawals: [], settlements: [] }, creditAccounts: s.creditAccounts || { accounts: [], receipts: [] }, counterQueue: s.counterQueue || [], counterTicket: s.counterTicket || { date: '', last: 0 } }; rows.push({ record_key: 'meta', data: meta }); return rows; }
 function snapOf(s) { let o = {}; for (let r of stateRecords(s))
     o[r.record_key] = JSON.stringify(r.data); return o; }
 function applyRows(rows) { let by = {}; (rows || []).forEach(r => by[r.record_key] = r.data); if (!by.meta && !Object.keys(by).some(k => k.startsWith('table:')))
-    return false; let ns = JSON.parse(JSON.stringify(state)); ns.tables = Array.from({ length: 10 }, (_, i) => { var _a; return by['table:' + (i + 1)] || ((_a = ns.tables) === null || _a === void 0 ? void 0 : _a[i]) || { id: i + 1, items: [], orders: [], status: 'livre' }; }); ns.counter = by.counter || ns.counter || { items: [], orders: [], status: 'livre' }; let m = by.meta || {}; for (let k of ['revenue', 'history', 'cash', 'cancellations', 'operators', 'transfers', 'internalAccounts', 'counterQueue', 'counterTicket'])
+    return false; let ns = JSON.parse(JSON.stringify(state)); ns.tables = Array.from({ length: 10 }, (_, i) => { var _a; return by['table:' + (i + 1)] || ((_a = ns.tables) === null || _a === void 0 ? void 0 : _a[i]) || { id: i + 1, items: [], orders: [], status: 'livre' }; }); ns.counter = by.counter || ns.counter || { items: [], orders: [], status: 'livre' }; let m = by.meta || {}; for (let k of ['revenue', 'history', 'cash', 'cancellations', 'operators', 'transfers', 'internalAccounts', 'creditAccounts', 'counterQueue', 'counterTicket'])
     if (m[k] !== undefined)
         ns[k] = m[k]; if (by.inventory !== undefined)
     ns.inventory = by.inventory;
@@ -2835,4 +2857,4 @@ if ('serviceWorker' in navigator) {
         }
     });
 }
-</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script></body></html>
+</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script></body></html>
