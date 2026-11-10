@@ -28,7 +28,8 @@
  function receiptsOf(a){return data().receipts.filter(r=>r.accountId===a.id&&!r.voided)}
  function paidTotal(a){return receiptsOf(a).reduce((v,r)=>v+amount(r.value),0)}
  function pendingAccounts(){return data().accounts.filter(a=>balance(a)>.009)}
- function canCharge(){return !authProfile||canView('mesas')||canView('caixa')}
+ function canAccess(){return !authProfile||canView('mesas')||canView('caixa')}
+ function canCharge(){return !authProfile||canView('mesas')}
  function canCollect(){return !!state.cash?.open && (!authProfile||canView('caixa'))}
  function escapeId(x){return encodeURIComponent(String(x||''))}
  function decodeId(x){try{return decodeURIComponent(x)}catch(e){return String(x||'')}}
@@ -78,19 +79,19 @@
     '<p class="muted">Documento de conferência do cliente. Não substitui nota fiscal. Consumos entram no extrato na hora do pedido; recebimentos entram no caixa somente quando pagos.</p>';
  }
  function showAccounts(){
-   if(!canCharge())return alert('Seu perfil não permite consultar contas de clientes.');
+   if(!canAccess())return alert('Seu perfil não permite consultar contas de clientes.');
    let accounts=data().accounts.slice().sort((a,b)=>(balance(b)>0)-(balance(a)>0)||a.name.localeCompare(b.name,'pt-BR'));
    document.getElementById('modalContent').innerHTML='<h2>👥 Contas de Clientes — Balcão</h2>'+
      '<p class="muted">A conta continua disponível mesmo após o fechamento do dia. Selecione um cliente para lançar novos produtos, conferir os consumos ou receber pagamentos.</p>'+
      '<div class="panel"><label>Novo cliente</label><input id="creditClientNameV67" maxlength="100" placeholder="Digite o nome do cliente">'+
      '<label>Telefone / referência (opcional)</label><input id="creditClientPhoneV67" maxlength="70" placeholder="Telefone ou identificação">'+
-     '<button class="btn primary" style="width:100%;margin-top:10px" onclick="createCreditAccountV67()">+ CADASTRAR CLIENTE</button></div>'+
+     '<button class="btn primary" style="width:100%;margin-top:10px" onclick="createCreditAccountV67()" '+(!canCharge()?'disabled':'')+'>+ CADASTRAR CLIENTE</button></div>'+
      '<label>Buscar cliente já cadastrado</label><input id="creditClientSearchV67" placeholder="🔎 Nome ou telefone..." oninput="filterCreditAccountsV67()">'+
      '<div id="creditClientCardsV67">'+accounts.map(a=>
        '<div class="panel credit-person-card" data-credit-search="'+esc((a.name+' '+(a.phone||'')).toLowerCase())+'">'+
        '<div class="cart-row"><span><b>'+esc(a.name)+'</b><small class="muted">'+(a.phone?esc(a.phone):'Conta de cliente')+'</small></span>'+
        '<b>'+money(balance(a))+'</b></div>'+
-       '<div class="credit-actions"><button class="btn primary" onclick="launchCreditOrderV67(\''+escapeId(a.id)+'\')">+ LANÇAR PEDIDO</button>'+
+       '<div class="credit-actions"><button class="btn primary" onclick="launchCreditOrderV67(\''+escapeId(a.id)+'\')" '+(!canCharge()?'disabled':'')+'>+ LANÇAR PEDIDO</button>'+
        '<button class="btn" onclick="openCreditAccountV67(\''+escapeId(a.id)+'\')">🧾 VER EXTRATO</button></div></div>'
      ).join('')+'</div>'+
      '<div class="sheet-actions"><button class="btn" onclick="closeModal()">FECHAR</button></div>';
@@ -119,7 +120,7 @@
    if(!a)return alert('Conta não localizada. Atualize a página e tente novamente.');
    document.getElementById('modalContent').innerHTML=statement(a)+
      '<div class="panel"><div class="credit-actions">'+
-     '<button class="btn primary" onclick="launchCreditOrderV67(\''+escapeId(a.id)+'\')">🍢 LANÇAR NOVO CONSUMO</button>'+
+     '<button class="btn primary" onclick="launchCreditOrderV67(\''+escapeId(a.id)+'\')" '+(!canCharge()?'disabled':'')+'>🍢 LANÇAR NOVO CONSUMO</button>'+
      '<button class="btn" onclick="startCreditPaymentV67(\''+escapeId(a.id)+'\')" '+(!canCollect()||balance(a)<.01?'disabled':'')+'>💰 RECEBER / ACERTAR</button>'+
      '<button class="btn" onclick="printCreditAccountV67(\''+escapeId(a.id)+'\')">📄 PDF / IMPRIMIR</button>'+
      '<button class="btn" onclick="shareCreditAccountV67(\''+escapeId(a.id)+'\')">📲 WHATSAPP</button>'+
