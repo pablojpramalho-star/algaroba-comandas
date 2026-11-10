@@ -24,7 +24,7 @@
    if(/^(?:KS\s*290\s*ml|Refrigerante\s*1\s*L|Refrigerante\b)/i.test(n))return 'Refrigerantes';
    if(/(?:litrinho|long neck|cerveja)/i.test(n))return 'Cervejas';
    if(/^Água\b/i.test(n))return 'Águas';
-   if(/^Café\b/i.test(n))return 'Cafés';
+   if(/^Café(?:\s|$)/i.test(n))return 'Cafés';
    if(/^Suco\b/i.test(n))return 'Sucos';
    return 'Outras bebidas';
  }
