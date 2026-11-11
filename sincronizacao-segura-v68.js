@@ -194,9 +194,11 @@
          const versionFilter=timestamp==null?'is.null':'eq.'+encodeURIComponent(timestamp);
          const url='algaroba_records?record_key=eq.'+encodeURIComponent(key)+
            '&updated_at='+versionFilter+'&select=record_key,updated_at';
+         const previousMs=Date.parse(timestamp||'');
+         const nextMs=Math.max(Date.now(),Number.isFinite(previousMs)?previousMs+1:0);
          saved=await rawRequest(url,{
            method:'PATCH',prefer:'return=representation',
-           body:JSON.stringify({data,updated_at:new Date().toISOString()})
+           body:JSON.stringify({data,updated_at:new Date(nextMs).toISOString()})
          });
        }
        if(!Array.isArray(saved)||saved.length!==1){
