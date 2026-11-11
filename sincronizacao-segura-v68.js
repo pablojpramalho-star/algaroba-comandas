@@ -194,54 +194,83 @@
    const requested=(Array.isArray(requestRows)?requestRows:[requestRows]).filter(x=>x?.record_key);
    if(!requested.length)return null;
    if(blocked)throw Error('Sincronização bloqueada por divergência anterior. Confira as cópias antes de prosseguir.');
-   // Protege também as gravações diretas de abertura, pagamento e fechamento.
    backupRows(requested,'Cópia antes do envio ao servidor');
    pendingWrite();
    writing=true;
    try{
-     // Consulta o servidor ANTES de gravar. O campo updated_at funciona
-     // como token de versão para o PATCH condicional atômico do PostgREST.
      const current=await getRows();
      const by=new Map(current.map(r=>[r.record_key,r]));
-     for(const originalRow of requested){
-       const key=originalRow.record_key;
-       // Se um novo pedido chegou enquanto a gravação esperava,
-       // a carga usada será o estado mais recente deste aparelho.
-       const local=latestRow(key);
-       const data=local?.data||originalRow.data;
-       const remote=by.get(key),known=cloudSnapshot[key];
-       if(remote&&canon(remote.data)===canon(data)){
-         cloudSnapshot[key]=JSON.stringify(data);continue;
-       }
-       if(remote&&(!known||canon(remote.data)!==canon(JSON.parse(known)))){
+     // PRÉ-CONFERÊNCIA DO LOTE INTEIRO antes de mudar qualquer registro.
+     // Evita fechar a mesa se o histórico do caixa já está divergente.
+     const plans=requested.map(row=>{
+       const key=row.record_key,local=latestRow(key),data=local?.data||row.data,
+             remote=by.get(key),known=cloudSnapshot[key];
+       const same=!!remote&&canon(remote.data)===canon(data);
+       if(remote&&!same&&(!known||canon(remote.data)!==canon(JSON.parse(known)))){
          backupRows([remote],'Versão divergente recebida do banco');
          alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
-         throw Error('Conflito de sincronização em '+labelKey(key)+': atualização concorrente não sobrescrita.');
+         throw Error('Conflito de sincronização em '+labelKey(key)+': lote não enviado.');
        }
-       let saved;
-       if(!remote){
-         saved=await rawRequest('algaroba_records?on_conflict=record_key&select=record_key,updated_at',{
-           method:'POST',prefer:'resolution=ignore-duplicates,return=representation',
-           body:JSON.stringify([{record_key:key,data,updated_at:new Date().toISOString()}])
-         });
-       }else{
-         const timestamp=remote.updated_at;
-         const versionFilter=timestamp==null?'is.null':'eq.'+encodeURIComponent(timestamp);
-         const url='algaroba_records?record_key=eq.'+encodeURIComponent(key)+
-           '&updated_at='+versionFilter+'&select=record_key,updated_at';
-         const previousMs=Date.parse(timestamp||'');
-         const nextMs=Math.max(Date.now(),Number.isFinite(previousMs)?previousMs+1:0);
-         saved=await rawRequest(url,{
-           method:'PATCH',prefer:'return=representation',
-           body:JSON.stringify({data,updated_at:new Date(nextMs).toISOString()})
-         });
+       return {key,data,remote,same};
+     });
+     const committed=[];
+     try{
+       for(const plan of plans){
+         const {key,data,remote,same}=plan;
+         if(same){cloudSnapshot[key]=JSON.stringify(data);continue}
+         let saved;
+         if(!remote){
+           saved=await rawRequest('algaroba_records?on_conflict=record_key&select=record_key,updated_at',{
+             method:'POST',prefer:'resolution=ignore-duplicates,return=representation',
+             body:JSON.stringify([{record_key:key,data,updated_at:new Date().toISOString()}])
+           });
+         }else{
+           const versionFilter=remote.updated_at==null?'is.null':'eq.'+encodeURIComponent(remote.updated_at);
+           const url='algaroba_records?record_key=eq.'+encodeURIComponent(key)+
+             '&updated_at='+versionFilter+'&select=record_key,updated_at';
+           const oldMs=Date.parse(remote.updated_at||'');
+           const nextMs=Math.max(Date.now(),Number.isFinite(oldMs)?oldMs+1:0);
+           saved=await rawRequest(url,{
+             method:'PATCH',prefer:'return=representation',
+             body:JSON.stringify({data,updated_at:new Date(nextMs).toISOString()})
+           });
+         }
+         if(!Array.isArray(saved)||saved.length!==1){
+           backupRows([remote].filter(Boolean),'Versão anterior ao conflito de gravação');
+           throw Error('Outro aparelho alterou '+labelKey(key)+' durante a gravação.');
+         }
+         committed.push({key,remote,writtenVersion:saved[0].updated_at});
+         cloudSnapshot[key]=JSON.stringify(data);
        }
-       if(!Array.isArray(saved)||saved.length!==1){
-         backupRows([remote].filter(Boolean),'Versão anterior ao conflito de gravação');
-         alertSync('Houve atualização simultânea de '+labelKey(key)+'. A operação foi preservada neste aparelho para conferência.',key);
-         throw Error('Conflito: o servidor não confirmou a gravação exclusiva de '+labelKey(key));
+     }catch(e){
+       let rollbackFailed=false;
+       // Compensa gravações já efetuadas neste lote quando a gravação seguinte
+       // falhou. A restauração só é permitida se a versão for exatamente a nossa.
+       for(const written of committed.reverse()){
+         if(!written.remote){rollbackFailed=true;continue}
+         try{
+           const version=written.writtenVersion;
+           if(!version){rollbackFailed=true;continue}
+           const past=Date.parse(version);
+           const nextMs=Math.max(Date.now(),Number.isFinite(past)?past+1:0);
+           const restored=await rawRequest('algaroba_records?record_key=eq.'+encodeURIComponent(written.key)+
+              '&updated_at=eq.'+encodeURIComponent(version)+'&select=record_key,updated_at',{
+             method:'PATCH',prefer:'return=representation',
+             body:JSON.stringify({data:written.remote.data,updated_at:new Date(nextMs).toISOString()})
+           });
+           if(!Array.isArray(restored)||restored.length!==1)rollbackFailed=true;
+           else cloudSnapshot[written.key]=JSON.stringify(written.remote.data);
+         }catch(rollbackError){
+           rollbackFailed=true;console.error('Não foi possível compensar '+written.key,rollbackError);
+         }
        }
-       cloudSnapshot[key]=JSON.stringify(data);
+       if(!blocked)alertSync(
+         rollbackFailed?
+           'Foi detectada uma GRAVAÇÃO PARCIAL. Preserve os aparelhos e confira mesa, estoque e caixa antes de voltar a receber.':
+           'Houve uma alteração simultânea. A gravação foi suspensa e as etapas concluídas foram revertidas para evitar divergência.',
+         String(e.message||e)
+       );
+       throw e;
      }
      clearBlock();
      cloudFailures=0;cloudLastError='';
