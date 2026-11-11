@@ -88,6 +88,19 @@
        const localOrderIds=new Set((x.data.orders||[]).map(o=>String(o.id)));
        const serverOrderIds=new Set((y.data.orders||[]).map(o=>String(o.id)));
        const lost=[...localOrderIds].filter(id=>!serverOrderIds.has(id));
+       const mesa=x.record_key.slice(6),meta=server.get('meta')?.data||{},mesaName='Mesa '+String(mesa).padStart(2,'0');
+       const recentOrderMs=Math.max(0,...(x.data.orders||[]).map(o=>new Date(o.createdAt||0).getTime()).filter(Number.isFinite));
+       const hasValidClosure=(meta.history||[]).some(h=>String(h.name||'').startsWith(mesaName)&&
+         new Date(h.closedAt||0).getTime()>=recentOrderMs);
+       const hasValidCancel=(meta.cancellations||[]).some(h=>String(h.table||'').startsWith(mesaName)&&
+         new Date(h.at||0).getTime()>=recentOrderMs);
+       const movedFromHere=(meta.transfers||[]).some(t=>String(t.from)===String(mesa)&&
+         new Date(t.at||0).getTime()>=recentOrderMs);
+       const totalOf=t=>(t.items||[]).reduce((v,it)=>v+Number(it.qty||0)*Number(it.price||0),0);
+       const beforeTotal=totalOf(x.data),afterTotal=totalOf(y.data);
+       if(afterTotal+.009<beforeTotal&&!hasValidClosure&&!hasValidCancel&&!movedFromHere){
+         reasons.push(labelKey(x.record_key)+' teve redução não justificada: '+beforeTotal.toFixed(2)+' → '+afterTotal.toFixed(2));
+       }
        if(lost.length){
          const mesa=x.record_key.slice(6),meta=server.get('meta')?.data||{},name='Mesa '+String(mesa).padStart(2,'0');
          const affected=(x.data.orders||[]).filter(o=>lost.includes(String(o.id)));
@@ -108,6 +121,13 @@
        const receipts=new Set((y.data.receipts||[]).map(r=>r.id));
        const missingReceipts=(x.data.receipts||[]).filter(r=>!receipts.has(r.id));
        if(missingReceipts.length)reasons.push(missingReceipts.length+' pagamento(s) de clientes sumiram do servidor');
+       for(const account of a){
+         const remoteAccount=b.find(b=>b.id===account.id);
+         if(!remoteAccount)continue;
+         const chargeIds=new Set((remoteAccount.charges||[]).map(c=>c.id));
+         const missingCharges=(account.charges||[]).filter(c=>!chargeIds.has(c.id));
+         if(missingCharges.length)reasons.push(missingCharges.length+' consumo(s) do cliente '+String(account.name||'')+' não constam no servidor');
+       }
      }
      if(x.record_key==='meta'){
        const localHistory=x.data.history||[],remoteHistory=y.data.history||[];
@@ -127,6 +147,19 @@
        const missingClosures=(x.data.cash?.closures||[]).slice(-20).filter(c=>!closures.has(c.closedAt));
        if(missingClosures.length)reasons.push(missingClosures.length+' fechamento(s) de caixa não constam no servidor');
        const latestQ=x.data.counterQueue||[],remoteQ=new Set((y.data.counterQueue||[]).map(q=>String(q.id)));
+       for(const localQ of latestQ){
+         const serverQ=(y.data.counterQueue||[]).find(q=>String(q.id)===String(localQ.id));
+         if(!serverQ)continue;
+         const totalOf=q=>(q.items||[]).reduce((v,it)=>v+Number(it.qty||0)*Number(it.price||0),0);
+         const oldTotal=totalOf(localQ),newTotal=totalOf(serverQ);
+         const cancel=(y.data.cancellations||[]).some(c=>
+           String(c.table||'').includes(String(localQ.ticket||''))&&
+           new Date(c.at||0)>=new Date(localQ.createdAt||0));
+         if(newTotal+.009<oldTotal&&!cancel){
+           reasons.push('Pedido de balcão '+String(localQ.ticket||localQ.id)+' teve redução não justificada');
+           break;
+         }
+       }
        for(const q of latestQ){
          if(remoteQ.has(String(q.id)))continue;
          const cashPaid=remoteHistory.some(s=>String(s.ticket||'')===String(q.ticket||'')&&
