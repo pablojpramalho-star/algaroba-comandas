@@ -177,7 +177,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.68 • SINCRONIZAÇÃO SEGURA</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.69 • MEDALHÕES E CACHAÇAS</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>🧾 CONFERIR E ENVIAR PEDIDO/button></div></section>
@@ -230,12 +230,12 @@ button{color:inherit}
 <div id='printReport' class='hide'><div id='report'></div></div>
 </section>
 </main><div id='modal' class='modal hide'><div class='sheet'><div id='modalContent'></div></div></div><script>const catalog = {
-    'Espetinhos':[['Pão de Alho',5],['Linguiça Toscana',5],['Linguiça Toscana de Frango',5],['Coxinha de Frango',5],['Linguiça Calabresa',5],['Frango',6],['Moela',6],['Pão de Carne de Sol',6],['Pão com Creme de Queijo',6],['Tulipa de Frango',7],['Queijo Coalho',7],['Carne',7],['Kafta',7],['Coração',7],['Língua',7],['Cupim',8],['Picanha Suína',8],['Camarão',8],['Maçã da Língua',8],['Carneiro',8],['Medalhão de Carne com Bacon',12],['Medalhão de Frango com Bacon',12],['Medalhão de Queijo Coalho',12]], 'Porções': [['Filé com Fritas', 30], ['Frango com Fritas', 25], ['Calabresa com Fritas', 25], ['Língua com Macaxeira', 30], ['Batata Frita P', 12], ['Batata Frita G', 20], ['Macaxeira Frita', 15]],
+    'Espetinhos':[['Pão de Alho',5],['Linguiça Toscana',5],['Linguiça Toscana de Frango',5],['Coxinha de Frango',5],['Linguiça Calabresa',5],['Frango',6],['Moela',6],['Pão de Carne de Sol',6],['Pão com Creme de Queijo',6],['Tulipa de Frango',7],['Queijo Coalho',7],['Carne',7],['Kafta',7],['Coração',7],['Língua',7],['Cupim',8],['Picanha Suína',8],['Camarão',8],['Maçã da Língua',8],['Carneiro',8],['Medalhão de Carne com Bacon',10],['Medalhão de Frango com Bacon',10],['Medalhão de Queijo Coalho',10]], 'Porções': [['Filé com Fritas', 30], ['Frango com Fritas', 25], ['Calabresa com Fritas', 25], ['Língua com Macaxeira', 30], ['Batata Frita P', 12], ['Batata Frita G', 20], ['Macaxeira Frita', 15]],
     'Caldos/Sopas': [['Sopa de Costela 500 ml', 15], ['Caldo da Casa 500 ml', 15]],
     'Pastéis Fritos na Hora': [['Pastel de Carne de Sol', 4], ['Pastel de Carne Moída', 4], ['Pastel de Frango', 4], ['Pastel de Queijo', 4]],
     'Bases': [['Base Pastel', 2], ['Pão na Chapa', 2], ['Base Tapioca', 3], ['Base Cuscuz', 3], ['Base Rap10', 3], ['Muçarela', 4], ['Queijo Coalho', 4], ['Queijo Manteiga', 4], ['Presunto', 4], ['Calabresa', 4], ['Carne Moída', 4], ['Frango recheio', 4], ['Catupiry', 4], ['Cheddar', 4], ['Carne de Sol', 5], ['Bacon', 5], ['Ovo Frito', 2]],
     'Acompanhamentos': [['Molho da Casa', 2.5], ['Vinagrete', 3], ['Farofa', 3], ['Kit Algaroba', 5]],
-    'Bebidas': [['KS 290 ml', 5], ['Refrigerante 1 L', 10], ['Litrinho Brahma', 5], ['Litrinho Skol', 5], ['Litrinho Original', 6], ['Budweiser long neck', 10], ['Heineken long neck', 12], ['Corona Extra long neck', 12], ['Água sem gás', 3], ['Água com gás', 4], ['Café pequeno', 1], ['Café grande', 3], ['Café com leite', 4], ['Suco 400 ml', 6]],
+    'Bebidas': [['KS 290 ml', 5], ['Refrigerante 1 L', 10], ['Litrinho Brahma', 5], ['Litrinho Skol', 5], ['Litrinho Original', 6], ['Budweiser long neck', 10], ['Heineken long neck', 12], ['Corona Extra long neck', 12], ['Água sem gás', 3], ['Água com gás', 4], ['Café pequeno', 1], ['Café grande', 3], ['Café com leite', 4], ['Suco 400 ml',6],['Matuta Cristal (Garrafa 300 ml)',45],['Matuta Umburana (Garrafa 300 ml)',45],['Matuta Maçã Verde (Garrafa 300 ml)',45],['Matuta Canela (Garrafa 300 ml)',45],['Matuta Mel & Limão (Garrafa 300 ml)',45],['Matuta Banana (Garrafa 300 ml)',45],['Sam Valle Prata (Garrafa)',38],['Sam Valle Umburana (Garrafa)',38],['Sam Valle Blend de Madeiras (Garrafa)',38],['Serra de Areia (Garrafa 275 ml)',32],['São Tomé Cristal (Garrafa 275 ml)',32],['Ypióca Prata (Lata 350 ml)',20]],
     'Shakes': [['Shake 300 ml', 8], ['Shake 500 ml', 10]],
     'Combos':[['Resenha',20],['Sossego',22],['Companheiro',20],['Combo Algaroba',20],['Bonde da Algaroba',60]]
 };
@@ -730,7 +730,7 @@ function renderTables() { let h = ''; state.tables.forEach(t => { let sum = t.it
 function getT() { return current === 'counter' ? state.counter : state.tables.find(x => x.id === current); }
 function openTable(id) { current = id; cart = []; document.getElementById('mesas').classList.add('hide'); document.getElementById('comanda').classList.remove('hide'); document.getElementById('tableTitle').textContent = id === 'counter' ? 'Balcão / Retirada' : 'Mesa ' + String(id).padStart(2, '0'); document.getElementById('transferBtn').style.display = id === 'counter' ? 'none' : 'inline-block'; const catsEl = document.getElementById('cats'); catsEl.innerHTML = ''; Object.keys(catalog).forEach((c, i) => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn' + (i === 0 ? ' primary' : ''); btn.textContent = c; btn.addEventListener('click', () => showCat(c, btn)); catsEl.appendChild(btn); }); showCat(Object.keys(catalog)[0]); renderCart(); }
 
-const skewerLines=[{name:'Arretada',price:5},{name:'Arrochada',price:6},{name:'Assanhada',price:7},{name:'Avexada',price:8},{name:'Atrevida',price:12}];
+const skewerLines=[{name:'Arretada',price:5},{name:'Arrochada',price:6},{name:'Assanhada',price:7},{name:'Avexada',price:8},{name:'Atrevida',price:10}];
 let selectedSkewerLine='Todas';
 function skewerLineForName(full){
  const name=String(full||'').split(' • ')[0].trim();
@@ -1612,6 +1612,7 @@ async function shareClosureWhatsApp() { let c = window.lastCashClosure; if (!c)
 function stockKey(name) {
     let full = String(name || '').trim();
  if(/^Medalhão de Queijo Coalho(?: com Bacon)?(?: •|$)/.test(full))return 'Queijo Coalho com Bacon';
+ if(/^Ypióca Prata \(Lata 350 ml\)(?: •|$)/.test(full))return 'Ypióca Lata';
     if (/^Queijo Coalho(?: •|$)/.test(full)) return 'Espetinho Queijo Coalho';
     if (full.startsWith('KS 290 ml • '))
         return full;
@@ -1638,6 +1639,7 @@ function inventoryCatalog() {
         for (const p of arr) {
             let k = p[0], price = p[1];
      if(cat==='Espetinhos'&&k==='Medalhão de Queijo Coalho'){add('Queijo Coalho com Bacon',cat,price);continue;}
+ if(cat==='Bebidas'&&k==='Ypióca Prata (Lata 350 ml)'){add('Ypióca Lata',cat,price);continue;}
             if (cat === 'Bebidas' && k === 'KS 290 ml') {
                 ks.forEach(v => add('KS 290 ml • ' + v, cat, price));
                 continue;
@@ -1709,7 +1711,8 @@ function addInvMovement(type, key, delta, reason, before, after, cost) { state.i
 function inventoryConsume(it) {
     ensureInventory();
     let nm = String((it === null || it === void 0 ? void 0 : it.name) || ''), size300 = /300\s*ml/i.test(nm), size500 = /500\s*ml/i.test(nm);
-    if (!size300 && !size500) {
+ if(!/^Shake\s+(?:300|500)\s*ml/i.test(nm)){size300=false;size500=false;}
+    if(/^Shake\s+(?:300|500)\s*ml/i.test(nm)&&!size300&&!size500){
         let sizeText = [it === null || it === void 0 ? void 0 : it.variant, it === null || it === void 0 ? void 0 : it.flavor, it === null || it === void 0 ? void 0 : it.option, it === null || it === void 0 ? void 0 : it.selectedVariant].filter(Boolean).join(' ');
         size300 = /300\s*ml/i.test(sizeText);
         size500 = /500\s*ml/i.test(sizeText);
@@ -1744,7 +1747,8 @@ function inventoryConsume(it) {
         addInvMovement('saida', k, delta, 'Venda / pedido enviado', before, x.qty, inventoryCostPerStockUnit(x));
     }
 }
-function inventoryReturn(it, reason) { ensureInventory(); let z = [it === null || it === void 0 ? void 0 : it.name, it === null || it === void 0 ? void 0 : it.variant, it === null || it === void 0 ? void 0 : it.flavor, it === null || it === void 0 ? void 0 : it.option, it === null || it === void 0 ? void 0 : it.selectedVariant].filter(Boolean).join(' '), size300 = /300\s*ml/i.test(z), size500 = /500\s*ml/i.test(z); if (size300 || size500) {
+function inventoryReturn(it, reason) { ensureInventory(); let z = [it === null || it === void 0 ? void 0 : it.name, it === null || it === void 0 ? void 0 : it.variant, it === null || it === void 0 ? void 0 : it.flavor, it === null || it === void 0 ? void 0 : it.option, it === null || it === void 0 ? void 0 : it.selectedVariant].filter(Boolean).join(' '), size300 = /300\s*ml/i.test(z), size500 = /500\s*ml/i.test(z);
+ if(!/^Shake\s+(?:300|500)\s*ml/i.test(String(it?.name||''))){size300=false;size500=false;} if (size300 || size500) {
     let p = resolveShakeFlavorStock(it), cfg = shakeCostConfig(), q = Number(it.qty || 1);
     if (p) {
         ensureShakeStockUnit(p);
@@ -1883,7 +1887,7 @@ function renderInventoryHistory() { var _a, _b, _c; let el = document.getElement
 const SHAKE_COST_DEFAULTS = { iceBagCost: 30, iceBagGrams: 50000, milkPackCost: 28, milkPackGrams: 750, cupCost: .30, strawCost: .12, toppingCost: .50, grams300: 90, grams500: 130, ice300: 300, ice500: 500, milk300: 20, milk500: 30 };
 function shakeCostConfig() { state.shakeCostConfig = Object.assign({}, SHAKE_COST_DEFAULTS, state.shakeCostConfig || {}); return state.shakeCostConfig; }
 function shakeRecipeCost(flavor, size) { var _a, _b; let c = shakeCostConfig(), x = ((_b = (_a = state.inventory) === null || _a === void 0 ? void 0 : _a.items) === null || _b === void 0 ? void 0 : _b[flavor]) || {}, kg = Number(x.cost || 0), small = Number(size) === 300, fg = small ? c.grams300 : c.grams500, ig = small ? c.ice300 : c.ice500, mg = small ? c.milk300 : c.milk500, p = { flavor: kg / 1000 * fg, ice: c.iceBagCost / c.iceBagGrams * ig, milk: c.milkPackCost / c.milkPackGrams * mg, cup: Number(c.cupCost), straw: Number(c.strawCost), topping: Number(c.toppingCost) }; return { flavor, size: Number(size), kgCost: kg, flavorGrams: fg, iceGrams: ig, milkGrams: mg, parts: p, total: Object.values(p).reduce((a, v) => a + Number(v || 0), 0) }; }
-function shakeCmvSnapshot(it) { let z = [it === null || it === void 0 ? void 0 : it.name, it === null || it === void 0 ? void 0 : it.variant, it === null || it === void 0 ? void 0 : it.flavor, it === null || it === void 0 ? void 0 : it.option, it === null || it === void 0 ? void 0 : it.selectedVariant].filter(Boolean).join(' '), size = /300\s*ml/i.test(z) ? 300 : /500\s*ml/i.test(z) ? 500 : 0; if (!size)
+function shakeCmvSnapshot(it) {if(!/^Shake\s+(?:300|500)\s*ml/i.test(String(it?.name||'')))return null; let z = [it === null || it === void 0 ? void 0 : it.name, it === null || it === void 0 ? void 0 : it.variant, it === null || it === void 0 ? void 0 : it.flavor, it === null || it === void 0 ? void 0 : it.option, it === null || it === void 0 ? void 0 : it.selectedVariant].filter(Boolean).join(' '), size = /300\s*ml/i.test(z) ? 300 : /500\s*ml/i.test(z) ? 500 : 0; if (!size)
     return null; let p = resolveShakeFlavorStock(it); return p ? shakeRecipeCost(p.key, size) : null; }
 async function saveShakeCostConfig() { let ids = ['iceBagCost', 'iceBagGrams', 'milkPackCost', 'milkPackGrams', 'cupCost', 'strawCost', 'toppingCost', 'grams300', 'grams500', 'ice300', 'ice500', 'milk300', 'milk500'], c = shakeCostConfig(); ids.forEach(id => { let e = document.getElementById('sc_' + id); if (e)
     c[id] = Number(e.value || 0); }); state.shakeCostConfig = c; localStorage.setItem('algarobaState', JSON.stringify(state)); try {
