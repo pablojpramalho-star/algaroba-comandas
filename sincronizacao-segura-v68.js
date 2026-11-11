@@ -1,5 +1,6 @@
 (function installSafeSyncV68(){
  const PENDING='algarobaSyncPendingV68';
+ const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const BACKUPS='algarobaComandasBackupsV68';
  const VERSION='2.9.7.68';
  const rawRequest=cloudRequest;
@@ -344,6 +345,7 @@
  }
 
  window.retrySafeSyncV68=async function(){
+   if(!canExport())return alert('Somente Administrador ou Gerente pode conciliar a sincronização.');
    if(!cloudReady)return alert('Sem conexão online. Preserve as cópias e tente quando a internet estiver disponível.');
    if(reading||writing)return alert('A sincronização ainda está verificando dados. Tente novamente.');
    try{
@@ -385,10 +387,10 @@
      '<div class="panel"><b>'+esc(blocked?'⚠️ SINCRONIZAÇÃO INTERROMPIDA':'✅ Proteção contra sobrescrita ativa')+'</b>'+
      '<div class="muted">'+esc(blocked?.message||'As alterações são comparadas com a versão do servidor antes de salvar.')+'</div>'+
      (blocked?.details?'<div class="muted">Registros afetados: '+esc(blocked.details)+'</div>':'')+
-     (blocked?'<button class="btn primary" onclick="retrySafeSyncV68()">🔄 REAVALIAR E RETOMAR COM SEGURANÇA</button>':'')+'</div>'+
+     (blocked&&canExport()?'<button class="btn primary" onclick="retrySafeSyncV68()">🔄 REAVALIAR E RETOMAR COM SEGURANÇA</button>':'')+'</div>'+
      '<div class="panel"><b>Arquivos de segurança deste aparelho</b><div class="muted">As cópias ficam armazenadas apenas neste aparelho. Faça uma exportação antes de limpar o navegador ou reinstalar o aplicativo.</div>'+
-     '<button class="btn primary" onclick="exportCurrentComandasV68()">📥 EXPORTAR ESTADO ATUAL (JSON)</button>'+
-     '<button class="btn" onclick="exportComandasBackupsV68()">📥 EXPORTAR CÓPIAS DE SEGURANÇA</button></div>'+
+     (canExport()?'<button class="btn primary" onclick="exportCurrentComandasV68()">📥 EXPORTAR ESTADO ATUAL (JSON)</button>':'')+
+     (canExport()?'<button class="btn" onclick="exportComandasBackupsV68()">📥 EXPORTAR CÓPIAS DE SEGURANÇA</button>':'<div class="muted">Solicite ao administrador para exportar dados de clientes e vendas.</div>')+'</div>'+
      backups.slice(0,20).map(e=>'<div class="cart-row"><span><b>'+esc(labelKey(e.key))+'</b><div class="muted">'+new Date(e.at).toLocaleString('pt-BR')+' • '+esc(e.why||'')+'</div></span><b>'+Math.round(e.size/1024)+' KB</b></div>').join('')+
      (blocked?'<p class="muted">Não force a sincronização nem limpe os dados. Mantenha os aparelhos abertos e confira as comandas antes de retomar.</p>':'')+
      '<button class="btn" onclick="closeModal()">FECHAR</button>';
@@ -403,11 +405,13 @@
    setTimeout(()=>URL.revokeObjectURL(url),1500);
  }
  window.exportCurrentComandasV68=function(){
+   if(!canExport())return alert('Apenas Administrador ou Gerente pode exportar registros de clientes.');
    backupRows(activeRows(),'Exportação manual');
    downloadJSON('algaroba-comandas-atual-'+new Date().toISOString().slice(0,10)+'.json',
      {version:VERSION,exportedAt:new Date().toISOString(),records:activeRows(),conflict:blocked});
  };
  window.exportComandasBackupsV68=function(){
+   if(!canExport())return alert('Apenas Administrador ou Gerente pode exportar registros de clientes.');
    downloadJSON('algaroba-backups-'+new Date().toISOString().slice(0,10)+'.json',
      {version:VERSION,exportedAt:new Date().toISOString(),backups:backupList()});
  };
