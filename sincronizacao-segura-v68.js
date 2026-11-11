@@ -159,6 +159,7 @@
  async function safeWriteRows(requestRows){
    const requested=(Array.isArray(requestRows)?requestRows:[requestRows]).filter(x=>x?.record_key);
    if(!requested.length)return null;
+   if(blocked)throw Error('Sincronização bloqueada por divergência anterior. Confira as cópias antes de prosseguir.');
    // Protege também as gravações diretas de abertura, pagamento e fechamento.
    backupRows(requested,'Cópia antes do envio ao servidor');
    pendingWrite();
@@ -262,7 +263,11 @@
  pullRecords=async function(first=false){
    if(reading||writing||blocked)return false;
    if(!first){
-     if(!cloudReady||userIsEditing()||Date.now()<cloudPausePullUntil||isDirty()||pendingRead())return false;
+     if(!cloudReady||userIsEditing()||Date.now()<cloudPausePullUntil)return false;
+     if(isDirty()||pendingRead()){
+       if(isDirty()&&!pendingRead()){pendingWrite();scheduleCloudSave()}
+       return false;
+     }
    }
    reading=true;
    try{
@@ -337,12 +342,50 @@
  function backupList(){
    try{const list=JSON.parse(localStorage.getItem(BACKUPS)||'[]');return Array.isArray(list)?list:[]}catch(e){return []}
  }
+
+ window.retrySafeSyncV68=async function(){
+   if(!cloudReady)return alert('Sem conexão online. Preserve as cópias e tente quando a internet estiver disponível.');
+   if(reading||writing)return alert('A sincronização ainda está verificando dados. Tente novamente.');
+   try{
+     const server=await getRows(),by=new Map(server.map(r=>[r.record_key,r]));
+     const local=activeRows();
+     const risks=dataLossSigns(local,server);
+     const divergent=[];
+     for(const row of changedNow()){
+       const remote=by.get(row.record_key);
+       const known=cloudSnapshot[row.record_key];
+       if(remote&&canon(remote.data)===canon(row.data)){
+         cloudSnapshot[row.record_key]=JSON.stringify(row.data);
+       }else if(remote&&known&&canon(remote.data)===canon(JSON.parse(known))){
+         // Modificação local pode ser reenviada sem risco de substituir o outro aparelho.
+       }else if(!remote&&!known){
+         // Registro novo ausente no banco: tentar inserção com chave única.
+       }else divergent.push(labelKey(row.record_key));
+     }
+     if(risks.length||divergent.length){
+       alertSync('Ainda existem diferenças entre a versão local e o banco. Nenhum lançamento será descartado.',
+         [...new Set([...risks,...divergent])].join('; '));
+       return alert('Persistem diferenças. Exporte as cópias locais e confira antes de conciliar as comandas.');
+     }
+     clearBlock();pendingWrite();
+     cloudLastError='';cloudFailures=0;
+     if(isDirty()){
+       scheduleCloudSave();setSyncStatus('offline','REENVIANDO ALTERAÇÕES SEGURAS…');
+     }else setSyncStatus('online','ONLINE • SALVO');
+     closeModal();alert('A verificação não encontrou conflito pendente nos registros alterados. A sincronização segura foi retomada.');
+   }catch(e){
+     alertSync('Não foi possível reavaliar a sincronização. Os dados locais permanecem preservados.',String(e.message||e));
+     alert('A verificação falhou. Confira sua conexão e não apague as cópias locais.');
+   }
+ };
+ 
  window.openSafeSyncPanelV68=function(){
    const backups=backupList();
    const content='<h2>🛡️ Segurança das Comandas</h2>'+
      '<div class="panel"><b>'+esc(blocked?'⚠️ SINCRONIZAÇÃO INTERROMPIDA':'✅ Proteção contra sobrescrita ativa')+'</b>'+
      '<div class="muted">'+esc(blocked?.message||'As alterações são comparadas com a versão do servidor antes de salvar.')+'</div>'+
-     (blocked?.details?'<div class="muted">Registros afetados: '+esc(blocked.details)+'</div>':'')+'</div>'+
+     (blocked?.details?'<div class="muted">Registros afetados: '+esc(blocked.details)+'</div>':'')+
+     (blocked?'<button class="btn primary" onclick="retrySafeSyncV68()">🔄 REAVALIAR E RETOMAR COM SEGURANÇA</button>':'')+'</div>'+
      '<div class="panel"><b>Arquivos de segurança deste aparelho</b><div class="muted">As cópias ficam armazenadas apenas neste aparelho. Faça uma exportação antes de limpar o navegador ou reinstalar o aplicativo.</div>'+
      '<button class="btn primary" onclick="exportCurrentComandasV68()">📥 EXPORTAR ESTADO ATUAL (JSON)</button>'+
      '<button class="btn" onclick="exportComandasBackupsV68()">📥 EXPORTAR CÓPIAS DE SEGURANÇA</button></div>'+
