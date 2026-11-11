@@ -2830,6 +2830,7 @@ function printFilteredReport() { generateFilteredReport(); setTimeout(() => { va
 window.addEventListener('storage', e => { if (e.key === 'algarobaState' && e.newValue) {
     if (userIsEditing())
         return;
+  if(typeof window.safeStorageReloadV68==='function'&&!window.safeStorageReloadV68(e.newValue))return;
     try {
         state = JSON.parse(e.newValue);
         renderOperator();
