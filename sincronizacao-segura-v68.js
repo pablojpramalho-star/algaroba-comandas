@@ -415,6 +415,25 @@
    downloadJSON('algaroba-backups-'+new Date().toISOString().slice(0,10)+'.json',
      {version:VERSION,exportedAt:new Date().toISOString(),backups:backupList()});
  };
+
+ window.safeStorageReloadV68=function(raw){
+   try{
+     if(!raw||reading||writing||blocked||isDirty()||pendingRead())return false;
+     const candidate=JSON.parse(raw);
+     if(!candidate||!Array.isArray(candidate.tables))return false;
+     const incoming=stateRecords(candidate);
+     const risks=dataLossSigns(activeRows(),incoming);
+     if(risks.length){
+       alertSync('Outra aba tentou substituir comandas por uma cópia local sem alguns lançamentos. A troca foi bloqueada.',risks.join('; '));
+       return false;
+     }
+     return true;
+   }catch(e){
+     console.warn('Bloqueada atualização local inválida:',e);
+     return false;
+   }
+ };
+
  const priorTables=renderTables;
  renderTables=function(){
    priorTables();
