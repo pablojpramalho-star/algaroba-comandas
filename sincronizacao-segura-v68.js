@@ -151,6 +151,9 @@
  async function safeWriteRows(requestRows){
    const requested=(Array.isArray(requestRows)?requestRows:[requestRows]).filter(x=>x?.record_key);
    if(!requested.length)return null;
+   // Protege também as gravações diretas de abertura, pagamento e fechamento.
+   backupRows(requested,'Cópia antes do envio ao servidor');
+   pendingWrite();
    writing=true;
    try{
      // Consulta o servidor ANTES de gravar. O campo updated_at funciona
@@ -381,4 +384,8 @@
    return oldCloudError();
  };
  started=true;
+ // Carrega a autenticação somente DEPOIS de instalar todas as proteções.
+ // Evita uma primeira leitura antiga do servidor sobrescrever os dados locais.
+ renderTables();
+ initAuth();
 })();
