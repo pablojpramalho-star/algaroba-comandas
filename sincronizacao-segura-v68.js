@@ -89,9 +89,14 @@
        const lost=[...localOrderIds].filter(id=>!serverOrderIds.has(id));
        if(lost.length){
          const mesa=x.record_key.slice(6),meta=server.get('meta')?.data||{},name='Mesa '+String(mesa).padStart(2,'0');
-         const paid=(meta.history||[]).some(s=>s.name===name&&!s.voided);
-         const cancelled=(meta.cancellations||[]).some(s=>s.table===name);
-         if(!paid&&!cancelled)reasons.push(labelKey(x.record_key)+' com '+lost.length+' pedido(s) ausente(s) do servidor');
+         const affected=(x.data.orders||[]).filter(o=>lost.includes(String(o.id)));
+         const closed=(meta.history||[]).some(s=>String(s.name||'').startsWith(name)&&
+           affected.some(o=>new Date(s.closedAt||0)>=new Date(o.createdAt||0)));
+         const cancelled=(meta.cancellations||[]).some(s=>String(s.table||'').startsWith(name)&&
+           affected.some(o=>new Date(s.at||0)>=new Date(o.createdAt||0)));
+         const moved=affected.every(o=>[...server.entries()].some(([key,row])=>
+           key.startsWith('table:')&&key!==x.record_key&&(row.data?.orders||[]).some(other=>String(other.id)===String(o.id))));
+         if(!closed&&!cancelled&&!moved)reasons.push(labelKey(x.record_key)+' com '+lost.length+' pedido(s) ausente(s) do servidor');
        }
      }
      if(x.record_key==='credit_accounts'){
@@ -99,6 +104,41 @@
        const ids=new Set(b.map(c=>c.id));
        const missing=a.filter(c=>!ids.has(c.id));
        if(missing.length)reasons.push(missing.length+' cliente(s) a prazo ausentes do servidor');
+       const receipts=new Set((y.data.receipts||[]).map(r=>r.id));
+       const missingReceipts=(x.data.receipts||[]).filter(r=>!receipts.has(r.id));
+       if(missingReceipts.length)reasons.push(missingReceipts.length+' pagamento(s) de clientes sumiram do servidor');
+     }
+     if(x.record_key==='meta'){
+       const localHistory=x.data.history||[],remoteHistory=y.data.history||[];
+       const saleKey=s=>String(s.id||'')+'|'+String(s.closedAt||'')+'|'+String(s.name||'')+'|'+Number(s.total||0);
+       const activeSales=new Set(remoteHistory.map(saleKey));
+       const disappeared=localHistory.slice(-80).filter(s=>!activeSales.has(saleKey(s)));
+       if(disappeared.length)reasons.push(disappeared.length+' venda(s) do histórico local não constam na atualização');
+       const closures=new Set((y.data.cash?.closures||[]).map(c=>c.closedAt));
+       const missingClosures=(x.data.cash?.closures||[]).slice(-20).filter(c=>!closures.has(c.closedAt));
+       if(missingClosures.length)reasons.push(missingClosures.length+' fechamento(s) de caixa não constam no servidor');
+       const latestQ=x.data.counterQueue||[],remoteQ=new Set((y.data.counterQueue||[]).map(q=>String(q.id)));
+       for(const q of latestQ){
+         if(remoteQ.has(String(q.id)))continue;
+         const cashPaid=remoteHistory.some(s=>String(s.ticket||'')===String(q.ticket||'')&&
+           new Date(s.closedAt||0)>=new Date(q.createdAt||0));
+         const internalPaid=(y.data.internalAccounts?.withdrawals||[]).some(w=>
+           String(w.ticket||'')===String(q.ticket||'')&&new Date(w.at||0)>=new Date(q.createdAt||0));
+         const creditPaid=(server.get('credit_accounts')?.data?.accounts||[]).some(a=>
+           (a.charges||[]).some(c=>String(c.orderId)===String(q.id)));
+         const cancelled=(y.data.cancellations||[]).some(c=>
+           String(c.table||'').includes(String(q.ticket||''))&&new Date(c.at||0)>=new Date(q.createdAt||0));
+         if(!cashPaid&&!internalPaid&&!creditPaid&&!cancelled){
+           reasons.push('Pedido de balcão '+String(q.ticket||q.id)+' ausente do servidor');
+           break;
+         }
+       }
+     }
+     if(x.record_key==='inventory'){
+       const key=m=>[m.at,m.key,m.type,m.qty,m.before,m.after].join('|');
+       const remoteMovements=new Set((y.data.movements||[]).map(key));
+       const missing=(x.data.movements||[]).slice(-30).filter(m=>!remoteMovements.has(key(m)));
+       if(missing.length)reasons.push(missing.length+' movimentação(ões) de estoque não constam no servidor');
      }
    }
    return reasons;
