@@ -1,4 +1,4 @@
-/* Algaroba Shakes Grills — Cardápio v2.9.7.69
+/* Algaroba Shakes Grills — Cardápio v2.9.7.70
  * Cachaças e Destilados dentro de Bebidas; caldos/sopas em porções de 300 ml.
  * Não converte automaticamente o estoque legado de recipientes de 500 ml. */
 (function(){
@@ -28,7 +28,7 @@
   'Ypióca Prata (Lata 350 ml)'
  ]);
  function cachaçaBrand(name){
-   if(/^Matuta\s/.test(name))return 'MATUTA — R$ 45,00';
+   if(/^Matuta\s/.test(name))return 'MATUTA — R$ 40,00';
    if(/^Sam Valle\s/.test(name))return 'SAM VALLE — R$ 38,00';
    if(/^(?:Serra de Areia|São Tomé)/.test(name))return 'REGIONAIS — R$ 32,00';
    if(/^Ypióca\s/.test(name))return 'YPIÓCA — R$ 20,00';
