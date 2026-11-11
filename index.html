@@ -163,6 +163,11 @@ button{color:inherit}
 .credit-cash-summary{margin-top:12px;border:1px solid #498a60}
 .credit-person-card{border:1px solid #3e7751;margin:8px 0}
 .credit-person-card small{display:block;margin-top:3px}
+
+/* Proteção contra retornos de comandas antigas — v2.9.7.68 */
+.sync-safe-tile{border-color:#57a676!important;background:linear-gradient(135deg,#183e29,#20302a);cursor:pointer}
+.sync-safe-cash{border:1px solid #599767;margin-top:12px}
+.sync-safe-tile h3{font-size:16px;margin:7px 0}
 </style><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#183f2b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Algaroba Comandas"><link rel="apple-touch-icon" href="./icon-192.png"></head><body>
 <div id='authGate' class='authgate'><div class='authcard'>
  <div class='authbrand'>🌳 Algaroba <span>Comandas</span></div>
@@ -172,7 +177,7 @@ button{color:inherit}
  <label>Senha</label><input id='loginPassword' type='password' autocomplete='current-password' placeholder='Sua senha'>
  <button id='loginBtn' class='btn primary' style='width:100%;margin-top:4px' onclick='loginUser()'>ENTRAR</button>
  <div class='muted' style='margin-top:12px'>Os acessos são definidos pelo administrador.</div>
-</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.67 • CLIENTES A PRAZO</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
+</div></div><header><div class='brand'>🌳 Algaroba <span>Shakes Grills</span></div><div class='sub'>COMANDAS 2.9.7.68 • SINCRONIZAÇÃO SEGURA</div><div class='userbadge'>👤 <b id='loggedUser'>Não autenticado</b><span id='loggedRole' class='syncpill'>—</span><button class='logoutbtn' onclick='logoutUser()'>SAIR</button></div><div class='operatorbar'><label for='deviceMode'>📱 Este aparelho</label><select id='deviceMode' onchange='setDeviceMode(this.value)'><option>Completo</option><option>Atendimento</option><option>Churrasqueira</option><option>Cozinha</option><option>Bebidas & Shakes</option><option>Caixa</option></select></div><div class='syncbar'><span id='syncStatus' class='syncpill offline' onclick='showCloudError()' style='cursor:pointer'>● LOCAL</span><button class='btn' style='padding:7px 10px' onclick='openOnlineSetup()'>☁️ Configurar online</button></div></header><main class='wrap'>
 <div class='tabs'><button data-view='mesas' class='active' onclick="view('mesas',this)">Mesas</button><button data-view='cozinha' onclick="view('cozinha',this)">Produção</button><button data-view='caixa' onclick="view('caixa',this)">Caixa</button><button data-view='estoque' onclick="view('estoque',this)">Estoque</button><button data-view='relatorios' onclick="view('relatorios',this)">Relatórios</button><button data-view='usuarios' onclick="view('usuarios',this)">Usuários</button></div>
 <section id='mesas'><div class='grid' id='tables'></div></section>
 <section id='comanda' class='hide'><div style='display:flex;gap:8px;flex-wrap:wrap'><button class='btn' onclick='back()'>← Mesas</button><button id='transferBtn' class='btn' onclick='transferTable()'>⇄ TRANSFERIR MESA</button></div><div class='panel'><h2 id='tableTitle'></h2><div class='cats' id='cats'></div><div class='products' id='products'></div></div><div class='panel'><h3>Comanda</h3><div id='cart'></div><div class='big' id='total'>R$ 0,00</div><button class='btn primary' style='width:100%;margin-top:12px' onclick='sendOrder()'>🧾 CONFERIR E ENVIAR PEDIDO/button></div></section>
@@ -1557,7 +1562,7 @@ function generateFilteredReport(){let [a,b]=reportDates(),h=(state.history||[]).
 function printFilteredReport(){generateFilteredReport();setTimeout(()=>{let body=document.getElementById('report')?.innerHTML||'<h2>Relatório sem conteúdo</h2>';openPrintableReport('Relatório Gerencial - Algaroba',body)},80)}
 window.addEventListener('storage',e=>{if(e.key==='algarobaState'&&e.newValue){if(userIsEditing())return;try{state=JSON.parse(e.newValue);renderOperator();renderTables();if(!document.getElementById('cozinha').classList.contains('hide'))renderKitchen();if(!document.getElementById('caixa').classList.contains('hide'))renderCash();/* Relatórios preservam posição durante sincronização */}catch(err){console.error(err)}}});
 function back(){let target=canView('mesas')?'mesas':((roleViews[authProfile?.perfil]||[])[0]||'mesas');view(target,document.querySelector('.tabs button[data-view="'+target+'"]'))}
-ensureInventory();renderOperator();renderTables();applyDeviceMode();initAuth();
+ensureInventory();renderOperator();renderTables();applyDeviceMode();/* Login inicializado após as proteções v68. */
 
 // PWA: registra o Service Worker somente no aplicativo principal.
 // O login/Supabase continua sempre pela rede; o SW cuida apenas do shell local.
@@ -1572,4 +1577,4 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script></body></html>
+</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script><script src="./sincronizacao-segura-v68.js"></script></body></html>
