@@ -110,10 +110,18 @@
      }
      if(x.record_key==='meta'){
        const localHistory=x.data.history||[],remoteHistory=y.data.history||[];
-       const saleKey=s=>String(s.id||'')+'|'+String(s.closedAt||'')+'|'+String(s.name||'')+'|'+Number(s.total||0);
+       const saleKey=s=>String(s.id||'')+'|'+String(s.closedAt||'');
        const activeSales=new Set(remoteHistory.map(saleKey));
        const disappeared=localHistory.slice(-80).filter(s=>!activeSales.has(saleKey(s)));
        if(disappeared.length)reasons.push(disappeared.length+' venda(s) do histórico local não constam na atualização');
+       const withdrawals=new Set((y.data.internalAccounts?.withdrawals||[]).map(w=>String(w.id||'')+'|'+String(w.at||'')));
+       const forgottenWithdrawals=(x.data.internalAccounts?.withdrawals||[]).slice(-30).filter(w=>
+         !withdrawals.has(String(w.id||'')+'|'+String(w.at||'')));
+       if(forgottenWithdrawals.length)reasons.push(forgottenWithdrawals.length+' retirada(s) de contas internas não constam no servidor');
+       const settlements=new Set((y.data.internalAccounts?.settlements||[]).map(p=>String(p.id||'')+'|'+String(p.at||'')));
+       const forgottenSettlements=(x.data.internalAccounts?.settlements||[]).slice(-30).filter(p=>
+         !settlements.has(String(p.id||'')+'|'+String(p.at||'')));
+       if(forgottenSettlements.length)reasons.push(forgottenSettlements.length+' pagamento(s) de contas internas não constam no servidor');
        const closures=new Set((y.data.cash?.closures||[]).map(c=>c.closedAt));
        const missingClosures=(x.data.cash?.closures||[]).slice(-20).filter(c=>!closures.has(c.closedAt));
        if(missingClosures.length)reasons.push(missingClosures.length+' fechamento(s) de caixa não constam no servidor');
@@ -171,6 +179,7 @@
          cloudSnapshot[key]=JSON.stringify(data);continue;
        }
        if(remote&&(!known||canon(remote.data)!==canon(JSON.parse(known)))){
+         backupRows([remote],'Versão divergente recebida do banco');
          alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
          throw Error('Conflito de sincronização em '+labelKey(key)+': atualização concorrente não sobrescrita.');
        }
@@ -191,6 +200,7 @@
          });
        }
        if(!Array.isArray(saved)||saved.length!==1){
+         backupRows([remote].filter(Boolean),'Versão anterior ao conflito de gravação');
          alertSync('Houve atualização simultânea de '+labelKey(key)+'. A operação foi preservada neste aparelho para conferência.',key);
          throw Error('Conflito: o servidor não confirmou a gravação exclusiva de '+labelKey(key));
        }
@@ -199,8 +209,9 @@
      clearBlock();
      cloudFailures=0;cloudLastError='';
      pendingWrite();
-     if(isDirty())scheduleCloudSave();
-     setSyncStatus('online','ONLINE • SALVO');
+     if(isDirty()){
+       scheduleCloudSave();setSyncStatus('offline','PENDENTE DE SINCRONIZAÇÃO');
+     }else setSyncStatus('online','ONLINE • SALVO');
      return null;
    }finally{
      writing=false;
