@@ -292,6 +292,7 @@
    try{
      const current=await getRows();
      const by=new Map(current.map(r=>[r.record_key,r]));
+     const localAtPlanning=canon(activeRows());
      // PRÉ-CONFERÊNCIA DO LOTE INTEIRO antes de mudar qualquer registro.
      // Evita fechar a mesa se o histórico do caixa já está divergente.
      const plans=requested.map(row=>{
@@ -336,6 +337,8 @@
        // confirmado, para evitar que um save posterior reenvie a versão antiga.
        if(plans.some(p=>p.merged)){
          const latest=await getRows();
+         if(canon(activeRows())!==localAtPlanning)
+           throw Error('Novo lançamento local durante a conciliação. O servidor já salvou o lote; preserve os dados e reavalie.');
          for(const plan of plans.filter(p=>p.merged)){
            const persisted=latest.find(x=>x.record_key===plan.key);
            if(!persisted||canon(persisted.data)!==canon(plan.data))
