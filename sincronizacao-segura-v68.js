@@ -295,15 +295,20 @@
      // PRÉ-CONFERÊNCIA DO LOTE INTEIRO antes de mudar qualquer registro.
      // Evita fechar a mesa se o histórico do caixa já está divergente.
      const plans=requested.map(row=>{
-       const key=row.record_key,local=latestRow(key),data=local?.data||row.data,
-             remote=by.get(key),known=cloudSnapshot[key];
-       const same=!!remote&&canon(remote.data)===canon(data);
-       if(remote&&!same&&(!known||canon(remote.data)!==canon(JSON.parse(known)))){
-         backupRows([remote],'Versão divergente recebida do banco');
-         alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
-         throw Error('Conflito de sincronização em '+labelKey(key)+': lote não enviado.');
+       const key=row.record_key,local=latestRow(key),remote=by.get(key),known=cloudSnapshot[key];
+       let data=local?.data||row.data,merged=false;
+       if(remote&&canon(remote.data)!==canon(data)&&
+          (!known||canon(remote.data)!==canon(JSON.parse(known)))){
+         const combined=known?mergeRecord(key,JSON.parse(known),data,remote.data):null;
+         if(combined){data=combined;merged=true}
+         else{
+           backupRows([remote],'Versão divergente recebida do banco');
+           alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
+           throw Error('Conflito de sincronização em '+labelKey(key)+': lote não enviado.');
+         }
        }
-       return {key,data,remote,same};
+       const same=!!remote&&canon(remote.data)===canon(data);
+       return {key,data,remote,same,merged};
      });
      // Lote único: o PostgreSQL valida todas as versões e grava tudo em uma transação.
      // Se um aparelho modificar qualquer registro, o banco desfaz o lote inteiro.
@@ -317,6 +322,21 @@
          });
          if(!result||Number(result.saved)!==changes.length)
            throw Error('Servidor não confirmou todas as gravações do lote.');
+       }
+       // Se houve mesclagem, atualizar a memória local somente depois do commit
+       // confirmado, para evitar que um save posterior reenvie a versão antiga.
+       if(plans.some(p=>p.merged)){
+         const latest=await getRows();
+         for(const plan of plans.filter(p=>p.merged)){
+           const persisted=latest.find(x=>x.record_key===plan.key);
+           if(!persisted||canon(persisted.data)!==canon(plan.data))
+             throw Error('Conciliação gravada, mas o banco mudou antes da atualização local.');
+         }
+         backupRows(activeRows(),'Antes de aplicar união de lançamentos simultâneos');
+         cloudApplying=true;
+         let applied=false;
+         try{applied=applyRows(latest)}finally{cloudApplying=false}
+         if(!applied)throw Error('A união foi salva no banco, mas a aplicação local falhou.');
        }
        for(const plan of plans)cloudSnapshot[plan.key]=JSON.stringify(plan.data);
      }catch(e){
