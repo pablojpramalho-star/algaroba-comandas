@@ -447,7 +447,7 @@
      if(risks.length||divergent.length){
        alertSync('Ainda existem diferenças entre a versão local e o banco. Nenhum lançamento será descartado.',
          [...new Set([...risks,...divergent])].join('; '));
-       return alert('Persistem diferenças. Exporte as cópias locais e confira antes de conciliar as comandas.');
+       return alert('Persistem diferenças. Registros: '+[...new Set([...risks,...divergent])].join('; ').slice(0,900)+'\n\nNenhum dado foi descartado. Não force a sincronização.');
      }
      clearBlock();pendingWrite();
      cloudLastError='';cloudFailures=0;
