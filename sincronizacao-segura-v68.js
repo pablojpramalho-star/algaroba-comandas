@@ -213,63 +213,22 @@
        }
        return {key,data,remote,same};
      });
-     const committed=[];
+     // Lote único: o PostgreSQL valida todas as versões e grava tudo em uma transação.
+     // Se um aparelho modificar qualquer registro, o banco desfaz o lote inteiro.
      try{
-       for(const plan of plans){
-         const {key,data,remote,same}=plan;
-         if(same){cloudSnapshot[key]=JSON.stringify(data);continue}
-         let saved;
-         if(!remote){
-           saved=await rawRequest('algaroba_records?on_conflict=record_key&select=record_key,updated_at',{
-             method:'POST',prefer:'resolution=ignore-duplicates,return=representation',
-             body:JSON.stringify([{record_key:key,data,updated_at:new Date().toISOString()}])
-           });
-         }else{
-           const versionFilter=remote.updated_at==null?'is.null':'eq.'+encodeURIComponent(remote.updated_at);
-           const url='algaroba_records?record_key=eq.'+encodeURIComponent(key)+
-             '&updated_at='+versionFilter+'&select=record_key,updated_at';
-           const oldMs=Date.parse(remote.updated_at||'');
-           const nextMs=Math.max(Date.now(),Number.isFinite(oldMs)?oldMs+1:0);
-           saved=await rawRequest(url,{
-             method:'PATCH',prefer:'return=representation',
-             body:JSON.stringify({data,updated_at:new Date(nextMs).toISOString()})
-           });
-         }
-         if(!Array.isArray(saved)||saved.length!==1){
-           backupRows([remote].filter(Boolean),'Versão anterior ao conflito de gravação');
-           throw Error('Outro aparelho alterou '+labelKey(key)+' durante a gravação.');
-         }
-         committed.push({key,remote,writtenVersion:saved[0].updated_at});
-         cloudSnapshot[key]=JSON.stringify(data);
+       const changes=plans.filter(p=>!p.same).map(p=>({
+         record_key:p.key,data:p.data,expected_at:p.remote?.updated_at||null
+       }));
+       if(changes.length){
+         const result=await rawRequest('rpc/algaroba_atomic_write',{
+           method:'POST',body:JSON.stringify({p_changes:changes})
+         });
+         if(!result||Number(result.saved)!==changes.length)
+           throw Error('Servidor não confirmou todas as gravações do lote.');
        }
+       for(const plan of plans)cloudSnapshot[plan.key]=JSON.stringify(plan.data);
      }catch(e){
-       let rollbackFailed=false;
-       // Compensa gravações já efetuadas neste lote quando a gravação seguinte
-       // falhou. A restauração só é permitida se a versão for exatamente a nossa.
-       for(const written of committed.reverse()){
-         if(!written.remote){rollbackFailed=true;continue}
-         try{
-           const version=written.writtenVersion;
-           if(!version){rollbackFailed=true;continue}
-           const past=Date.parse(version);
-           const nextMs=Math.max(Date.now(),Number.isFinite(past)?past+1:0);
-           const restored=await rawRequest('algaroba_records?record_key=eq.'+encodeURIComponent(written.key)+
-              '&updated_at=eq.'+encodeURIComponent(version)+'&select=record_key,updated_at',{
-             method:'PATCH',prefer:'return=representation',
-             body:JSON.stringify({data:written.remote.data,updated_at:new Date(nextMs).toISOString()})
-           });
-           if(!Array.isArray(restored)||restored.length!==1)rollbackFailed=true;
-           else cloudSnapshot[written.key]=JSON.stringify(written.remote.data);
-         }catch(rollbackError){
-           rollbackFailed=true;console.error('Não foi possível compensar '+written.key,rollbackError);
-         }
-       }
-       if(!blocked)alertSync(
-         rollbackFailed?
-           'Foi detectada uma GRAVAÇÃO PARCIAL. Preserve os aparelhos e confira mesa, estoque e caixa antes de voltar a receber.':
-           'Houve uma alteração simultânea. A gravação foi suspensa e as etapas concluídas foram revertidas para evitar divergência.',
-         String(e.message||e)
-       );
+       if(!blocked)alertSync('Gravação simultânea detectada. Nenhum registro do lote foi sobrescrito; os dados locais estão preservados.',String(e.message||e));
        throw e;
      }
      clearBlock();
