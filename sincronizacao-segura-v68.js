@@ -494,6 +494,29 @@
      const server=await getRows(),by=new Map(server.map(r=>[r.record_key,r]));
      const local=activeRows();
      const risks=dataLossSigns(local,server);
+     // Em conflitos surgidos durante esta sessão, a versão-base conhecida
+     // permite unir inclusões independentes em vez de exigir exportação manual.
+     const pending=changedNow();
+     const mergeable=pending.length>0&&pending.every(row=>{
+       const remote=by.get(row.record_key),known=cloudSnapshot[row.record_key];
+       if(!remote)return !known;
+       if(canon(remote.data)===canon(row.data))return true;
+       if(known&&canon(remote.data)===canon(JSON.parse(known)))return true;
+       return !!(known&&mergeRecord(row.record_key,JSON.parse(known),row.data,remote.data));
+     });
+     if(mergeable){
+       backupRows(local,'Antes de conciliar lançamentos entre aparelhos');
+       clearBlock();
+       try{
+         await safeWriteRows(pending);
+         if(blocked)throw Error('A conciliação não pôde ser confirmada.');
+         closeModal();alert('Lançamentos independentes conciliados e gravados com segurança.');
+         return;
+       }catch(e){
+         if(!blocked)alertSync('A conciliação automática não pôde ser concluída.',String(e.message||e));
+         return alert('A conciliação não foi concluída. Seus dados continuam preservados.');
+       }
+     }
      // Aceitar apenas a fila remota estritamente mais completa, sem alterar outros dados.
      const remoteMeta=by.get('meta')?.data,localMeta=local.find(r=>r.record_key==='meta')?.data;
      const queueOnlySuperset=!!remoteMeta&&!!localMeta&&
