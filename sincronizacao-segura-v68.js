@@ -277,6 +277,26 @@
    }
    return null;
  }
+
+ function remoteDominatesMeta(local,remote){
+   if(!local||!remote)return false;
+   const omit=x=>({...x,counterQueue:[],counterTicket:null,creditAccounts:null});
+   if(canon(omit(local))!==canon(omit(remote)))return false;
+   const lq=local.counterQueue||[],rq=remote.counterQueue||[];
+   if(!lq.every(q=>rq.some(v=>String(v.id)===String(q.id)&&canon(v)===canon(q))))return false;
+   const lt=local.counterTicket||{},rt=remote.counterTicket||{};
+   if(lt.date!==rt.date||Number(rt.last||0)<Number(lt.last||0))return false;
+   const lc=local.creditAccounts||{accounts:[],receipts:[]};
+   const rc=remote.creditAccounts||{accounts:[],receipts:[]};
+   if(!Array.isArray(lc.accounts)||!Array.isArray(rc.accounts))return false;
+   for(const a of lc.accounts){
+     const b=rc.accounts.find(x=>x.id===a.id);
+     if(!b||canon({...a,charges:[]})!==canon({...b,charges:[]}))return false;
+     if(!(a.charges||[]).every(c=>(b.charges||[]).some(x=>x.id===c.id&&canon(x)===canon(c))))return false;
+   }
+   if(!(lc.receipts||[]).every(c=>(rc.receipts||[]).some(x=>x.id===c.id&&canon(x)===canon(c))))return false;
+   return true;
+ }
  async function getRows(){
    const rows=await rawRequest('algaroba_records?select=record_key,data,updated_at',{method:'GET'});
    if(!Array.isArray(rows))throw Error('Servidor não retornou lista válida de registros.');
@@ -519,6 +539,26 @@
          if(!blocked)alertSync('A conciliação automática não pôde ser concluída.',String(e.message||e));
          return alert('A conciliação não foi concluída. Seus dados continuam preservados.');
        }
+     }
+     // Quando o banco já recebeu o pedido recuperado, o meta local antigo
+     // pode diferir em fila, numeração e espelho de contas a prazo.
+     // Aceitar apenas se cada evento local também existir no servidor.
+     const onlyRemoteAdditions=local.every(r=>{
+       const remote=by.get(r.record_key)?.data;
+       if(!remote)return false;
+       return canon(remote)===canon(r.data)||
+         (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote));
+     });
+     if(onlyRemoteAdditions&&!risks.length){
+       backupRows(local,'Antes de receber eventos adicionais do banco');
+       cloudApplying=true;
+       let applied=false;
+       try{applied=applyRows(server)}finally{cloudApplying=false}
+       if(!applied)throw Error('A atualização local não foi confirmada.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       closeModal();alert('Sincronização recuperada: os lançamentos do banco foram incorporados sem descartar os do aparelho.');
+       return;
      }
      // Aceitar apenas a fila remota estritamente mais completa, sem alterar outros dados.
      const remoteMeta=by.get('meta')?.data,localMeta=local.find(r=>r.record_key==='meta')?.data;
