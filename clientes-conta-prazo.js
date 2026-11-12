@@ -163,7 +163,19 @@
  window.launchCreditOrderV67=function(value){
    if(!canCharge())return alert('Seu perfil não permite lançar pedidos.');
    const a=accountById(decodeId(value));if(!a)return alert('Cliente não encontrado.');
+   // Reabrir a tela do balcão mesmo quando current ainda é 'counter' após o pedido anterior.
+   // Não limpar o carrinho se já estamos no balcão: preservar itens ainda não enviados.
    if(current!=='counter')originalOpenTable('counter');
+   else {
+     document.getElementById('mesas').classList.add('hide');
+     document.getElementById('comanda').classList.remove('hide');
+     if(!document.getElementById('cats').children.length){
+       const catsEl=document.getElementById('cats');
+       Object.keys(catalog).forEach((c,i)=>{const btn=document.createElement('button');btn.type='button';btn.className='btn'+(i===0?' primary':'');btn.textContent=c;btn.addEventListener('click',()=>showCat(c,btn));catsEl.appendChild(btn)});
+       showCat(Object.keys(catalog)[0]);
+     }
+     renderCart();
+   }
    if(cart.length&&!confirm('Há itens no carrinho. Deseja vinculá-los à conta de '+a.name+'?'))return;
    selectedAccountId=a.id;
    closeModal();decorateCart();
