@@ -1325,6 +1325,7 @@ let reportUiState={module:null,start:null,end:null,selectedPeriod:'today'};
 let selectedAdminSales=new Set();
 function reportModuleCards(){
  return [
+  ['intelligence','📈','Inteligência de Vendas','Turnos, rankings, dias fortes e oportunidades'],
   ['sales','💰','Vendas','Comandas, faturamento e pagamentos'],
   ['cash','🏦','Caixa','Abertura, entradas, saídas e fechamentos'],
   ['stock','📦','Estoque','Saldo e movimentações'],
@@ -1355,7 +1356,7 @@ function openReportModule(k,restoring=false){
    mod.innerHTML=`<h2>${meta[1]} ${meta[2]}</h2><div id=internalPeopleChooser></div><div id=internalPersonReport class=hide></div><div id=moduleResult></div>`;
    renderInternalPeopleChooser();return;
  }
- mod.innerHTML=`<h2>${meta[1]} ${meta[2]}</h2>${reportFilterHtml(k)}<div id=moduleResult></div>`;
+ mod.innerHTML=`<h2>${meta[1]} ${meta[2]}</h2>${reportFilterHtml(k)}${k==='intelligence'?`<div class=panel><label>Virada do 1º para o 2º turno <input id=intelShiftStart type=time value=17:00></label><label>Visualizar <select id=intelShiftFilter><option value=all>Ambos os turnos</option><option value=1>Somente 1º turno</option><option value=2>Somente 2º turno</option></select></label><div class=muted>Turnos definidos pelo horário de fechamento da venda. Padrão: 1º até 16:59 e 2º a partir de 17:00.</div></div>`:''}<div id=moduleResult></div>`;
  if(restoring)restoreReportFilters();else setReportQuick('today',false);
 }
 function isoLocalDate(d){let z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)}
@@ -1430,8 +1431,94 @@ function reportMovementQty(m){
  return (sec==='Shakes'||x?.stockUnit==='g')?`${q.toLocaleString('pt-BR')} g`:`${q.toLocaleString('pt-BR')} un`;
 }
 
+
+/* Painel gerencial de turnos e produtos: somente leitura, sem alterações no caixa. */
+function intelligenceTime(s,defaultMinutes){
+ const m=/^(\\d{2}):(\\d{2})$/.exec(String(s||''));
+ if(!m)return defaultMinutes;
+ const n=Number(m[1])*60+Number(m[2]);return n>=0&&n<1440?n:defaultMinutes;
+}
+function intelligenceShiftSettings(){
+ const start=intelligenceTime(document.getElementById('intelShiftStart')?.value,1020);
+ return {start,filter:document.getElementById('intelShiftFilter')?.value||'all'};
+}
+function intelligenceShiftOf(date,start){
+ const d=new Date(date);if(!Number.isFinite(d.getTime()))return -1;
+ return d.getHours()*60+d.getMinutes()<start?1:2;
+}
+function intelligenceDashboard(a,b){
+ const cfg=intelligenceShiftSettings(),all=moduleSales(a,b);
+ const filtered=all.filter(v=>cfg.filter==='all'||String(intelligenceShiftOf(v.closedAt,cfg.start))===cfg.filter);
+ const amount=x=>Number(x.total||0),sum=xs=>xs.reduce((n,x)=>n+amount(x),0);
+ const money=x=>brl(x),total=sum(filtered),days=new Map(),weekdays=new Map(),hours=new Map(),operators=new Map(),methods=new Map(),products=new Map(),cats=new Map();
+ const shifts=[all.filter(v=>intelligenceShiftOf(v.closedAt,cfg.start)===1),all.filter(v=>intelligenceShiftOf(v.closedAt,cfg.start)===2)];
+ const dateKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ const weekdayNames=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+ let units=0,cmv=0,costKnown=0;
+ for(const v of filtered){
+   const d=new Date(v.closedAt);if(!Number.isFinite(d.getTime()))continue;
+   const k=dateKey(d),value=amount(v),day=days.get(k)||{name:d.toLocaleDateString('pt-BR'),total:0,count:0,date:k};
+   day.total+=value;day.count++;days.set(k,day);
+   const wd=weekdayNames[d.getDay()],w=weekdays.get(wd)||{name:wd,total:0,count:0,days:new Set()};
+   w.total+=value;w.count++;w.days.add(k);weekdays.set(wd,w);
+   const hour=String(d.getHours()).padStart(2,'0')+':00',hr=hours.get(hour)||{name:hour,total:0,count:0};
+   hr.total+=value;hr.count++;hours.set(hour,hr);
+   const op=String(v.operator||'Não informado');operators.set(op,(operators.get(op)||0)+value);
+   for(const p of (v.payments||[{method:v.payment||'Não informado',value:v.total}])){
+     const method=String(p.method||'Não informado');methods.set(method,(methods.get(method)||0)+Number(p.value||0));
+   }
+   for(const it of (v.items||[])){
+     const name=reportItemBaseName(it.name)||'Produto sem nome',qty=Number(it.qty||0),revenue=qty*Number(it.price||0);
+     if(!Number.isFinite(qty)||qty<=0)continue;
+     units+=qty;
+     const entry=products.get(name)||{name,qty:0,revenue:0};entry.qty+=qty;entry.revenue+=revenue;products.set(name,entry);
+     const category=reportCategory(name),ce=cats.get(category)||{name:category,qty:0,revenue:0};ce.qty+=qty;ce.revenue+=revenue;cats.set(category,ce);
+     const rawCost=it.unitCostAtSale??it.costAtSale??it.cost;
+     if(rawCost!==undefined&&rawCost!==null&&Number.isFinite(Number(rawCost))){cmv+=Number(rawCost)*qty;costKnown+=qty}
+   }
+ }
+ const bestDays=[...days.values()].sort((x,y)=>y.total-x.total);
+ const bestWeek=[...weekdays.values()].map(x=>({...x,average:x.total/x.days.size})).sort((x,y)=>y.average-x.average);
+ const topQty=[...products.values()].sort((x,y)=>y.qty-x.qty).slice(0,10);
+ const topRevenue=[...products.values()].sort((x,y)=>y.revenue-x.revenue).slice(0,10);
+ const rows=(xs,fmt)=>xs.map((x,i)=>'<div class="cart-row"><span><b>'+(i+1)+'. '+esc(x.name)+'</b><div class="muted">'+(fmt==='weekday'?x.days.size+' dia(s) • '+x.count+' venda(s)':x.qty!==undefined?x.qty+' unidade(s)':x.count+' venda(s)')+'</div></span><b>'+money(fmt==='weekday'?x.average:fmt==='qty'?x.revenue:x.revenue??x.total)+'</b></div>').join('')||'<div class="muted">Sem dados no período.</div>';
+ const simple=(label,value)=>'<div class="panel"><div class="muted">'+label+'</div><div class="big">'+value+'</div></div>';
+ const ranking=(title,arr,fmt)=>'<h3>'+title+'</h3><div class="panel">'+rows(arr,fmt)+'</div>';
+ const range=(mins)=>String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+ const shiftStats=shifts.map((xs,i)=>({name:(i+1)+'º turno',count:xs.length,total:sum(xs),ticket:xs.length?sum(xs)/xs.length:0}));
+ const selectedShift=cfg.filter==='all'?'Todos os turnos':cfg.filter+'º turno';
+ const detail=bestDays.length?'<div class="panel"><b>Melhor dia: '+esc(bestDays[0].name)+'</b><div>'+money(bestDays[0].total)+' • '+bestDays[0].count+' venda(s)</div></div>':'';
+ const bestSale=filtered.slice().sort((x,y)=>amount(y)-amount(x))[0];
+ const saleCard=bestSale?'<div class="panel"><b>Maior venda individual: '+money(amount(bestSale))+'</b><div class="muted">'+esc(histSaleLabel(bestSale))+' • '+new Date(bestSale.closedAt).toLocaleString('pt-BR')+'</div></div>':'';
+ const weekRows=bestWeek.map((x,i)=>'<div class="cart-row"><span><b>'+(i+1)+'. '+esc(x.name)+'</b><div class="muted">'+x.days.size+' dia(s) registrado(s) • total '+money(x.total)+'</div></span><b>'+money(x.average)+'/dia</b></div>').join('');
+ const splitRows=shiftStats.map(x=>'<div class="panel"><b>'+x.name+'</b><div class="cart-row"><span>Faturamento</span><b>'+money(x.total)+'</b></div><div class="cart-row"><span>Vendas</span><b>'+x.count+'</b></div><div class="cart-row"><span>Ticket médio</span><b>'+money(x.ticket)+'</b></div></div>').join('');
+ const categoryRows=[...cats.values()].sort((x,y)=>y.revenue-x.revenue).map(x=>'<div class="cart-row"><span>'+esc(x.name)+' • '+x.qty+' un.</span><b>'+money(x.revenue)+'</b></div>').join('');
+ const payRows=[...methods.entries()].sort((x,y)=>y[1]-x[1]).map(([k,v])=>'<div class="cart-row"><span>'+esc(k)+'</span><b>'+money(v)+'</b></div>').join('');
+ const opRows=[...operators.entries()].sort((x,y)=>y[1]-x[1]).map(([k,v])=>'<div class="cart-row"><span>'+esc(k)+'</span><b>'+money(v)+'</b></div>').join('');
+ const dateRows=bestDays.map(x=>'<div class="cart-row"><span>'+esc(x.name)+' • '+x.count+' venda(s)</span><b>'+money(x.total)+'</b></div>').join('');
+ const hourRows=[...hours.values()].sort((x,y)=>y.total-x.total).map(x=>'<div class="cart-row"><span>'+esc(x.name)+' • '+x.count+' venda(s)</span><b>'+money(x.total)+'</b></div>').join('');
+ const cancellationCount=(state.cancellations||[]).filter(c=>{let d=new Date(c.at);return d>=a&&d<=b}).length;
+ const netNotice='Valores de vendas finalizadas. Recebimentos posteriores de contas a prazo não são somados novamente ao faturamento.';
+ return '<div class="panel"><b>'+esc(modulePeriodTitle(a,b))+' • '+selectedShift+'</b><div class="muted">1º turno: 00:00–'+range(cfg.start-1)+' | 2º turno: '+range(cfg.start)+'–23:59. Ajuste a virada do turno no filtro.</div></div>'+
+ '<div class="grid">'+simple('Faturamento',money(total))+simple('Vendas finalizadas',filtered.length)+simple('Ticket médio',money(filtered.length?total/filtered.length:0))+simple('Produtos vendidos',units)+simple('Dias com vendas',days.size)+simple('Média por dia com vendas',money(days.size?total/days.size:0))+'</div>'+
+ '<h3>Comparativo dos turnos</h3><div class="grid">'+splitRows+'</div>'+
+ '<h3>Desempenho</h3>'+detail+saleCard+
+ ranking('🏆 Dez produtos mais vendidos (quantidade)',topQty,'qty')+
+ ranking('💰 Dez produtos com maior faturamento',topRevenue,'revenue')+
+ '<h3>Melhores dias da semana (média por dia registrado)</h3><div class="panel">'+(weekRows||'Sem dados.')+'</div>'+
+ '<h3>Faturamento por data</h3><div class="panel">'+(dateRows||'Sem dados.')+'</div>'+
+ '<h3>Horários de maior venda</h3><div class="panel">'+(hourRows||'Sem dados.')+'</div>'+
+ '<h3>Faturamento por categoria</h3><div class="panel">'+(categoryRows||'Sem dados.')+'</div>'+
+ '<h3>Formas de pagamento das vendas</h3><div class="panel">'+(payRows||'Sem dados.')+'</div>'+
+ '<h3>Vendas por operador</h3><div class="panel">'+(opRows||'Sem dados.')+'</div>'+
+ '<div class="panel"><b>Cancelamentos registrados no período: '+cancellationCount+'</b><div class="muted">'+netNotice+'</div><div class="muted">CMV histórico: '+(costKnown===units&&units>0?money(cmv):'dados de custo incompletos; consulte CMV e Margem')+'. Turno atribuído pela hora de fechamento da venda, não pela abertura da comanda.</div></div>';
+}
 function generateModuleReport(){
  if(activeReportModule==='internal'&&window.internalStatementPerson){generateInternalPersonReport();return}
+ if(activeReportModule==='intelligence'){
+   const [a,b]=moduleDates(),res=document.getElementById('moduleResult');
+   if(res)res.innerHTML=intelligenceDashboard(a,b)+modulePrintButton();return;
+ }
  let [a,b]=moduleDates(),k=activeReportModule,res=document.getElementById('moduleResult');if(!res)return;
  let h=moduleSales(a,b),total=h.reduce((q,x)=>q+Number(x.total||0),0),html='';
  if(k==='sales'){
