@@ -414,6 +414,24 @@
      const server=await getRows(),by=new Map(server.map(r=>[r.record_key,r]));
      const local=activeRows();
      const risks=dataLossSigns(local,server);
+     // Aceitar apenas a fila remota estritamente mais completa, sem alterar outros dados.
+     const remoteMeta=by.get('meta')?.data,localMeta=local.find(r=>r.record_key==='meta')?.data;
+     const queueOnlySuperset=!!remoteMeta&&!!localMeta&&
+       canon({...remoteMeta,counterQueue:[]})===canon({...localMeta,counterQueue:[]})&&
+       (remoteMeta.counterQueue||[]).length>(localMeta.counterQueue||[]).length&&
+       (localMeta.counterQueue||[]).every(q=>(remoteMeta.counterQueue||[]).some(s=>String(s.id)===String(q.id)&&canon(s)===canon(q)))&&
+       local.every(r=>r.record_key==='meta'||(by.has(r.record_key)&&canon(by.get(r.record_key).data)===canon(r.data)));
+     if(queueOnlySuperset&&!risks.length){
+       backupRows(local,'Antes de unificar fila de balcão com o servidor');
+       cloudApplying=true;
+       let applied=false;
+       try{applied=applyRows(server)}finally{cloudApplying=false}
+       if(!applied)throw Error('A aplicação da conciliação não foi confirmada.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       closeModal();alert('Conciliação concluída: fila de balcão completa e dados preservados.');
+       return;
+     }
      const divergent=[];
      for(const row of changedNow()){
        const remote=by.get(row.record_key);
