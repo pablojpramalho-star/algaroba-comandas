@@ -185,6 +185,98 @@
    }
    return reasons;
  }
+
+ // Mesclagem de três vias: somente inclusões independentes são combinadas.
+ // Mudanças destrutivas, pagamentos concorrentes e edições do mesmo evento
+ // continuam bloqueados até que exista uma regra de negócio inequívoca.
+ function mergeAppend(base,local,remote,key){
+   if(!Array.isArray(base)||!Array.isArray(local)||!Array.isArray(remote))return null;
+   const ident=x=>key(x);
+   const b=new Map(base.map(x=>[ident(x),x]));
+   const l=new Map(local.map(x=>[ident(x),x]));
+   const r=new Map(remote.map(x=>[ident(x),x]));
+   if([b,l,r].some((m,i)=>m.size!==[base,local,remote][i].length))return null;
+   for(const [id,x] of b){
+     if(!l.has(id)||!r.has(id)||canon(l.get(id))!==canon(x)||canon(r.get(id))!==canon(x))return null;
+   }
+   for(const [id,x] of l)if(r.has(id)&&canon(r.get(id))!==canon(x))return null;
+   return [...remote,...local.filter(x=>!r.has(ident(x)))];
+ }
+ const eventKey=x=>String(x.id||'')+'|'+String(x.closedAt||x.at||x.createdAt||'');
+ function mergeRecord(key,base,local,remote){
+   if(!base||!local||!remote)return null;
+   if(canon(local)===canon(remote))return remote;
+   const eq=(a,b)=>canon(a)===canon(b);
+   if(key==='credit_accounts'){
+     const mergedReceipts=mergeAppend(base.receipts||[],local.receipts||[],remote.receipts||[],x=>String(x.id));
+     if(!mergedReceipts)return null;
+     const b=new Map((base.accounts||[]).map(x=>[x.id,x]));
+     const l=new Map((local.accounts||[]).map(x=>[x.id,x]));
+     const r=new Map((remote.accounts||[]).map(x=>[x.id,x]));
+     const accounts=[];
+     for(const [id,a] of r){
+       const la=l.get(id),ba=b.get(id);
+       if(!la){if(ba)return null;accounts.push(a);continue}
+       if(!ba){if(!eq(a,la))return null;accounts.push(a);continue}
+       if(!eq({...a,charges:[]},{...ba,charges:[]})||
+          !eq({...la,charges:[]},{...ba,charges:[]}))return null;
+       const charges=mergeAppend(ba.charges||[],la.charges||[],a.charges||[],x=>String(x.id));
+       if(!charges)return null;
+       accounts.push({...a,charges});
+     }
+     for(const [id,a] of l)if(!r.has(id)){
+       if(b.has(id))return null;
+       accounts.push(a);
+     }
+     if(!eq({...base,accounts:[],receipts:[]},{...local,accounts:[],receipts:[]})||
+        !eq({...base,accounts:[],receipts:[]},{...remote,accounts:[],receipts:[]}))return null;
+     return {...remote,accounts,receipts:mergedReceipts};
+   }
+   if(key==='inventory'){
+     if(!eq({...base,items:{},movements:[]},{...local,items:{},movements:[]})||
+        !eq({...base,items:{},movements:[]},{...remote,items:{},movements:[]}))return null;
+     const mk=x=>[x.at,x.key,x.type,x.qty,x.before,x.after].join('|');
+     const movements=mergeAppend(base.movements||[],local.movements||[],remote.movements||[],mk);
+     if(!movements)return null;
+     const items={...remote.items};
+     for(const name of new Set([...Object.keys(base.items||{}),...Object.keys(local.items||{}),...Object.keys(remote.items||{})])){
+       const b=base.items?.[name],l=local.items?.[name],r=remote.items?.[name];
+       if(!b||!l||!r){if(!eq(l,r))return null;continue}
+       if(!eq({...b,qty:0},{...l,qty:0})||!eq({...b,qty:0},{...r,qty:0}))return null;
+       const localDelta=Number(l.qty)-Number(b.qty);
+       const remoteDelta=Number(r.qty)-Number(b.qty);
+       if(!Number.isFinite(localDelta)||!Number.isFinite(remoteDelta))return null;
+       const localMovements=local.movements.filter(x=>!(base.movements||[]).some(y=>mk(y)===mk(x))&&x.key===name);
+       const remoteMovements=remote.movements.filter(x=>!(base.movements||[]).some(y=>mk(y)===mk(x))&&x.key===name);
+       if(Math.abs(localDelta-localMovements.reduce((n,x)=>n+Number(x.qty),0))>.00001||
+          Math.abs(remoteDelta-remoteMovements.reduce((n,x)=>n+Number(x.qty),0))>.00001)return null;
+       const delta=localMovements.filter(x=>!remoteMovements.some(y=>mk(y)===mk(x))).reduce((n,x)=>n+Number(x.qty),0);
+       items[name]={...r,qty:Number(r.qty)+delta};
+     }
+     return {...remote,items,movements};
+   }
+   if(key==='meta'){
+     const history=mergeAppend(base.history||[],local.history||[],remote.history||[],eventKey);
+     const queue=mergeAppend(base.counterQueue||[],local.counterQueue||[],remote.counterQueue||[],x=>String(x.id));
+     if(!history||!queue)return null;
+     const bt=base.counterTicket||{},lt=local.counterTicket||{},rt=remote.counterTicket||{};
+     if(bt.date!==lt.date||bt.date!==rt.date)return null;
+     const localNew=local.history.length-base.history.length;
+     const remoteNew=remote.history.length-base.history.length;
+     const baseRevenue=Number(base.revenue),localRevenue=Number(local.revenue),remoteRevenue=Number(remote.revenue);
+     if(![baseRevenue,localRevenue,remoteRevenue].every(Number.isFinite))return null;
+     const added=history.filter(x=>!(remote.history||[]).some(y=>eventKey(y)===eventKey(x)));
+     const extra=added.reduce((n,x)=>n+Number(x.total||0),0);
+     if(Math.abs((localRevenue-baseRevenue)-(local.history.slice(base.history.length).reduce((n,x)=>n+Number(x.total||0),0)))>.01||
+        Math.abs((remoteRevenue-baseRevenue)-(remote.history.slice(base.history.length).reduce((n,x)=>n+Number(x.total||0),0)))>.01)return null;
+     const omit=x=>({...x,history:[],counterQueue:[],counterTicket:null,revenue:0});
+     if(!eq(omit(base),omit(local))||!eq(omit(base),omit(remote)))return null;
+     const ticket=Math.max(Number(lt.last||0),Number(rt.last||0));
+     if(queue.some((q,i)=>queue.findIndex(x=>x.ticket===q.ticket&&x.date===q.date)!==i))return null;
+     return {...remote,history,counterQueue:queue,counterTicket:{...rt,last:ticket},revenue:remoteRevenue+extra};
+   }
+   return null;
+ }
  async function getRows(){
    const rows=await rawRequest('algaroba_records?select=record_key,data,updated_at',{method:'GET'});
    if(!Array.isArray(rows))throw Error('Servidor não retornou lista válida de registros.');
