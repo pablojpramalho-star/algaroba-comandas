@@ -269,7 +269,7 @@
      const extra=added.reduce((n,x)=>n+Number(x.total||0),0);
      if(Math.abs((localRevenue-baseRevenue)-(local.history.slice(base.history.length).reduce((n,x)=>n+Number(x.total||0),0)))>.01||
         Math.abs((remoteRevenue-baseRevenue)-(remote.history.slice(base.history.length).reduce((n,x)=>n+Number(x.total||0),0)))>.01)return null;
-     const omit=x=>({...x,history:[],counterQueue:[],counterTicket:null,revenue:0});
+     const omit=x=>({...x,history:[],counterQueue:[],counterTicket:null,revenue:0,creditAccounts:null});
      if(!eq(omit(base),omit(local))||!eq(omit(base),omit(remote)))return null;
      const ticket=Math.max(Number(lt.last||0),Number(rt.last||0));
      if(queue.some((q,i)=>queue.findIndex(x=>x.ticket===q.ticket&&x.date===q.date)!==i))return null;
@@ -310,6 +310,15 @@
        const same=!!remote&&canon(remote.data)===canon(data);
        return {key,data,remote,same,merged};
      });
+     // O modelo legado duplica contas a prazo dentro de meta.
+     // As duas representações devem conter o MESMO conjunto conciliado.
+     const creditPlan=plans.find(p=>p.key==='credit_accounts');
+     const metaPlan=plans.find(p=>p.key==='meta');
+     if(creditPlan&&metaPlan&&creditPlan.merged){
+       metaPlan.data={...metaPlan.data,creditAccounts:creditPlan.data};
+       metaPlan.same=!!metaPlan.remote&&canon(metaPlan.remote.data)===canon(metaPlan.data);
+       metaPlan.merged=true;
+     }
      // Lote único: o PostgreSQL valida todas as versões e grava tudo em uma transação.
      // Se um aparelho modificar qualquer registro, o banco desfaz o lote inteiro.
      try{
