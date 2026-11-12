@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.70-pwa19';
+const CACHE = 'algaroba-shell-2.9.7.70-pwa20';
 
 const SHELL = [
   './',
@@ -57,6 +57,25 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Scripts e estilos: rede primeiro para não executar correções obsoletas.
+  // Em modo offline, mantém a última cópia válida sem tocar no localStorage.
+  if (/\\.(?:js|css)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE).then((cache) => cache.put(event.request, copy)));
+        }
+        return response;
+      }).catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        throw new Error('Arquivo indisponível offline');
+      })
     );
     return;
   }
