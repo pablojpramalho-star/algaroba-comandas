@@ -280,7 +280,12 @@
 
  function remoteDominatesMeta(local,remote){
    if(!local||!remote)return false;
-   const omit=x=>({...x,counterQueue:[],counterTicket:null,creditAccounts:null});
+   const omit=x=>({...x,counterQueue:[],counterTicket:null,creditAccounts:null,
+     cash:x.cash?{...x.cash,movements:[]}:x.cash});
+   // A despesa registrada em outro aparelho pode estar somente no servidor.
+   // Receber apenas acréscimos idênticos, sem perder movimentos locais.
+   const localCash=local.cash?.movements||[],remoteCash=remote.cash?.movements||[];
+   if(!localCash.every(v=>remoteCash.some(w=>canon(w)===canon(v))))return false;
    if(canon(omit(local))!==canon(omit(remote)))return false;
    const lq=local.counterQueue||[],rq=remote.counterQueue||[];
    if(!lq.every(q=>rq.some(v=>String(v.id)===String(q.id)&&canon(v)===canon(q))))return false;
@@ -547,7 +552,15 @@
        const remote=by.get(r.record_key)?.data;
        if(!remote)return false;
        return canon(remote)===canon(r.data)||
-         (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote));
+         (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote))||
+         // Mesas vazias equivalentes: diferenças de campos opcionais legados
+         // não representam vendas ou comandas perdidas.
+         (r.record_key.startsWith('table:')&&
+           (r.data.items||[]).length===0&&(r.data.orders||[]).length===0&&
+           (remote.items||[]).length===0&&(remote.orders||[]).length===0&&
+           r.data.status==='livre'&&remote.status==='livre'&&
+           (r.data.customers||[]).length===0&&(remote.customers||[]).length===0&&
+           (r.data.customerPayments||[]).length===0&&(remote.customerPayments||[]).length===0);
      });
      if(onlyRemoteAdditions&&!risks.length){
        backupRows(local,'Antes de receber eventos adicionais do banco');
