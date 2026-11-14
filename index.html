@@ -254,12 +254,42 @@ const roleViews={
  estoque:['estoque']
 };
 function authToken(){return authSession&&authSession.access_token?authSession.access_token:null}
+let authRefreshPromise=null;
+function tokenExpiresSoon(){
+ if(!authSession||!authSession.access_token)return false;
+ const exp=Number(authSession.expires_at||0);
+ if(exp)return exp*1000<Date.now()+60000;
+ try{const p=JSON.parse(atob(authSession.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));return Number(p.exp||0)*1000<Date.now()+60000}catch(e){return false}
+}
+async function refreshAlgarobaSession(force=false){
+ if(!authSession||!authSession.refresh_token)throw new Error('Sessão expirada. Entre novamente sem limpar os dados locais.');
+ if(!force&&!tokenExpiresSoon())return;
+ if(authRefreshPromise)return authRefreshPromise;
+ authRefreshPromise=(async()=>{
+  const cfg=cloudConfig();
+  const response=await fetch(cfg.url.replace(/\/$/,'')+'/auth/v1/token?grant_type=refresh_token',{
+   method:'POST',headers:{'apikey':cfg.key,'Content-Type':'application/json'},
+   body:JSON.stringify({refresh_token:authSession.refresh_token})
+  });
+  const payload=await response.json().catch(()=>({}));
+  if(!response.ok||!payload.access_token)throw new Error('Não foi possível renovar a sessão. Entre novamente; os lançamentos locais estão preservados.');
+  authSession={...authSession,...payload,expires_at:Math.floor(Date.now()/1000)+Number(payload.expires_in||3600)};
+  localStorage.setItem('algarobaAuthSession',JSON.stringify(authSession));
+ })();
+ try{return await authRefreshPromise}finally{authRefreshPromise=null}
+}
 function authMessage(msg,err=false){let e=document.getElementById('authMsg');if(e){e.textContent=msg;e.className='authmsg '+(err?'autherr':'authok')}}
 async function authFetch(path,opts={}){
  let cfg=cloudConfig();if(!cfg||!cfg.url||!cfg.key)throw new Error('Configure primeiro a conexão online do Supabase na versão anterior.');
- let headers={'apikey':cfg.key,'Content-Type':'application/json',...(opts.headers||{})};
- if(authToken())headers.Authorization='Bearer '+authToken();
- let r=await fetch(cfg.url.replace(/\/$/,'')+path,{...opts,headers});
+ const isTokenEndpoint=path.includes('/auth/v1/token');
+ if(!isTokenEndpoint&&authToken())await refreshAlgarobaSession();
+ async function send(){
+  const headers={'apikey':cfg.key,'Content-Type':'application/json',...(opts.headers||{})};
+  if(authToken())headers.Authorization='Bearer '+authToken();
+  return fetch(cfg.url.replace(/\/$/,'')+path,{...opts,headers});
+ }
+ let r=await send();
+ if(r.status===401&&!isTokenEndpoint&&authSession?.refresh_token){await refreshAlgarobaSession(true);r=await send()}
  let txt=await r.text(),data=null;try{data=txt?JSON.parse(txt):null}catch(e){data=txt}
  if(!r.ok)throw new Error((data&&data.msg)||(data&&data.message)||(data&&data.error_description)||('HTTP '+r.status));
  return data
@@ -408,7 +438,7 @@ async function logoutUser(){
 }
 async function initAuth(){
  let raw=localStorage.getItem('algarobaAuthSession');if(!raw)return;
- try{authSession=JSON.parse(raw);await loadProfile()}catch(e){authSession=null;authProfile=null;localStorage.removeItem('algarobaAuthSession');authMessage('Entre novamente para continuar.',true)}
+ try{authSession=JSON.parse(raw);await refreshAlgarobaSession();await loadProfile()}catch(e){authProfile=null;authMessage('Conexão ou sessão: '+e.message+' Entre novamente se necessário. Seus dados locais permanecem salvos.',true)}
 }
 function setSyncStatus(kind,text){let e=document.getElementById('syncStatus');if(!e)return;e.className='syncpill '+kind;e.textContent='● '+text;e.title=cloudLastError||''}
 const BUILTIN_CLOUD_CONFIG={url:'https://dlwrmpfurphccaeuwsfj.supabase.co',key:'sb_publishable_0Yr-97uqdGFXAcSvpZ2IGA_G3DpnaB7'};
@@ -421,7 +451,20 @@ function cloudConfig(){
 function save(){localStorage.setItem('algarobaState',JSON.stringify(state));if(cloudReady&&!cloudApplying){cloudPausePullUntil=Date.now()+5000;scheduleCloudSave()}}
 function scheduleCloudSave(){clearTimeout(cloudTimer);cloudTimer=setTimeout(pushChangedRecords,300)}
 function cloudHeaders(cfg,prefer){let h={'apikey':cfg.key,'Authorization':'Bearer '+(authToken()||cfg.key),'Content-Type':'application/json'};if(prefer)h['Prefer']=prefer;return h}
-async function cloudRequest(path,opts={}){let cfg=cloudConfig();if(!cfg)throw new Error('Configuração online ausente');let url=cfg.url.replace(/\/$/,'')+'/rest/v1/'+path;let ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),10000);try{let r=await fetch(url,{...opts,signal:ctrl.signal,headers:{...cloudHeaders(cfg,opts.prefer),...(opts.headers||{})}});let txt=await r.text();if(!r.ok)throw new Error('HTTP '+r.status+' • '+(txt||r.statusText));return txt?JSON.parse(txt):null}finally{clearTimeout(tm)}}
+async function cloudRequest(path,opts={}){
+ let cfg=cloudConfig();if(!cfg)throw new Error('Configuração online ausente');
+ let url=cfg.url.replace(/\/$/,'')+'/rest/v1/'+path;
+ let ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),10000);
+ try{
+  if(authToken())await refreshAlgarobaSession();
+  const send=()=>fetch(url,{...opts,signal:ctrl.signal,headers:{...cloudHeaders(cfg,opts.prefer),...(opts.headers||{})}});
+  let r=await send();
+  if(r.status===401&&authSession?.refresh_token){await refreshAlgarobaSession(true);r=await send()}
+  let txt=await r.text();
+  if(!r.ok)throw new Error('HTTP '+r.status+' • '+(txt||r.statusText));
+  return txt?JSON.parse(txt):null
+ }finally{clearTimeout(tm)}
+}
 function stateRecords(s){let rows=[];(s.tables||[]).forEach(t=>rows.push({record_key:'table:'+t.id,data:t}));rows.push({record_key:'counter',data:s.counter||{items:[],orders:[],status:'livre'}});rows.push({record_key:'inventory',data:s.inventory||{items:{},movements:[]}});let meta={revenue:s.revenue||0,history:s.history||[],cash:s.cash||{open:false,openedAt:null,opening:0,movements:[],closures:[]},cancellations:s.cancellations||[],operators:s.operators||['Pablo','Cláudia','Claudevânia'],transfers:s.transfers||[],internalAccounts:s.internalAccounts||{withdrawals:[],settlements:[]}, creditAccounts: s.creditAccounts || { accounts: [], receipts: [] },counterQueue:s.counterQueue||[],counterTicket:s.counterTicket||{date:'',last:0}};rows.push({record_key:'meta',data:meta});rows.push({record_key:'credit_accounts',data:s.creditAccounts||{accounts:[],receipts:[]}});return rows;}
 function snapOf(s){let o={};for(let r of stateRecords(s))o[r.record_key]=JSON.stringify(r.data);return o}
 function applyRows(rows){let by={};(rows||[]).forEach(r=>by[r.record_key]=r.data);if(!by.meta&&!Object.keys(by).some(k=>k.startsWith('table:')))return false;let ns=JSON.parse(JSON.stringify(state));ns.tables=Array.from({length:10},(_,i)=>by['table:'+(i+1)]||ns.tables?.[i]||{id:i+1,items:[],orders:[],status:'livre'});ns.counter=by.counter||ns.counter||{items:[],orders:[],status:'livre'};let m=by.meta||{};for(let k of ['revenue','history','cash','cancellations','operators','transfers','internalAccounts','creditAccounts','counterQueue','counterTicket'])if(m[k]!==undefined)ns[k]=m[k];if(by.credit_accounts!==undefined)ns.creditAccounts=by.credit_accounts; if(by.inventory!==undefined)ns.inventory=by.inventory;else if(m.inventory!==undefined)ns.inventory=m.inventory;ns.activeOperator=localStorage.getItem('algarobaActiveOperator')||ns.activeOperator||((ns.operators||[])[0]||'Pablo');state=ns;localStorage.setItem('algarobaState',JSON.stringify(state));cloudSnapshot=snapOf(state);return true}
