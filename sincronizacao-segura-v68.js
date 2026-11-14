@@ -278,6 +278,36 @@
    return null;
  }
 
+ // Reconciliação de cópias antigas após recuperação administrativa no banco.
+ // Somente recebe o servidor quando TODOS os eventos locais continuam presentes
+ // e o estado operacional restante é idêntico. Não grava nem fecha comandas.
+ function remoteContainsEvents(local,remote,key){
+   if(!Array.isArray(local)||!Array.isArray(remote))return false;
+   const identity=x=>key(x);
+   const seen=new Map(remote.map(x=>[identity(x),x]));
+   if(seen.size!==remote.length)return false;
+   return local.every(x=>seen.has(identity(x))&&canon(seen.get(identity(x)))===canon(x));
+ }
+ function recoveredRemoteDominates(key,local,remote){
+   if(!local||!remote)return false;
+   const eq=(a,b)=>canon(a)===canon(b);
+   if(key==='inventory'){
+     const movementKey=x=>[x.at,x.key,x.type,x.qty,x.before,x.after].join('|');
+     if(!remoteContainsEvents(local.movements||[],remote.movements||[],movementKey))return false;
+     return eq({...local,movements:[]},{...remote,movements:[]});
+   }
+   if(key==='meta'){
+     if(!remoteContainsEvents(local.history||[],remote.history||[],eventKey))return false;
+     if(!remoteContainsEvents(local.counterQueue||[],remote.counterQueue||[],x=>String(x.id)))return false;
+     const ticketL=local.counterTicket||{},ticketR=remote.counterTicket||{};
+     if(ticketL.date!==ticketR.date||Number(ticketR.last||0)<Number(ticketL.last||0))return false;
+     // Campos financeiros, despesas, caixa, crédito e demais dados precisam
+     // coincidir integralmente; divergência nova nunca é descartada.
+     return eq({...local,history:[],counterQueue:[],counterTicket:null},
+               {...remote,history:[],counterQueue:[],counterTicket:null});
+   }
+   return false;
+ }
  function remoteDominatesMeta(local,remote){
    if(!local||!remote)return false;
    const omit=x=>({...x,counterQueue:[],counterTicket:null,creditAccounts:null,
@@ -545,6 +575,48 @@
          return alert('A conciliação não foi concluída. Seus dados continuam preservados.');
        }
      }
+     // O banco pode conter exatamente os eventos recuperados de um backup.
+     // Neste caso o telefone deve RECEBER, jamais reenviar, a versão completa.
+     const recoveryDominated=local.every(r=>{
+       const remote=by.get(r.record_key)?.data;
+       if(!remote)return false;
+       return canon(remote)===canon(r.data)||
+         (['meta','inventory'].includes(r.record_key)&&recoveredRemoteDominates(r.record_key,r.data,remote))||
+         (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote))||
+         (r.record_key.startsWith('table:')&&
+           (r.data.items||[]).length===0&&(r.data.orders||[]).length===0&&
+           (remote.items||[]).length===0&&(remote.orders||[]).length===0&&
+           r.data.status==='livre'&&remote.status==='livre'&&
+           (r.data.customers||[]).length===0&&(remote.customers||[]).length===0&&
+           (r.data.customerPayments||[]).length===0&&(remote.customerPayments||[]).length===0);
+     });
+     if(recoveryDominated&&!risks.length){
+       backupRows(local,'Antes de receber recuperação administrativa confirmada');
+       const before=canon(activeRows());
+       const fresh=await getRows();
+       if(canon(activeRows())!==before)throw Error('Novo lançamento durante a verificação; não atualizar.');
+       const freshMap=new Map(fresh.map(r=>[r.record_key,r]));
+       if(!local.every(r=>{
+         const remote=freshMap.get(r.record_key)?.data;
+         return remote&&(canon(remote)===canon(r.data)||
+           (['meta','inventory'].includes(r.record_key)&&recoveredRemoteDominates(r.record_key,r.data,remote))||
+           (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote))||
+           (r.record_key.startsWith('table:')&&
+             (r.data.items||[]).length===0&&(r.data.orders||[]).length===0&&
+             (remote.items||[]).length===0&&(remote.orders||[]).length===0&&
+             r.data.status==='livre'&&remote.status==='livre'&&
+             (r.data.customers||[]).length===0&&(remote.customers||[]).length===0&&
+             (r.data.customerPayments||[]).length===0&&(remote.customerPayments||[]).length===0));
+       }))throw Error('Servidor mudou durante a conferência; reavaliar.');
+       cloudApplying=true;
+       let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Não foi possível aplicar a versão completa.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       closeModal();alert('Dados recuperados confirmados no banco e recebidos neste aparelho. Nenhum lançamento foi reenviado.');
+       return;
+     }
      // Quando o banco já recebeu o pedido recuperado, o meta local antigo
      // pode diferir em fila, numeração e espelho de contas a prazo.
      // Aceitar apenas se cada evento local também existir no servidor.
@@ -553,6 +625,7 @@
        if(!remote)return false;
        return canon(remote)===canon(r.data)||
          (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote))||
+         (['meta','inventory'].includes(r.record_key)&&recoveredRemoteDominates(r.record_key,r.data,remote))||
          // Mesas vazias equivalentes: diferenças de campos opcionais legados
          // não representam vendas ou comandas perdidas.
          (r.record_key.startsWith('table:')&&
