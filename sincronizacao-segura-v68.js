@@ -291,20 +291,37 @@
  function recoveredRemoteDominates(key,local,remote){
    if(!local||!remote)return false;
    const eq=(a,b)=>canon(a)===canon(b);
+   const prefix=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length<=b.length&&
+     a.every((x,i)=>eq(x,b[i]));
    if(key==='inventory'){
-     const movementKey=x=>[x.at,x.key,x.type,x.qty,x.before,x.after].join('|');
-     if(!remoteContainsEvents(local.movements||[],remote.movements||[],movementKey))return false;
-     return eq({...local,movements:[]},{...remote,movements:[]});
+     const lm=local.movements||[],rm=remote.movements||[];
+     if(!prefix(lm,rm))return false;
+     const li=local.items||{},ri=remote.items||{};
+     if(Object.keys(li).length!==Object.keys(ri).length)return false;
+     const expected={};
+     for(const [k,v] of Object.entries(li))expected[k]=Number(v.qty);
+     for(const mv of rm.slice(lm.length)){
+       if(!Object.prototype.hasOwnProperty.call(expected,mv.key))return false;
+       if(Number(mv.before)!==expected[mv.key])return false;
+       expected[mv.key]=Math.max(0,expected[mv.key]+Number(mv.qty));
+       if(Number(mv.after)!==expected[mv.key])return false;
+     }
+     if(!Object.keys(li).every(k=>ri[k]&&
+       eq({...li[k],qty:0},{...ri[k],qty:0})&&
+       Number(ri[k].qty)===expected[k]))return false;
+     return eq({...local,items:{},movements:[]},{...remote,items:{},movements:[]});
    }
    if(key==='meta'){
-     if(!remoteContainsEvents(local.history||[],remote.history||[],eventKey))return false;
+     const lh=local.history||[],rh=remote.history||[];
+     if(!prefix(lh,rh))return false;
+     if(!prefix(local.cancellations||[],remote.cancellations||[]))return false;
      if(!remoteContainsEvents(local.counterQueue||[],remote.counterQueue||[],x=>String(x.id)))return false;
-     const ticketL=local.counterTicket||{},ticketR=remote.counterTicket||{};
-     if(ticketL.date!==ticketR.date||Number(ticketR.last||0)<Number(ticketL.last||0))return false;
-     // Campos financeiros, despesas, caixa, crédito e demais dados precisam
-     // coincidir integralmente; divergência nova nunca é descartada.
-     return eq({...local,history:[],counterQueue:[],counterTicket:null},
-               {...remote,history:[],counterQueue:[],counterTicket:null});
+     const lt=local.counterTicket||{},rt=remote.counterTicket||{};
+     if(lt.date!==rt.date||Number(rt.last||0)<Number(lt.last||0))return false;
+     const extra=rh.slice(lh.length).reduce((sum,x)=>sum+Number(x.total||0),0);
+     if(Math.abs(Number(local.revenue||0)+extra-Number(remote.revenue||0))>0.001)return false;
+     return eq({...local,history:[],cancellations:[],revenue:0,counterQueue:[],counterTicket:null},
+               {...remote,history:[],cancellations:[],revenue:0,counterQueue:[],counterTicket:null});
    }
    return false;
  }
