@@ -295,12 +295,21 @@
      a.every((x,i)=>eq(x,b[i]));
    if(key==='inventory'){
      const lm=local.movements||[],rm=remote.movements||[];
-     if(!prefix(lm,rm))return false;
+     // Eventos podem chegar em ordem diferente após recuperação administrativa.
+     // Comparar multiplicidade e conteúdo completo, sem exigir mesma posição.
+     const counts=new Map();
+     for(const mv of lm){const k=canon(mv);counts.set(k,(counts.get(k)||0)+1)}
+     const additions=[];
+     for(const mv of rm){
+       const k=canon(mv),n=counts.get(k)||0;
+       if(n)counts.set(k,n-1);else additions.push(mv);
+     }
+     if([...counts.values()].some(n=>n!==0))return false;
      const li=local.items||{},ri=remote.items||{};
      if(Object.keys(li).length!==Object.keys(ri).length)return false;
      const expected={};
      for(const [k,v] of Object.entries(li))expected[k]=Number(v.qty);
-     for(const mv of rm.slice(lm.length)){
+     for(const mv of additions){
        if(!Object.prototype.hasOwnProperty.call(expected,mv.key))return false;
        if(Number(mv.before)!==expected[mv.key])return false;
        expected[mv.key]=Math.max(0,expected[mv.key]+Number(mv.qty));
