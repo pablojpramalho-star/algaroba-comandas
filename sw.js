@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.72-pwa32';
+const CACHE = 'algaroba-shell-2.9.7.73-pwa33';
 
 const SHELL = [
   './',
