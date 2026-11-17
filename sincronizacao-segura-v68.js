@@ -14,7 +14,7 @@
    }return x;
  }
  function changedNow(){
-   return stateRecords(state).filter(r=>cloudSnapshot[r.record_key]!==JSON.stringify(r.data));
+   return stateRecords(state).filter(r=>!cloudSnapshot[r.record_key]||canon(JSON.parse(cloudSnapshot[r.record_key]))!==canon(r.data));
  }
  function labelKey(k){
    if(k.startsWith('table:'))return 'Mesa '+k.slice(6);
@@ -492,7 +492,7 @@
    if(!first){
      if(!cloudReady||userIsEditing()||Date.now()<cloudPausePullUntil)return false;
      if(isDirty()||pendingRead()){
-       if(isDirty()&&!pendingRead()){pendingWrite();scheduleCloudSave()}
+       if(isDirty()){pendingWrite();scheduleCloudSave()}else pendingWrite()
        return false;
      }
    }
@@ -570,10 +570,12 @@
    try{const list=JSON.parse(localStorage.getItem(BACKUPS)||'[]');return Array.isArray(list)?list:[]}catch(e){return []}
  }
 
- window.retrySafeSyncV68=async function(){
-   if(!canExport())return alert('Somente Administrador ou Gerente pode conciliar a sincronização.');
-   if(!cloudReady)return alert('Sem conexão online. Preserve as cópias e tente quando a internet estiver disponível.');
-   if(reading||writing)return alert('A sincronização ainda está verificando dados. Tente novamente.');
+ window.retrySafeSyncV68=async function(automatic=false){
+   const notify=message=>{if(!automatic)alert(message)};
+   const dismiss=()=>{if(!automatic)closeModal()};
+   if(!(automatic?!!authProfile:canExport()))return notify('Somente Administrador ou Gerente pode conciliar a sincronização.');
+   if(!cloudReady)return notify('Sem conexão online. Preserve as cópias e tente quando a internet estiver disponível.');
+   if(reading||writing)return notify('A sincronização ainda está verificando dados. Tente novamente.');
    try{
      const server=await getRows(),by=new Map(server.map(r=>[r.record_key,r]));
      const local=activeRows();
@@ -594,11 +596,11 @@
        try{
          await safeWriteRows(pending);
          if(blocked)throw Error('A conciliação não pôde ser confirmada.');
-         closeModal();alert('Lançamentos independentes conciliados e gravados com segurança.');
+         dismiss();notify('Lançamentos independentes conciliados e gravados com segurança.');
          return;
        }catch(e){
          if(!blocked)alertSync('A conciliação automática não pôde ser concluída.',String(e.message||e));
-         return alert('A conciliação não foi concluída. Seus dados continuam preservados.');
+         return notify('A conciliação não foi concluída. Seus dados continuam preservados.');
        }
      }
      // O banco pode conter exatamente os eventos recuperados de um backup.
@@ -640,7 +642,7 @@
        if(!applied)throw Error('Não foi possível aplicar a versão completa.');
        clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
-       closeModal();alert('Dados recuperados confirmados no banco e recebidos neste aparelho. Nenhum lançamento foi reenviado.');
+       dismiss();notify('Dados recuperados confirmados no banco e recebidos neste aparelho. Nenhum lançamento foi reenviado.');
        return;
      }
      // Quando o banco já recebeu o pedido recuperado, o meta local antigo
@@ -669,7 +671,7 @@
        if(!applied)throw Error('A atualização local não foi confirmada.');
        clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
-       closeModal();alert('Sincronização recuperada: os lançamentos do banco foram incorporados sem descartar os do aparelho.');
+       dismiss();notify('Sincronização recuperada: os lançamentos do banco foram incorporados sem descartar os do aparelho.');
        return;
      }
      // Aceitar apenas a fila remota estritamente mais completa, sem alterar outros dados.
@@ -687,7 +689,7 @@
        if(!applied)throw Error('A aplicação da conciliação não foi confirmada.');
        clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
-       closeModal();alert('Conciliação concluída: fila de balcão completa e dados preservados.');
+       dismiss();notify('Conciliação concluída: fila de balcão completa e dados preservados.');
        return;
      }
      const divergent=[];
@@ -705,17 +707,17 @@
      if(risks.length||divergent.length){
        alertSync('Ainda existem diferenças entre a versão local e o banco. Nenhum lançamento será descartado.',
          [...new Set([...risks,...divergent])].join('; '));
-       return alert('Persistem diferenças. Registros: '+[...new Set([...risks,...divergent])].join('; ').slice(0,900)+'\n\nNenhum dado foi descartado. Não force a sincronização.');
+       return notify('Persistem diferenças. Registros: '+[...new Set([...risks,...divergent])].join('; ').slice(0,900)+'\n\nNenhum dado foi descartado. Não force a sincronização.');
      }
      clearBlock();pendingWrite();
      cloudLastError='';cloudFailures=0;
      if(isDirty()){
        scheduleCloudSave();setSyncStatus('offline','REENVIANDO ALTERAÇÕES SEGURAS…');
      }else setSyncStatus('online','ONLINE • SALVO');
-     closeModal();alert('A verificação não encontrou conflito pendente nos registros alterados. A sincronização segura foi retomada.');
+     dismiss();notify('A verificação não encontrou conflito pendente nos registros alterados. A sincronização segura foi retomada.');
    }catch(e){
      alertSync('Não foi possível reavaliar a sincronização. Os dados locais permanecem preservados.',String(e.message||e));
-     alert('A verificação falhou. Confira sua conexão e não apague as cópias locais.');
+     notify('A verificação falhou. Confira sua conexão e não apague as cópias locais.');
    }
  };
  
@@ -800,6 +802,18 @@
    if(blocked)return window.openSafeSyncPanelV68();
    return oldCloudError();
  };
+ let automaticBusy=false;
+ async function automaticRecovery(){
+   if(automaticBusy||reading||writing||!authProfile||!navigator.onLine||userIsEditing())return;
+   automaticBusy=true;
+   try{
+     if(!cloudReady){await initCloud();return}
+     if(blocked){await window.retrySafeSyncV68(true);return}
+     if(isDirty()){pendingWrite();scheduleCloudSave()}else{await pullRecords(false)}
+   }catch(e){console.warn('Nova tentativa automática:',e)}finally{automaticBusy=false}
+ }
+ setInterval(automaticRecovery,15000);
+ window.addEventListener('online',automaticRecovery);
  started=true;
  // Carrega a autenticação somente DEPOIS de instalar todas as proteções.
  // Evita uma primeira leitura antiga do servidor sobrescrever os dados locais.
