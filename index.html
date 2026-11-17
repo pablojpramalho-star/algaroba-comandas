@@ -669,6 +669,7 @@ async function confirmCancelCashComanda(){
 }
 
 async function openCash(){
+ if(algarobaCashExpired())return alert('O caixa anterior precisa ser fechado antes de abrir outro.');
  let el=document.getElementById('openingValue'),v=parseFloat(String(el?.value||0).replace(',','.'));
  if(v<0||isNaN(v))return alert('Informe um valor válido.');
  if(!confirm(`Confirmar abertura do caixa com ${brl(v)}?`))return;
@@ -724,7 +725,27 @@ function confirmCashMovement(type){
  if(!note)return alert('Informe o motivo da movimentação.');
  state.cash.movements.push({type,value:v,note,operator:state.activeOperator,at:new Date().toISOString()});save();closeModal();renderCash()
 }
-let payCtx=null,payments=[];function paymentModalCounter(id){let t=counterOrderById(id);if(!t||!t.items?.length)return alert('Pedido de balcão não localizado.');let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0);payCtx={name:'Balcão '+ticketLabel(t.ticket),tableId:'counterQueue',counterId:t.id,ticket:t.ticket,sum};payments=[];renderPaymentModal()}function paymentModal(name){let tableId=name==='Balcão'?'counter':Number(name.replace(/\D/g,''));let t=tableId==='counter'?state.counter:state.tables.find(x=>x.id===tableId);if(!t||!t.items||!t.items.length)return alert('Comanda não localizada ou vazia.');let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0);payCtx={name,tableId,sum};payments=[];renderPaymentModal()}function renderPaymentModal(){let paid=payments.reduce((a,p)=>a+p.value,0),remaining=Math.max(0,payCtx.sum-paid);document.getElementById('modalContent').innerHTML=`<h2>💳 ${payCtx.name}</h2><div class=big>Total ${brl(payCtx.sum)}</div><div class=panel><div class=muted>Pago</div><b>${brl(paid)}</b><div class=muted>Falta</div><div class=big>${brl(remaining)}</div></div>${payments.map((p,i)=>`<div class=cart-row><span>${p.method}</span><b>${brl(p.value)} <button onclick="removePayment(${i})">×</button></b></div>`).join('')}<select id=payMethod><option>Pix</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option></select><input id=payValue type=number step=.01 min=.01 value='${remaining.toFixed(2)}'><button class=btn onclick=addPayment()>+ ADICIONAR PAGAMENTO</button><div class=sheet-actions><button class=btn onclick=closeModal()>Cancelar</button>${(payCtx.tableId==='counter'||payCtx.tableId==='counterQueue')?`<button class="btn" onclick=openInternalWithdrawal()>👤 CONSUMO / RETIRADA</button>`:''}<button class="btn primary" onclick=finishPayment()>FINALIZAR VENDA</button></div>`;document.getElementById('modal').classList.remove('hide')}function addPayment(){let v=parseFloat(document.getElementById('payValue').value),remaining=payCtx.sum-payments.reduce((a,p)=>a+p.value,0);if(!v||v<=0)return alert('Informe um valor válido.');if(v>remaining+.009)return alert('O valor ultrapassa o restante da conta.');payments.push({method:document.getElementById('payMethod').value,value:v});renderPaymentModal()}function removePayment(i){payments.splice(i,1);renderPaymentModal()}async function finishPayment(){
+let payCtx=null,payments=[];function paymentModalCounter(id){let t=counterOrderById(id);if(!t||!t.items?.length)return alert('Pedido de balcão não localizado.');let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0);payCtx={name:'Balcão '+ticketLabel(t.ticket),tableId:'counterQueue',counterId:t.id,ticket:t.ticket,sum};payments=[];renderPaymentModal()}function paymentModal(name){let tableId=name==='Balcão'?'counter':Number(name.replace(/\D/g,''));let t=tableId==='counter'?state.counter:state.tables.find(x=>x.id===tableId);if(!t||!t.items||!t.items.length)return alert('Comanda não localizada ou vazia.');let sum=t.items.reduce((a,x)=>a+x.price*x.qty,0);payCtx={name,tableId,sum};payments=[];renderPaymentModal()}function renderPaymentModal(){let paid=payments.reduce((a,p)=>a+p.value,0),remaining=Math.max(0,payCtx.sum-paid);document.getElementById('modalContent').innerHTML=`<h2>💳 ${payCtx.name}</h2><div class=big>Total ${brl(payCtx.sum)}</div><div class=panel><div class=muted>Pago</div><b>${brl(paid)}</b><div class=muted>Falta</div><div class=big>${brl(remaining)}</div></div>${payments.map((p,i)=>`<div class=cart-row><span>${p.method}</span><b>${brl(p.value)} <button onclick="removePayment(${i})">×</button></b></div>`).join('')}<select id=payMethod><option>Pix</option><option>Dinheiro</option><option>Débito</option><option>Crédito</option></select><input id=payValue type=number step=.01 min=.01 value='${remaining.toFixed(2)}'><button class=btn onclick=addPayment()>+ ADICIONAR PAGAMENTO</button><div class=sheet-actions><button class=btn onclick=closeModal()>Cancelar</button>${(payCtx.tableId==='counter'||payCtx.tableId==='counterQueue')?`<button class="btn" onclick=openInternalWithdrawal()>👤 CONSUMO / RETIRADA</button>`:''}<button class="btn primary" onclick=finishPayment()>FINALIZAR VENDA</button></div>`;document.getElementById('modal').classList.remove('hide')}function addPayment(){let v=parseFloat(document.getElementById('payValue').value),remaining=payCtx.sum-payments.reduce((a,p)=>a+p.value,0);if(!v||v<=0)return alert('Informe um valor válido.');if(v>remaining+.009)return alert('O valor ultrapassa o restante da conta.');payments.push({method:document.getElementById('payMethod').value,value:v});renderPaymentModal()}function removePayment(i){payments.splice(i,1);renderPaymentModal()}// Proteção do dia operacional: 05h em Natal encerra o dia anterior.
+function algarobaBusinessDay(date){
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(date);
+ const get=k=>parts.find(x=>x.type===k)?.value;
+ const y=Number(get('year')),m=Number(get('month')),d=Number(get('day')),h=Number(get('hour'));
+ return new Date(Date.UTC(y,m-1,d-(h<5?1:0))).toISOString().slice(0,10);
+}
+function algarobaCashExpired(){
+ return !!(state.cash?.open&&state.cash.openedAt&&
+   algarobaBusinessDay(new Date(state.cash.openedAt))!==algarobaBusinessDay(new Date()));
+}
+function algarobaRequireCurrentCash(){
+ if(algarobaCashExpired()){
+   alert('⚠️ O caixa pertence a outro dia operacional. Para proteger as vendas, feche o caixa anterior e abra um novo antes de receber pagamentos. Horário de virada: 05h (Natal).');
+   closeModal();renderCash();return false;
+ }
+ if(!state.cash?.open){alert('Abra o caixa de hoje antes de finalizar uma venda.');closeModal();renderCash();return false}
+ return true;
+}
+async function finishPayment(){
+if(!algarobaRequireCurrentCash())return;
 if(!payCtx)return alert('Conta não localizada.');
 let paid=payments.reduce((a,p)=>a+p.value,0),remaining=payCtx.sum-paid;
 if(remaining>.01){let elV=document.getElementById('payValue'),elM=document.getElementById('payMethod'),v=elV?parseFloat(elV.value):0;if(v>0&&Math.abs(v-remaining)<=.01){payments.push({method:elM?elM.value:'Não informado',value:remaining});paid=payments.reduce((a,p)=>a+p.value,0);remaining=payCtx.sum-paid}}
