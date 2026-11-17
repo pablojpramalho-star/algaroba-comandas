@@ -251,6 +251,7 @@
        if(Math.abs(localDelta-localMovements.reduce((n,x)=>n+Number(x.qty),0))>.00001||
           Math.abs(remoteDelta-remoteMovements.reduce((n,x)=>n+Number(x.qty),0))>.00001)return null;
        const delta=localMovements.filter(x=>!remoteMovements.some(y=>mk(y)===mk(x))).reduce((n,x)=>n+Number(x.qty),0);
+       if(Number(r.qty)+delta<0)return null;
        items[name]={...r,qty:Number(r.qty)+delta};
      }
      return {...remote,items,movements};
@@ -267,8 +268,9 @@
      if(![baseRevenue,localRevenue,remoteRevenue].every(Number.isFinite))return null;
      const added=history.filter(x=>!(remote.history||[]).some(y=>eventKey(y)===eventKey(x)));
      const extra=added.reduce((n,x)=>n+Number(x.total||0),0);
-     if(Math.abs((localRevenue-baseRevenue)-(local.history.slice(base.history.length).reduce((n,x)=>n+Number(x.total||0),0)))>.01||
-        Math.abs((remoteRevenue-baseRevenue)-(remote.history.slice(base.history.length).reduce((n,x)=>n+Number(x.total||0),0)))>.01)return null;
+     const baseIds=new Set((base.history||[]).map(eventKey));
+     const additionsTotal=h=>h.filter(x=>!baseIds.has(eventKey(x))).reduce((n,x)=>n+Number(x.total||0),0);
+     if(Math.abs(localRevenue-baseRevenue-additionsTotal(local.history))>.01||Math.abs(remoteRevenue-baseRevenue-additionsTotal(remote.history))>.01)return null;
      const omit=x=>({...x,history:[],counterQueue:[],counterTicket:null,revenue:0,creditAccounts:null});
      if(!eq(omit(base),omit(local))||!eq(omit(base),omit(remote)))return null;
      const ticket=Math.max(Number(lt.last||0),Number(rt.last||0));
@@ -374,6 +376,8 @@
      const current=await getRows();
      const by=new Map(current.map(r=>[r.record_key,r]));
      const localAtPlanning=canon(activeRows());
+     const requestedKeys=new Set(requested.map(r=>r.record_key));
+     const unrelatedDirty=changedNow().some(r=>!requestedKeys.has(r.record_key));
      // PRÉ-CONFERÊNCIA DO LOTE INTEIRO antes de mudar qualquer registro.
      // Evita fechar a mesa se o histórico do caixa já está divergente.
      const plans=requested.map(row=>{
@@ -417,6 +421,7 @@
        // Se houve mesclagem, atualizar a memória local somente depois do commit
        // confirmado, para evitar que um save posterior reenvie a versão antiga.
        if(plans.some(p=>p.merged)){
+         if(unrelatedDirty)throw Error('Outros registros locais pendentes; união preservada no servidor, atualização local suspensa.');
          const latest=await getRows();
          if(canon(activeRows())!==localAtPlanning)
            throw Error('Novo lançamento local durante a conciliação. O servidor já salvou o lote; preserve os dados e reavalie.');
