@@ -75,8 +75,8 @@
  function dailyDisplay(cash,cutoff){
    const r=cashData(cash,cutoff);if(!r)return r;
    for(const sale of state.history||[]){
-     if(sale.voided||typeof algarobaReconciledTurn!=='function'||algarobaReconciledTurn(sale)!==1||r.businessDate!=='2026-11-16'||new Date(sale.closedAt)>=new Date(cash.openedAt))continue;
-     const t=r.turn1,value=Number(sale.total||0);t.sales+=value;t.salesCount++;const op=sale.operator||'Não identificado';t.operators[op]=(t.operators[op]||0)+value;
+     if(sale.voided||typeof algarobaReconciledTurn!=='function'||algarobaReconciledTurn(sale)!==2||r.businessDate!=='2026-11-16'||new Date(sale.closedAt)>=new Date(cash.openedAt))continue;
+     const t=r.turn2,value=Number(sale.total||0);t.sales+=value;t.salesCount++;const op=sale.operator||'Não identificado';t.operators[op]=(t.operators[op]||0)+value;
      for(const p of paymentsOf(sale))t.payments[p.method]=(t.payments[p.method]||0)+Number(p.value||0);
      r.totalSales+=value;
    }
