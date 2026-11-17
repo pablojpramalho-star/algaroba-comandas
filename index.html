@@ -1521,7 +1521,7 @@ function intelligenceShiftOf(date,start){
  const d=new Date(date);if(!Number.isFinite(d.getTime()))return -1;
  return d.getHours()*60+d.getMinutes()<start?1:2;
 }
-function algarobaReconciledTurn(sale){return ["2026-11-16T21:12:28.057Z","2026-11-16T23:56:54.404Z","2026-11-16T23:57:02.662Z","2026-11-16T23:57:09.810Z","2026-11-16T23:57:14.849Z","2026-11-17T00:00:17.679Z","2026-11-17T00:00:24.871Z"].includes(sale?.closedAt)?1:null;}
+function algarobaReconciledTurn(sale){return ["2026-11-16T21:12:28.057Z","2026-11-16T23:56:54.404Z","2026-11-16T23:57:02.662Z","2026-11-16T23:57:09.810Z","2026-11-16T23:57:14.849Z","2026-11-17T00:00:17.679Z","2026-11-17T00:00:24.871Z" ].includes(sale?.closedAt)?2:null;}
 function intelligenceDashboard(a,b){
  const cfg=intelligenceShiftSettings(),all=moduleSales(a,b);
  const filtered=all.filter(v=>cfg.filter==='all'||String((algarobaReconciledTurn(v)||intelligenceShiftOf(v.closedAt,cfg.start)))===cfg.filter);
