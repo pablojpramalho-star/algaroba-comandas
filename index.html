@@ -1521,12 +1521,13 @@ function intelligenceShiftOf(date,start){
  const d=new Date(date);if(!Number.isFinite(d.getTime()))return -1;
  return d.getHours()*60+d.getMinutes()<start?1:2;
 }
+function algarobaReconciledTurn(sale){return ["2026-11-16T21:12:28.057Z","2026-11-16T23:56:54.404Z","2026-11-16T23:57:02.662Z","2026-11-16T23:57:09.810Z","2026-11-16T23:57:14.849Z","2026-11-17T00:00:17.679Z","2026-11-17T00:00:24.871Z"].includes(sale?.closedAt)?1:null;}
 function intelligenceDashboard(a,b){
  const cfg=intelligenceShiftSettings(),all=moduleSales(a,b);
- const filtered=all.filter(v=>cfg.filter==='all'||String(intelligenceShiftOf(v.closedAt,cfg.start))===cfg.filter);
+ const filtered=all.filter(v=>cfg.filter==='all'||String((algarobaReconciledTurn(v)||intelligenceShiftOf(v.closedAt,cfg.start)))===cfg.filter);
  const amount=x=>Number(x.total||0),sum=xs=>xs.reduce((n,x)=>n+amount(x),0);
  const money=x=>brl(x),total=sum(filtered),days=new Map(),weekdays=new Map(),hours=new Map(),operators=new Map(),methods=new Map(),products=new Map(),cats=new Map();
- const shifts=[all.filter(v=>intelligenceShiftOf(v.closedAt,cfg.start)===1),all.filter(v=>intelligenceShiftOf(v.closedAt,cfg.start)===2)];
+ const shifts=[all.filter(v=>(algarobaReconciledTurn(v)||intelligenceShiftOf(v.closedAt,cfg.start))===1),all.filter(v=>(algarobaReconciledTurn(v)||intelligenceShiftOf(v.closedAt,cfg.start))===2)];
  const dateKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
  const weekdayNames=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
  let units=0,cmv=0,costKnown=0;
