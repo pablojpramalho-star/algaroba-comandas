@@ -608,6 +608,17 @@ function renderCash(){
  let mt=cashMoveTotals();
  document.getElementById('cashStatus').innerHTML=`<div class=panel><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class=status>● CAIXA ABERTO</span><b>${state.cash.openedBy||state.activeOperator}</b></div><div class=muted style="margin-top:8px">Aberto em ${new Date(state.cash.openedAt).toLocaleString('pt-BR')}</div></div>`;
  if(openingEl)openingEl.textContent=brl(state.cash.opening||0);if(entriesEl)entriesEl.textContent=brl(mt.entries);if(outEl)outEl.textContent=brl(mt.outflows);
+ // Resumo administrativo dos turnos: mantém vendas conciliadas sem lançá-las novamente no caixa físico.
+ const businessDate=algarobaBusinessDay(new Date());
+ const reconciled=(state.cash.closures||[]).filter(c=>c.businessDate===businessDate&&c.reconciliation);
+ const firstReconciled=reconciled.reduce((n,c)=>n+Number(c.shiftBreakdown?.turn1?.sales||0),0);
+ const secondReconciled=reconciled.reduce((n,c)=>n+Number(c.shiftBreakdown?.turn2?.sales||0),0);
+ const newSales=currentCashSales();
+ const secondNew=newSales.reduce((n,v)=>n+Number(v.total||0),0);
+ const summary=document.getElementById('cashStatus');
+ if(summary&&(firstReconciled||secondReconciled)){
+   summary.innerHTML+=`<div class=panel><b>📊 Turnos de ${businessDate.split('-').reverse().join('/')}</b><div class=cart-row><span>Primeiro turno • vendas conciliadas</span><b>${brl(firstReconciled)}</b></div><div class=cart-row><span>Segundo turno • vendas conciliadas</span><b>${brl(secondReconciled)}</b></div><div class=cart-row><span>Vendas após abertura do caixa atual</span><b>${brl(secondNew)}</b></div><div class=muted>Histórico preservado. Vendas conciliadas não são cobradas novamente nem alteram o dinheiro esperado do caixa atual.</div></div>`;
+ }
  document.getElementById('revenue').textContent=brl(cashSales());document.getElementById('cashExpected').textContent=brl(expectedCash());
  let bp=cashByPayment();if(payBox)payBox.innerHTML=['Dinheiro','Pix','Débito','Crédito'].map(k=>`<div class=cart-row><span>${k}</span><b>${brl(bp[k]||0)}</b></div>`).join('');
  document.getElementById('cashMovements').innerHTML=(state.cash.movements||[]).slice().reverse().map(m=>`<div class=cart-row><span>${m.type==='entrada'?'➕':m.type==='sangria'?'💸':'🧾'} ${m.type.toUpperCase()} • ${m.note||'Sem descrição'}<div class=muted>${m.operator||'Não identificado'} • ${new Date(m.at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div></span><b>${m.type==='entrada'?'+':'−'} ${brl(m.value)}</b></div>`).join('')||'<div class=muted>Nenhuma movimentação neste turno.</div>';
