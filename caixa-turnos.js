@@ -71,6 +71,17 @@
  }
  window.cashShiftBreakdownV65=turnSnapshot;
  const cashData=(cash,cutoff)=>turnSnapshot(cash,cutoff,state.history||[],state.internalAccounts?.settlements||[]);
+ // Painel diário: soma apenas as vendas conciliadas anteriores à abertura, sem alterar o fechamento físico.
+ function dailyDisplay(cash,cutoff){
+   const r=cashData(cash,cutoff);if(!r)return r;
+   for(const sale of state.history||[]){
+     if(sale.voided||typeof algarobaReconciledTurn!=='function'||algarobaReconciledTurn(sale)!==1||r.businessDate!=='2026-11-16'||new Date(sale.closedAt)>=new Date(cash.openedAt))continue;
+     const t=r.turn1,value=Number(sale.total||0);t.sales+=value;t.salesCount++;const op=sale.operator||'Não identificado';t.operators[op]=(t.operators[op]||0)+value;
+     for(const p of paymentsOf(sale))t.payments[p.method]=(t.payments[p.method]||0)+Number(p.value||0);
+     r.totalSales+=value;
+   }
+   return r;
+ }
  function closureSnapshot(c){
    return c?.shiftBreakdown||turnSnapshot({openedAt:c?.openedAt,opening:c?.opening,movements:c?.movements||[]},c?.closedAt,state.history||[],state.internalAccounts?.settlements||[]);
  }
@@ -130,7 +141,7 @@
    if(!state.cash?.open)return;
    const panel=document.getElementById('cashStatus');
    if(!panel)return;
-   const report=cashData(state.cash,new Date());
+   const report=dailyDisplay(state.cash,new Date());
    if(!report)return;
    const outer=document.createElement('div');outer.className='cash-shift-summary';
    outer.innerHTML='<div class="panel"><b>🕒 Vendas por turno • '+dateLabel(report.businessDate)+'</b>'+
