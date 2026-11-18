@@ -5,7 +5,6 @@
  const menu=catalog;
  const broths=menu['Caldos/Sopas']||[];
  const transitions=[
-   ['Sopa de Costela 500 ml','Sopa de Costela 300 ml'],
    ['Caldo da Casa 500 ml','Caldo da Casa 300 ml']
  ];
  for(const [oldName,newName] of transitions){
@@ -110,7 +109,7 @@
  const originalReportCategory=reportCategory;
  reportCategory=function(name){
    const raw=String(name||'');
-   if(/^(?:Sopa de Costela|Caldo da Casa)\s+500\s*ml(?:\s*•|$)/i.test(raw))return 'Caldos/Sopas';
+   if(/^(?:Sopa de Costela|Caldo da Casa)\s+(?:300|500)\s*ml(?:\s*•|$)/i.test(raw))return 'Caldos/Sopas';
    if(/^Ypióca Lata(?: •|$)/i.test(raw))return 'Bebidas';
    const withoutKit=raw.replace(/\s*•\s*Aperitivo da Casa incluso(?:\s*•.*)?$/i,'').trim();
    return originalReportCategory(withoutKit);
