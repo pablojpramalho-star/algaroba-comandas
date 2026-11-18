@@ -324,7 +324,12 @@
    }
    if(key==='meta'){
      const lh=local.history||[],rh=remote.history||[];
-     if(!prefix(lh,rh))return false;
+     const normalizedSale=s=>{
+       const v={...s,closedAt:s.originalClosedAt||s.closedAt};
+       delete v.originalClosedAt;delete v.businessDate;delete v.shift;
+       return v;
+     };
+     if(!prefix(lh.map(normalizedSale),rh.map(normalizedSale)))return false;
      if(!prefix(local.cancellations||[],remote.cancellations||[]))return false;
      if(!remoteContainsEvents(local.counterQueue||[],remote.counterQueue||[],x=>String(x.id)))return false;
      const lt=local.counterTicket||{},rt=remote.counterTicket||{};
@@ -618,8 +623,7 @@
          (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote))||
          (r.record_key.startsWith('table:')&&
            (r.data.items||[]).length===0&&(r.data.orders||[]).length===0&&
-           (remote.items||[]).length===0&&(remote.orders||[]).length===0&&
-           r.data.status==='livre'&&remote.status==='livre'&&
+           r.data.status==='livre'&&
            (r.data.customers||[]).length===0&&(remote.customers||[]).length===0&&
            (r.data.customerPayments||[]).length===0&&(remote.customerPayments||[]).length===0);
      });
@@ -636,8 +640,7 @@
            (r.record_key==='meta'&&remoteDominatesMeta(r.data,remote))||
            (r.record_key.startsWith('table:')&&
              (r.data.items||[]).length===0&&(r.data.orders||[]).length===0&&
-             (remote.items||[]).length===0&&(remote.orders||[]).length===0&&
-             r.data.status==='livre'&&remote.status==='livre'&&
+           r.data.status==='livre'&&
              (r.data.customers||[]).length===0&&(remote.customers||[]).length===0&&
              (r.data.customerPayments||[]).length===0&&(remote.customerPayments||[]).length===0));
        }))throw Error('Servidor mudou durante a conferência; reavaliar.');
@@ -663,8 +666,7 @@
          // não representam vendas ou comandas perdidas.
          (r.record_key.startsWith('table:')&&
            (r.data.items||[]).length===0&&(r.data.orders||[]).length===0&&
-           (remote.items||[]).length===0&&(remote.orders||[]).length===0&&
-           r.data.status==='livre'&&remote.status==='livre'&&
+           r.data.status==='livre'&&
            (r.data.customers||[]).length===0&&(remote.customers||[]).length===0&&
            (r.data.customerPayments||[]).length===0&&(remote.customerPayments||[]).length===0);
      });
