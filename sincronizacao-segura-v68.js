@@ -131,7 +131,7 @@
      }
      if(x.record_key==='meta'){
        const localHistory=x.data.history||[],remoteHistory=y.data.history||[];
-       const saleKey=s=>String(s.id||'')+'|'+String(s.closedAt||'');
+       const saleKey=s=>String(s.id||'')+'|'+String(s.originalClosedAt||s.closedAt||'');
        const activeSales=new Set(remoteHistory.map(saleKey));
        const disappeared=localHistory.slice(-80).filter(s=>!activeSales.has(saleKey(s)));
        if(disappeared.length)reasons.push(disappeared.length+' venda(s) do histórico local não constam na atualização');
@@ -202,7 +202,7 @@
    for(const [id,x] of l)if(r.has(id)&&canon(r.get(id))!==canon(x))return null;
    return [...remote,...local.filter(x=>!r.has(ident(x)))];
  }
- const eventKey=x=>String(x.id||'')+'|'+String(x.closedAt||x.at||x.createdAt||'');
+ const eventKey=x=>String(x.id||'')+'|'+String(x.originalClosedAt||x.closedAt||x.at||x.createdAt||'');
  function mergeRecord(key,base,local,remote){
    if(!base||!local||!remote)return null;
    if(canon(local)===canon(remote))return remote;
