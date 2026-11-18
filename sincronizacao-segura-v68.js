@@ -589,6 +589,30 @@
    try{
      const server=await getRows(),by=new Map(server.map(r=>[r.record_key,r]));
      const local=activeRows();
+     // Recuperação administrativa de exportações conferidas em 18/11/2026.
+     // Não aceita dados locais novos nem uma revisão do servidor diferente.
+     const approvedExports=new Set(['b6a67bc1efbd6ff90154ae9341047f80f9cfaa3b94b1f9e90a407bf195e41bc8','2436cc19b66a72931a941ebc4f02794b33da6f5a9c5d07da8a38f6ed94319667']);
+     const approvedRevisions={"counter":null,"credit_accounts":null,"inventory":null,"meta":null,"table:1":null,"table:10":null,"table:2":null,"table:3":null,"table:4":null,"table:5":null,"table:6":null,"table:7":null,"table:8":null,"table:9":null};
+     const exportDigest=async rows=>{
+       const payload=canon(rows.map(r=>({record_key:r.record_key,data:r.data})).sort((a,b)=>a.record_key.localeCompare(b.record_key)));
+       const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
+       return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+     };
+     const revisionMatch=rows=>rows.length===Object.keys(approvedRevisions).length&&rows.every(r=>approvedRevisions[r.record_key]===Date.parse(r.updated_at));
+     if(!automatic&&canExport()&&revisionMatch(server)&&globalThis.crypto?.subtle&&approvedExports.has(await exportDigest(local))){
+       if(!confirm('A cópia deste aparelho corresponde ao backup conferido. Receber a base central consolidada, preservando os arquivos de auditoria já exportados?'))return;
+       const fresh=await getRows();
+       if(!revisionMatch(fresh)||!approvedExports.has(await exportDigest(activeRows())))throw Error('Os dados mudaram durante a conferência. Não foi aplicada a recuperação.');
+       backupRows(local,'Antes de receber base central conferida em 18/11');
+       cloudApplying=true;
+       let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao aplicar base central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       dismiss();notify('Base central recebida com segurança. Nenhuma venda foi reenviada.');
+       return;
+     }
      const risks=dataLossSigns(local,server);
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
      // permite unir inclusões independentes em vez de exigir exportação manual.
