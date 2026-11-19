@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.82';
+ const VERSION='2.9.7.83';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -611,6 +611,33 @@
      if(first)throw e;return false;
    }finally{reading=false}
  };
+ // Caixa único: operações de abertura e fechamento exigem a revisão central atual.
+ const originalOpenCash=openCash,originalConfirmCloseCash=confirmCloseCash;
+ let cashTransition=false;
+ async function centralCashTransition(opening,action){
+   if(cashTransition)return;
+   if(blocked||!cloudReady||!navigator.onLine||reading||writing||isDirty()||pendingRead())
+     return alert('Caixa central ainda não confirmado. Aguarde a sincronização antes de abrir ou fechar.');
+   cashTransition=true;
+   try{
+     const before=canon(activeRows());
+     const rows=await getRows(),meta=rows.find(r=>r.record_key==='meta');
+     if(!meta?.data?.cash||blocked||reading||writing||canon(activeRows())!==before)
+       return alert('Não foi possível confirmar o caixa central. Tente novamente.');
+     const local=latestRow('meta')?.data;
+     if(canon(meta.data)!==canon(local)){
+       return alert('O caixa central mudou em outro aparelho. Feche esta janela, aguarde a atualização e confira novamente.');
+     }
+     if(!!meta.data.cash.open===opening){
+       if(opening)renderCash();
+       return alert(opening?'O caixa central já está aberto para todos.':'O caixa central já está fechado.');
+     }
+     await action();
+   }catch(e){alert('Não foi possível confirmar a operação no caixa central. Confira a sincronização.');}
+   finally{cashTransition=false;}
+ }
+ openCash=function(){return centralCashTransition(true,originalOpenCash)};
+ confirmCloseCash=function(){return centralCashTransition(false,originalConfirmCloseCash)};
  const priorEditing=userIsEditing;
  userIsEditing=function(){
    const modal=document.getElementById('modal');
