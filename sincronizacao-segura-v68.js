@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.78';
+ const VERSION='2.9.7.79';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -653,7 +653,7 @@
  window.retrySafeSyncV68=async function(automatic=false){
    const notify=message=>{if(!automatic)alert(message)};
    const dismiss=()=>{if(!automatic)closeModal()};
-   if(!(automatic?!!authProfile:canExport()))return notify('Somente Administrador ou Gerente pode conciliar a sincronização.');
+   if(!(automatic?!!authProfile:canExportCurrent()))return notify('Somente Administrador ou Gerente pode conciliar a sincronização.');
    if(!cloudReady)return notify('Sem conexão online. Preserve as cópias e tente quando a internet estiver disponível.');
    if(reading||writing)return notify('A sincronização ainda está verificando dados. Tente novamente.');
    try{
@@ -682,6 +682,19 @@
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
        dismiss();notify('Base central recebida com segurança. Nenhuma venda foi reenviada.');
        return;
+     }
+     // Recuperação pontual do backup de Larissa, conciliado pela administração.
+     const larissaDigest='f6579ce27bbfd4eceafb4f0f3e093f5a38889de44e445635996a77e47feb29e8';
+     const larissaRevisions={"counter":"2026-10-03 13:42:19.884+00","credit_accounts":"2026-11-19 00:14:39.840959+00","inventory":"2026-11-19 01:27:09.824708+00","meta":"2026-11-19 12:48:31.490335+00","table:1":"2026-11-19 00:38:48.79985+00","table:10":"2026-11-07 01:55:49.497+00","table:2":"2026-11-18 03:05:28.975912+00","table:3":"2026-11-19 01:46:39.561544+00","table:4":"2026-11-10 23:25:59.351+00","table:5":"2026-11-11 00:30:58.122+00","table:6":"2026-11-14 19:59:43.700725+00","table:7":"2026-11-07 02:16:44.827+00","table:8":"2026-10-09 13:10:13.702+00","table:9":"2026-11-12 03:23:17.154681+00"};
+     const larissaMatch=rows=>rows.length===Object.keys(larissaRevisions).length&&rows.every(r=>larissaRevisions[r.record_key]===r.updated_at);
+     if(blocked&&authProfile&&globalThis.crypto?.subtle&&larissaMatch(server)&&await exportDigest(local)===larissaDigest){
+       const fresh=await getRows();
+       if(!larissaMatch(fresh)||await exportDigest(activeRows())!==larissaDigest)throw Error('Dados alterados; recuperação não aplicada.');
+       backupRows(local,'Backup Larissa conciliado; saldo central prioritário');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao receber base central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Backup conferido; base central recebida.');return;
      }
      const risks=dataLossSigns(local,server);
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
