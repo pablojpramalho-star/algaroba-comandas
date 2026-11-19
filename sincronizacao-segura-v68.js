@@ -1,8 +1,9 @@
 (function installSafeSyncV68(){
  const PENDING='algarobaSyncPendingV68';
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
+ const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.76';
+ const VERSION='2.9.7.77';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -594,6 +595,11 @@
      if(first)throw e;return false;
    }finally{reading=false}
  };
+ const priorEditing=userIsEditing;
+ userIsEditing=function(){
+   const modal=document.getElementById('modal');
+   return !!(modal&&!modal.classList.contains('hide'))||priorEditing();
+ };
  const originalInit=initCloud;
  initCloud=async function(){
    // A rotina antiga inicia o polling; a leitura protegida é chamada por
@@ -786,8 +792,8 @@
      (blocked?.details?'<div class="muted">Registros afetados: '+esc(blocked.details)+'</div>':'')+
      (blocked&&canExport()?'<button class="btn primary" onclick="retrySafeSyncV68()">🔄 REAVALIAR E RETOMAR COM SEGURANÇA</button>':'')+'</div>'+
      '<div class="panel"><b>Arquivos de segurança deste aparelho</b><div class="muted">As cópias ficam armazenadas apenas neste aparelho. Faça uma exportação antes de limpar o navegador ou reinstalar o aplicativo.</div>'+
-     (canExport()?'<button class="btn primary" onclick="exportCurrentComandasV68()">📥 EXPORTAR ESTADO ATUAL (JSON)</button>':'')+
-     (canExport()?'<button class="btn" onclick="exportComandasBackupsV68()">📥 EXPORTAR CÓPIAS DE SEGURANÇA</button>':'<div class="muted">Solicite ao administrador para exportar dados de clientes e vendas.</div>')+'</div>'+
+     (canExportCurrent()?'<button class="btn primary" onclick="exportCurrentComandasV68()">📥 EXPORTAR ESTADO ATUAL (JSON)</button>':'')+
+     (canExport()?'<button class="btn" onclick="exportComandasBackupsV68()">📥 EXPORTAR CÓPIAS DE SEGURANÇA</button>':'<div class="muted">Cópias históricas completas: somente administrador ou gerente.</div>')+'</div>'+
      backups.slice(0,20).map(e=>'<div class="cart-row"><span><b>'+esc(labelKey(e.key))+'</b><div class="muted">'+new Date(e.at).toLocaleString('pt-BR')+' • '+esc(e.why||'')+'</div></span><b>'+Math.round(e.size/1024)+' KB</b></div>').join('')+
      (blocked?'<p class="muted">Não force a sincronização nem limpe os dados. Mantenha os aparelhos abertos e confira as comandas antes de retomar.</p>':'')+
      '<button class="btn" onclick="closeModal()">FECHAR</button>';
@@ -802,7 +808,8 @@
    setTimeout(()=>URL.revokeObjectURL(url),1500);
  }
  window.exportCurrentComandasV68=function(){
-   if(!canExport())return alert('Apenas Administrador ou Gerente pode exportar registros de clientes.');
+   if(!canExportCurrent())return alert('Exportação permitida à gerência ou ao atendimento durante conflito.');
+   if(!canExport()&&!confirm('Este arquivo contém dados da empresa e de clientes. Envie exclusivamente ao responsável autorizado pela recuperação. Continuar?'))return;
    backupRows(activeRows(),'Exportação manual');
    downloadJSON('algaroba-comandas-atual-'+new Date().toISOString().slice(0,10)+'.json',
      {version:VERSION,exportedAt:new Date().toISOString(),records:activeRows(),conflict:blocked});
