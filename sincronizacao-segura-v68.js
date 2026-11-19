@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.83';
+ const VERSION='2.9.7.84';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -738,6 +738,28 @@
        try{applied=applyRows(fresh)}finally{cloudApplying=false}
        if(!applied)throw Error('Falha ao receber base central.');
        clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Backup conferido; base central recebida.');return;
+     }
+     // Exportação Larissa 11:33 preservada externamente; recuperação somente leitura.
+     const larissaCurrentDigest='776aa929a828e17675992c698e75bc2f287334ee1fac176c0156076614ebd562';
+     const larissaCentralCurrent=rows=>{
+       const m=rows.find(r=>r.record_key==='meta')?.data,i=rows.find(r=>r.record_key==='inventory')?.data;
+       const hasSale=(at,total,name)=>m?.history?.some(h=>h.closedAt===at&&Number(h.total)===total&&h.items?.some(x=>x.name===name));
+       return rows.length===14&&m?.history?.length>=446&&i?.movements?.length>=3148&&
+         hasSale('2026-11-18T14:56:03.683Z',10,'Shake 500 ml • Tradicional com Açúcar Mascavo')&&
+         hasSale('2026-11-18T18:18:07.132Z',6,'Água sem gás')&&
+         hasSale('2026-11-19T00:38:46.344Z',10,'Cuscuz + Carne Moída')&&
+         hasSale('2026-11-19T14:57:57.282Z',8,'Pastel de Carne Moída');
+     };
+     if(blocked&&authProfile&&globalThis.crypto?.subtle&&await exportDigest(local)===larissaCurrentDigest&&larissaCentralCurrent(server)){
+       if(automatic)return;
+       if(!confirm('O backup exportado foi preservado e os quatro pedidos conferidos constam no histórico central. Receber o caixa central atual, sem reenviar o backup?'))return;
+       const fresh=await getRows();
+       if(!larissaCentralCurrent(fresh)||await exportDigest(activeRows())!==larissaCurrentDigest)throw Error('Dados alterados durante a conferência.');
+       backupRows(local,'Antes de receber caixa central; backup externo Larissa 11:33');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao receber a central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Caixa central recebido. Confira os dados antes de lançar.');return;
      }
      const risks=dataLossSigns(local,server);
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
