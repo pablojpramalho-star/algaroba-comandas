@@ -2,7 +2,7 @@
  const PENDING='algarobaSyncPendingV68';
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.75';
+ const VERSION='2.9.7.76';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -203,6 +203,19 @@
    return [...remote,...local.filter(x=>!r.has(ident(x)))];
  }
  const eventKey=x=>String(x.id||'')+'|'+String(x.originalClosedAt||x.closedAt||x.at||x.createdAt||'');
+ function mergeQueue(base,local,remote){
+ const eq=(a,b)=>canon(a)===canon(b), maps=[base,local,remote].map(a=>new Map(a.map(x=>[String(x.id),x])));
+ if(maps.some((m,i)=>m.size!==[base,local,remote][i].length))return null;
+ const [b,l,r]=maps,out=[];
+ for(const id of new Set([...r.keys(),...l.keys(),...b.keys()])){
+   const x=b.get(id),y=l.get(id),z=r.get(id);
+   if(eq(y,z)){if(y)out.push(y);continue}
+   if(eq(x,y)){if(z)out.push(z);continue}
+   if(eq(x,z)){if(y)out.push(y);continue}
+   return null;
+ }
+ return out;
+ }
  function mergeRecord(key,base,local,remote){
    if(!base||!local||!remote)return null;
    if(canon(local)===canon(remote))return remote;
@@ -258,7 +271,7 @@
    }
    if(key==='meta'){
      const history=mergeAppend(base.history||[],local.history||[],remote.history||[],eventKey);
-     const queue=mergeAppend(base.counterQueue||[],local.counterQueue||[],remote.counterQueue||[],x=>String(x.id));
+     const queue=mergeQueue(base.counterQueue||[],local.counterQueue||[],remote.counterQueue||[]);
      if(!history||!queue)return null;
      const bt=base.counterTicket||{},lt=local.counterTicket||{},rt=remote.counterTicket||{};
      if(bt.date!==lt.date||bt.date!==rt.date)return null;
@@ -271,11 +284,21 @@
      const baseIds=new Set((base.history||[]).map(eventKey));
      const additionsTotal=h=>h.filter(x=>!baseIds.has(eventKey(x))).reduce((n,x)=>n+Number(x.total||0),0);
      if(Math.abs(localRevenue-baseRevenue-additionsTotal(local.history))>.01||Math.abs(remoteRevenue-baseRevenue-additionsTotal(remote.history))>.01)return null;
-     const omit=x=>({...x,history:[],counterQueue:[],counterTicket:null,revenue:0,creditAccounts:null});
-     if(!eq(omit(base),omit(local))||!eq(omit(base),omit(remote)))return null;
+     const cash=mergeAppend(base.cash?.movements||[],local.cash?.movements||[],remote.cash?.movements||[],x=>canon(x));
+     if(!cash)return null;
+     const strip=x=>({...x,history:[],counterQueue:[],counterTicket:null,revenue:0,cash:{...x.cash,movements:[]}});
+     const bs=strip(base),ls=strip(local),rs=strip(remote);
+     const fields={};
+     for(const k of new Set([...Object.keys(bs),...Object.keys(ls),...Object.keys(rs)])){
+       if(eq(ls[k],rs[k]))fields[k]=local[k];
+       else if(eq(bs[k],ls[k]))fields[k]=remote[k];
+       else if(eq(bs[k],rs[k]))fields[k]=local[k];
+       else return null;
+     }
+     fields.cash={...fields.cash,movements:cash};
      const ticket=Math.max(Number(lt.last||0),Number(rt.last||0));
      if(queue.some((q,i)=>queue.findIndex(x=>x.ticket===q.ticket&&x.date===q.date)!==i))return null;
-     return {...remote,history,counterQueue:queue,counterTicket:{...rt,last:ticket},revenue:remoteRevenue+extra};
+     return {...remote,...fields,history,counterQueue:queue,counterTicket:{...rt,last:ticket},revenue:remoteRevenue+extra};
    }
    return null;
  }
