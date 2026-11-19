@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.77';
+ const VERSION='2.9.7.78';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -221,6 +221,22 @@
    if(!base||!local||!remote)return null;
    if(canon(local)===canon(remote))return remote;
    const eq=(a,b)=>canon(a)===canon(b);
+   if(key.startsWith('table:')){
+     // Only merge independent additions; closure, transfers and cancellations remain atomic conflicts.
+     if([base,local,remote].some(t=>!Array.isArray(t.orders)||!Array.isArray(t.items)))return null;
+     const strip=t=>({...t,orders:[],items:[],status:null});
+     if(!eq(strip(base),strip(local))||!eq(strip(base),strip(remote)))return null;
+     const orders=mergeAppend(base.orders,local.orders,remote.orders,o=>String(o.id));
+     if(!orders)return null;
+     const itemKey=i=>canon({...i,qty:0});
+     const sums=a=>{const m=new Map();for(const i of a){const k=itemKey(i);m.set(k,(m.get(k)||0)+Number(i.qty));}return m};
+     const check=(t,added)=>{const b=sums(base.items),n=sums(t.items),d=sums(added.flatMap(o=>o.items||[]));return [...new Set([...b.keys(),...n.keys(),...d.keys()])].every(k=>Math.abs((n.get(k)||0)-(b.get(k)||0)-(d.get(k)||0))<.00001)};
+     const ids=new Set(base.orders.map(o=>String(o.id)));
+     if(!check(local,local.orders.filter(o=>!ids.has(String(o.id))))||!check(remote,remote.orders.filter(o=>!ids.has(String(o.id)))))return null;
+     const remoteIds=new Set(remote.orders.map(o=>String(o.id))),items=JSON.parse(JSON.stringify(remote.items));
+     for(const o of orders.filter(o=>!remoteIds.has(String(o.id))))for(const i of o.items||[]){const x=items.find(a=>itemKey(a)===itemKey(i));if(x)x.qty+=i.qty;else items.push({...i})}
+     return {...remote,orders,items,status:items.length?'ocupada':'livre'};
+   }
    if(key==='credit_accounts'){
      const mergedReceipts=mergeAppend(base.receipts||[],local.receipts||[],remote.receipts||[],x=>String(x.id));
      if(!mergedReceipts)return null;
