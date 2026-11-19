@@ -735,7 +735,7 @@ let selectedSkewerLine='Todas';
 function skewerLineForName(full){
  const name=String(full||'').split(' • ')[0].trim();
  const p=catalog['Espetinhos'].find(p=>p[0]===name);
- const group=p&&skewerLines.find(g=>g.price===Number(p[1]));
+ const group=p&&skewerLines.find(g=>g.price===(window.algarobaSkewerGroupPrice?window.algarobaSkewerGroupPrice(p):Number(p[1])));
  return group?'Linha '+group.name:'';
 }
 
@@ -757,15 +757,15 @@ function showCat(c,b){
   productsEl.innerHTML='';productsEl.appendChild(tabs);
   for(const group of skewerLines.filter(g=>selectedSkewerLine==='Todas'||g.name===selectedSkewerLine)){
    const head=document.createElement('div');head.className='skewer-group-head';
-   head.textContent='🔥 LINHA '+group.name.toUpperCase()+' — '+brl(group.price);
+   head.textContent='🔥 LINHA '+group.name.toUpperCase();
    productsEl.appendChild(head);
-   catalog['Espetinhos'].forEach((p,i)=>{if(Number(p[1])===group.price)renderRow(p,i)});
+   catalog['Espetinhos'].forEach((p,i)=>{if((window.algarobaSkewerGroupPrice?window.algarobaSkewerGroupPrice(p):Number(p[1]))===group.price)renderRow(p,i)});
   }
   btns.forEach(o=>o.btn.classList.toggle('active',o.name===selectedSkewerLine));
  };
  for(const group of items){
   const btn=document.createElement('button');btn.type='button';btn.className='skewer-category-chip';
-  btn.textContent=group.name==='Todas'?'⭐ Todas':group.name+' • '+brl(group.price);
+  btn.textContent=group.name==='Todas'?'⭐ Todas':group.name;
   btn.addEventListener('click',()=>{selectedSkewerLine=group.name;redraw()});
   tabs.appendChild(btn);btns.push({btn,name:group.name});
  }
@@ -788,7 +788,7 @@ catch (err) {
     console.error(err);
     alert('Não foi possível adicionar o item. Erro: ' + err.message);
 } }); grid.appendChild(btn); }); const actions = document.createElement('div'); actions.className = 'sheet-actions'; const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn'; cancel.textContent = 'Cancelar'; cancel.addEventListener('click', closeModal); actions.appendChild(cancel); mc.append(h, p, grid, actions); m.classList.remove('hide'); }
-function comboEligible(maxPrice){return catalog['Espetinhos'].filter(p=>Number(p[1])<=maxPrice)}
+function comboEligible(maxPrice){return catalog['Espetinhos'].filter(p=>(window.algarobaSkewerGroupPrice?window.algarobaSkewerGroupPrice(p):Number(p[1]))<=maxPrice)}
 function comboPickSkewers(ctx,done){const opts=comboEligible(ctx.maxPrice),picked=[];function next(){if(picked.length>=ctx.count)return done(picked);openChoiceModal('🔥 '+ctx.name,'Escolha o espetinho '+(picked.length+1)+' de '+ctx.count,opts.map(p=>({label:p[0]+' — '+brl(p[1]),action:()=>{picked.push(p[0]);setTimeout(next,0)}})))}next()}
 function chooseCombo(name,price){
  const finish=(skewers,drink,extraComps=[])=>{skewers=skewers.map(x=>x==='Queijo Coalho'?'Espetinho Queijo Coalho':x);const counts={};skewers.forEach(x=>counts[x]=(counts[x]||0)+1);let parts=Object.entries(counts).map(([k,q])=>(q>1?q+'× ':'')+k);let label=name+' • '+parts.join(', ')+(drink?' • '+drink:'');pushCart(label,price,[...skewers,...extraComps]);};
@@ -1447,7 +1447,30 @@ function printableDocument(title, body) {
  h1{font-size:24px;margin:0 0 3px}h2{font-size:19px;margin:22px 0 8px}h3{font-size:16px;margin:16px 0 6px}
  .muted{color:#666}.panel{border:1px solid #bbb;border-radius:10px;padding:12px;margin:9px 0}.cart-row,.r{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #ddd;padding:8px 0}.cart-row:last-child,.r:last-child{border-bottom:0}.big{font-size:22px;font-weight:bold}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}button{display:none!important}
  @media print{body{padding:0}.panel{break-inside:avoid}.grid{display:block}}
- </style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script></body></html>`;
+ </style></head><body>${body}<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script><script>
+(function(){
+const groups=new Map(catalog.Espetinhos.map(p=>[p[0],Number(p[1])]));
+window.algarobaSkewerGroupPrice=p=>groups.get(p[0]);
+const extras=[['Matuta Bálsamo (Garrafa 300 ml)',30],['Matuta Black Blend (Garrafa 300 ml)',70],['Matuta Single Blend (Garrafa 300 ml)',70],['Heineken Original — Lata 350 ml',9],['Stella Artois — Long Neck',10],['Red Bull — Lata 250 ml',10]];
+for(const p of extras)if(!catalog.Bebidas.some(x=>x[0]===p[0]))catalog.Bebidas.push(p);
+let busy=false;
+const status=document.createElement('div');status.style.cssText='font-size:11px;margin:4px 0;color:inherit';status.textContent='Preços: consultando cadastro central';document.querySelector('header').appendChild(status);
+async function refresh(){
+ if(busy)return;busy=true;
+ try{
+  const ctrl=new AbortController(), timer=setTimeout(()=>ctrl.abort(),12000);
+  let rows;try{const r=await fetch('https://dlwrmpfurphccaeuwsfj.supabase.co/rest/v1/algaroba_catalog_prices?select=category,product,price',{headers:{apikey:'sb_publishable_0Yr-97uqdGFXAcSvpZ2IGA_G3DpnaB7'},cache:'no-store',signal:ctrl.signal});if(!r.ok)throw Error('HTTP '+r.status);rows=await r.json()}finally{clearTimeout(timer)}
+  if(!Array.isArray(rows)||rows.length<98)throw Error('Cadastro incompleto');
+  const prices=new Map(rows.map(r=>[r.category+'|'+r.product,Number(r.price)]));
+  const modal=document.getElementById('modal');if(modal&&!modal.classList.contains('hide'))return;
+  let changed=false;for(const [c,items] of Object.entries(catalog))for(const p of items){const v=prices.get(c+'|'+p[0]);if(Number.isFinite(v)&&v>=0&&p[1]!==v){p[1]=v;changed=true}}
+  if(changed){const area=document.getElementById('comanda'), b=document.querySelector('#cats button.primary');if(area&&!area.classList.contains('hide')&&b)showCat(b.textContent,b)}
+  status.textContent='Preços: cadastro central consultado';
+ }catch(e){status.textContent='Preços: consulta indisponível • valores locais';console.warn('Catálogo central',e)}finally{busy=false}
+}
+refresh();setInterval(refresh,30000);window.addEventListener('online',refresh);
+})();
+</script></body></html>`;
 }
 function openPrintableReport(title, body) {
     // Imprime dentro do próprio PWA, sem abrir nova aba/janela.
@@ -2867,4 +2890,4 @@ if ('serviceWorker' in navigator) {
         }
     });
 }
-</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script><script src="./sincronizacao-segura-v68.js?v=72"></script></body></html>
+</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js?v=73"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script><script src="./sincronizacao-segura-v68.js?v=72"></script></body></html>
