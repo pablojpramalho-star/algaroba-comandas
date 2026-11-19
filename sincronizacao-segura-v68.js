@@ -2,7 +2,7 @@
  const PENDING='algarobaSyncPendingV68';
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.68';
+ const VERSION='2.9.7.72';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -443,7 +443,7 @@
        }
        for(const plan of plans)cloudSnapshot[plan.key]=JSON.stringify(plan.data);
      }catch(e){
-       if(!blocked)alertSync('Gravação simultânea detectada. Nenhum registro do lote foi sobrescrito; os dados locais estão preservados.',String(e.message||e));
+       if(!blocked){const msg=String(e.message||e);if(/CONCURRENT_WRITE|40001|conciliação|união/i.test(msg)){alertSync('Gravação simultânea detectada. Os dados locais estão preservados.',msg);}else{cloudLastError=msg;pendingWrite();setSyncStatus('offline','PENDENTE — NOVA TENTATIVA AUTOMÁTICA');}}
        throw e;
      }
      clearBlock();
@@ -487,7 +487,7 @@
      }
    }catch(e){
      console.error('Sincronização protegida',e);
-     if(!blocked)alertSync('Falha ao salvar. Os dados permanecem no aparelho. Toque no status para conferir.',String(e.message||e));
+     if(!blocked){cloudLastError=String(e.message||e);pendingWrite();setSyncStatus('offline','PENDENTE — NOVA TENTATIVA AUTOMÁTICA');}
    }
  };
  save=function(){
@@ -573,7 +573,7 @@
    // A rotina antiga inicia o polling; a leitura protegida é chamada por
    // referência, inclusive no tablet que antes não conferia mudanças locais.
    await originalInit();
-   if(blocked)setSyncStatus('error','⚠️ CONFLITO — CONFERIR');
+   if(blocked){setSyncStatus('error','⚠️ CONFLITO — CONFERIR');if(cloudReady&&authProfile)await window.retrySafeSyncV68(true);}
    else if(cloudReady&&isDirty())scheduleCloudSave();
  };
  function backupList(){
@@ -591,16 +591,16 @@
      const local=activeRows();
      // Recuperação administrativa de exportações conferidas em 18/11/2026.
      // Não aceita dados locais novos nem uma revisão do servidor diferente.
-     const approvedExports=new Set(['b6a67bc1efbd6ff90154ae9341047f80f9cfaa3b94b1f9e90a407bf195e41bc8','2436cc19b66a72931a941ebc4f02794b33da6f5a9c5d07da8a38f6ed94319667']);
-     const approvedRevisions={"counter":null,"credit_accounts":null,"inventory":null,"meta":null,"table:1":null,"table:10":null,"table:2":null,"table:3":null,"table:4":null,"table:5":null,"table:6":null,"table:7":null,"table:8":null,"table:9":null};
+     const approvedExports=new Set(['7527c6990aecf40589a0fd3c03eee7f8af821f8cf30e240b4b21a61c24a9b0d2']);
+     const approvedRevisions={"counter":1791034939884,"credit_accounts":1795047279840,"inventory":1795049242054,"meta":1795048971776,"table:1":1795048728799,"table:10":1794016549497,"table:2":1794971128975,"table:3":1794971134513,"table:4":1794353159351,"table:5":1794357058122,"table:6":1794686383700,"table:7":1794017804827,"table:8":1791551413702,"table:9":1794453797154};
      const exportDigest=async rows=>{
        const payload=canon(rows.map(r=>({record_key:r.record_key,data:r.data})).sort((a,b)=>a.record_key.localeCompare(b.record_key)));
        const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
        return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
      };
      const revisionMatch=rows=>rows.length===Object.keys(approvedRevisions).length&&rows.every(r=>approvedRevisions[r.record_key]===Date.parse(r.updated_at));
-     if(!automatic&&canExport()&&revisionMatch(server)&&globalThis.crypto?.subtle&&approvedExports.has(await exportDigest(local))){
-       if(!confirm('A cópia deste aparelho corresponde ao backup conferido. Receber a base central consolidada, preservando os arquivos de auditoria já exportados?'))return;
+     if(canExport()&&revisionMatch(server)&&globalThis.crypto?.subtle&&approvedExports.has(await exportDigest(local))){
+       if(!automatic&&!confirm('A cópia deste aparelho corresponde ao backup conferido. Receber a base central consolidada, preservando os arquivos de auditoria já exportados?'))return;
        const fresh=await getRows();
        if(!revisionMatch(fresh)||!approvedExports.has(await exportDigest(activeRows())))throw Error('Os dados mudaram durante a conferência. Não foi aplicada a recuperação.');
        backupRows(local,'Antes de receber base central conferida em 18/11');
@@ -633,7 +633,7 @@
          dismiss();notify('Lançamentos independentes conciliados e gravados com segurança.');
          return;
        }catch(e){
-         if(!blocked)alertSync('A conciliação automática não pôde ser concluída.',String(e.message||e));
+         if(!blocked){cloudLastError=String(e.message||e);pendingWrite();setSyncStatus('offline','PENDENTE — NOVA TENTATIVA AUTOMÁTICA');}
          return notify('A conciliação não foi concluída. Seus dados continuam preservados.');
        }
      }
