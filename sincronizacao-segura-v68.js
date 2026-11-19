@@ -600,6 +600,28 @@
    const modal=document.getElementById('modal');
    return !!(modal&&!modal.classList.contains('hide'))||priorEditing();
  };
+ const priorFinishPayment=finishPayment;
+ let checkingPayment=false;
+ finishPayment=async function(){
+   if(checkingPayment)return;
+   if(blocked||!cloudReady||!navigator.onLine)return alert('Não receba por este aparelho: sincronização pendente. Confira a conta no caixa online.');
+   if(!payCtx)return;
+   checkingPayment=true;
+   const ctx=payCtx;
+   try{
+     if(reading||writing)return alert('Aguarde a confirmação da sincronização e tente novamente.');
+     const key=ctx.tableId==='counterQueue'?'meta':ctx.tableId==='counter'?'counter':'table:'+ctx.tableId;
+     const local=latestRow(key)?.data;
+     const rows=await getRows();
+     const remote=rows.find(r=>r.record_key===key)?.data;
+     const select=x=>ctx.tableId==='counterQueue'?x?.counterQueue?.find(o=>String(o.id)===String(ctx.counterId)):x;
+     if(blocked||payCtx!==ctx||!select(local)||!select(remote)||canon(select(local))!==canon(select(remote))||canon(select(latestRow(key)?.data))!==canon(select(local))){
+       return alert('Conta ainda não confirmada pelo servidor ou alterada por outro aparelho. Não cobre este valor. Confira a comanda no caixa online.');
+     }
+     await priorFinishPayment();
+   }catch(e){alert('Não foi possível confirmar a conta online. Confira os lançamentos antes de cobrar.');}
+   finally{checkingPayment=false;}
+ };
  const originalInit=initCloud;
  initCloud=async function(){
    // A rotina antiga inicia o polling; a leitura protegida é chamada por
