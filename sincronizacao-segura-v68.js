@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.81';
+ const VERSION='2.9.7.82';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -857,7 +857,7 @@
      '<div class="panel"><b>'+esc(blocked?'⚠️ SINCRONIZAÇÃO INTERROMPIDA':'✅ Proteção contra sobrescrita ativa')+'</b>'+
      '<div class="muted">'+esc(blocked?.message||'As alterações são comparadas com a versão do servidor antes de salvar.')+'</div>'+
      (blocked?.details?'<div class="muted">Registros afetados: '+esc(blocked.details)+'</div>':'')+
-     (blocked&&canExport()?'<button class="btn primary" onclick="retrySafeSyncV68()">🔄 REAVALIAR E RETOMAR COM SEGURANÇA</button>':'')+'</div>'+
+     (blocked&&canExportCurrent()?'<button class="btn primary" onclick="retrySafeSyncV68()">🔄 REAVALIAR E RETOMAR COM SEGURANÇA</button>':'')+'</div>'+
      '<div class="panel"><b>Arquivos de segurança deste aparelho</b><div class="muted">As cópias ficam armazenadas apenas neste aparelho. Faça uma exportação antes de limpar o navegador ou reinstalar o aplicativo.</div>'+
      (canExportCurrent()?'<button class="btn primary" onclick="exportCurrentComandasV68()">📥 EXPORTAR ESTADO ATUAL (JSON)</button>':'')+
      (canExport()?'<button class="btn" onclick="exportComandasBackupsV68()">📥 EXPORTAR CÓPIAS DE SEGURANÇA</button>':'<div class="muted">Cópias históricas completas: somente administrador ou gerente.</div>')+'</div>'+
