@@ -2,7 +2,7 @@
  const PENDING='algarobaSyncPendingV68';
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.72';
+ const VERSION='2.9.7.75';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -308,7 +308,10 @@
      }
      if([...counts.values()].some(n=>n!==0))return false;
      const li=local.items||{},ri=remote.items||{};
-     if(Object.keys(li).length!==Object.keys(ri).length)return false;
+     if(Object.keys(li).some(k=>!Object.prototype.hasOwnProperty.call(ri,k)))return false;
+     // Novos cadastros vazios do catálogo não são perda de estoque.
+     const newKeys=Object.keys(ri).filter(k=>!Object.prototype.hasOwnProperty.call(li,k));
+     if(newKeys.some(k=>ri[k].qty!==0||ri[k].cost!==0||rm.some(m=>m.key===k)))return false;
      const expected={};
      for(const [k,v] of Object.entries(li))expected[k]=Number(v.qty);
      for(const mv of additions){
