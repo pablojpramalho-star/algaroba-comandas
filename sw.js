@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.77-pwa42';
+const CACHE = 'algaroba-shell-2.9.7.72-sync-pwa43';
 
 const SHELL = [
   './',
@@ -13,6 +13,8 @@ const SHELL = [
   './cervejas-litrinho-v66.js',
   './clientes-conta-prazo.js',
   './sincronizacao-segura-v68.js',
+  './sincronizacao-segura-v68.js?v=72',
+  './tablet.html',
   './icon-192.png',
   './icon-512.png'
 ];
@@ -31,7 +33,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE)
+            .filter((key) => key.startsWith('algaroba-shell-') && key !== CACHE)
             .map((key) => caches.delete(key))
         )
       )
@@ -53,17 +55,17 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put('./index.html', copy));
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(async () => (await caches.match(event.request)) || (await caches.match(url.pathname.endsWith('tablet.html') ? './tablet.html' : './index.html')))
     );
     return;
   }
 
   // Scripts e estilos: rede primeiro para não executar correções obsoletas.
   // Em modo offline, mantém a última cópia válida sem tocar no localStorage.
-  if (/\\.(?:js|css)$/.test(url.pathname)) {
+  if (/\.(?:js|css)$/.test(url.pathname)) {
     event.respondWith(
       fetch(event.request).then((response) => {
         if (response.ok) {
