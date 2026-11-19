@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.79';
+ const VERSION='2.9.7.80';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -661,8 +661,8 @@
      const local=activeRows();
      // Recuperação administrativa de exportações conferidas em 18/11/2026.
      // Não aceita dados locais novos nem uma revisão do servidor diferente.
-     const approvedExports=new Set(['7527c6990aecf40589a0fd3c03eee7f8af821f8cf30e240b4b21a61c24a9b0d2']);
-     const approvedRevisions={"counter":1791034939884,"credit_accounts":1795047279840,"inventory":1795049242054,"meta":1795048971776,"table:1":1795048728799,"table:10":1794016549497,"table:2":1794971128975,"table:3":1794971134513,"table:4":1794353159351,"table:5":1794357058122,"table:6":1794686383700,"table:7":1794017804827,"table:8":1791551413702,"table:9":1794453797154};
+     const approvedExports=new Set(['ac4d2e2eaba322942051cdb6e85cc423e16a137dee5b425a36b58f6ab4318d0b']);
+     const approvedRevisions={"counter":1791034939884,"credit_accounts":1795095118357,"inventory":1795095172605,"meta":1795095280273,"table:1":1795048728799,"table:10":1794016549497,"table:2":1795095118358,"table:3":1795052799561,"table:4":1794353159351,"table:5":1794357058122,"table:6":1794686383700,"table:7":1794017804827,"table:8":1791551413702,"table:9":1794453797154};
      const exportDigest=async rows=>{
        const payload=canon(rows.map(r=>({record_key:r.record_key,data:r.data})).sort((a,b)=>a.record_key.localeCompare(b.record_key)));
        const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
@@ -673,7 +673,7 @@
        if(!automatic&&!confirm('A cópia deste aparelho corresponde ao backup conferido. Receber a base central consolidada, preservando os arquivos de auditoria já exportados?'))return;
        const fresh=await getRows();
        if(!revisionMatch(fresh)||!approvedExports.has(await exportDigest(activeRows())))throw Error('Os dados mudaram durante a conferência. Não foi aplicada a recuperação.');
-       backupRows(local,'Antes de receber base central conferida em 18/11');
+       backupRows(local,'Antes de receber base central conferida em 19/11');
        cloudApplying=true;
        let applied=false;
        try{applied=applyRows(fresh)}finally{cloudApplying=false}
