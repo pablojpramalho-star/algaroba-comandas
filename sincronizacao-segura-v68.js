@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.80';
+ const VERSION='2.9.7.81';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -682,6 +682,22 @@
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
        dismiss();notify('Base central recebida com segurança. Nenhuma venda foi reenviada.');
        return;
+     }
+     // Backup Pablo 19/11 10:44: registros históricos conferidos; somente leitura da central.
+     const pabloDigest='b9f4126428ff963c2eb2ac20f102f8c4ab846edfbd37cd642b281e2b36757896';
+     const pabloCentral=rows=>{
+       const m=rows.find(r=>r.record_key==='meta'),i=rows.find(r=>r.record_key==='inventory');
+       return rows.length===14&&Date.parse(m?.updated_at)>=Date.parse('2026-11-19T13:42:49.457Z')&&Date.parse(i?.updated_at)>=Date.parse('2026-11-19T13:42:49.436Z')&&m.data.history.length>=440&&i.data.movements.length>=3126&&m.data.history.some(h=>h.closedAt==='2026-11-19T02:24:58.477Z'&&h.ticket===9&&h.total===17);
+     };
+     if(blocked&&authProfile?.perfil==='administrador'&&globalThis.crypto?.subtle&&pabloCentral(server)&&await exportDigest(local)===pabloDigest){
+       if(!automatic&&!confirm('Backup conferido. Receber a base central atual sem reenviar vendas antigas?'))return;
+       const fresh=await getRows();
+       if(!pabloCentral(fresh)||await exportDigest(activeRows())!==pabloDigest)throw Error('Dados alterados; recuperação não aplicada.');
+       backupRows(local,'Backup Pablo 10:44 conciliado');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao receber base central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Base central recebida sem reenviar vendas.');return;
      }
      // Recuperação pontual do backup de Larissa, conciliado pela administração.
      const larissaDigest='f6579ce27bbfd4eceafb4f0f3e093f5a38889de44e445635996a77e47feb29e8';
