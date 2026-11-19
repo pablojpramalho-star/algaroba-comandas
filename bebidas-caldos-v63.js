@@ -19,7 +19,7 @@
    else drinks[legacyIndex][0]='Ypióca Prata (Lata 350 ml)';
  }
  const cachaçaNames=new Set([
-  'Matuta Cristal (Garrafa 300 ml)','Matuta Umburana (Garrafa 300 ml)',
+  'Matuta Bálsamo (Garrafa 300 ml)','Matuta Black Blend (Garrafa 300 ml)','Matuta Single Blend (Garrafa 300 ml)','Matuta Cristal (Garrafa 300 ml)','Matuta Umburana (Garrafa 300 ml)',
   'Matuta Maçã Verde (Garrafa 300 ml)','Matuta Canela (Garrafa 300 ml)',
   'Matuta Mel & Limão (Garrafa 300 ml)','Matuta Banana (Garrafa 300 ml)',
   'Sam Valle Prata (Garrafa)','Sam Valle Umburana (Garrafa)','Sam Valle Blend de Madeiras (Garrafa)',
@@ -27,10 +27,10 @@
   'Ypióca Prata (Lata 350 ml)'
  ]);
  function cachaçaBrand(name){
-   if(/^Matuta\s/.test(name))return 'MATUTA — R$ 40,00';
-   if(/^Sam Valle\s/.test(name))return 'SAM VALLE — R$ 38,00';
-   if(/^(?:Serra de Areia|São Tomé)/.test(name))return 'REGIONAIS — R$ 32,00';
-   if(/^Ypióca\s/.test(name))return 'YPIÓCA — R$ 20,00';
+   if(/^Matuta\s/.test(name))return 'MATUTA';
+   if(/^Sam Valle\s/.test(name))return 'SAM VALLE';
+   if(/^(?:Serra de Areia|São Tomé)/.test(name))return 'REGIONAIS';
+   if(/^Ypióca\s/.test(name))return 'YPIÓCA';
    return 'OUTRAS CACHAÇAS';
  }
  const originalAdd=add;
