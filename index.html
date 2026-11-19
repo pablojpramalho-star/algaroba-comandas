@@ -978,6 +978,29 @@ async function refresh(){
 }
 refresh();setInterval(refresh,30000);window.addEventListener('online',refresh);
 })();
+</script><script id="gestao-precos-v73">
+(function(){
+const button=document.createElement('button');button.type='button';button.textContent='⚙ Gestão do cardápio';button.style.cssText='margin:6px;display:none';document.querySelector('header').appendChild(button);
+setInterval(()=>{button.style.display=authProfile&&authProfile.ativo!==false&&authProfile.perfil==='administrador'?'inline-block':'none'},1000);
+button.onclick=async()=>{
+try{
+ const rows=await cloudRequest('algaroba_catalog_prices?select=category,product,price&order=category,product');
+ const pane=document.createElement('div');pane.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#222;overflow:auto;padding:20px';
+ const title=document.createElement('h2');title.textContent='Gestão do cardápio digital';pane.appendChild(title);
+ const close=document.createElement('button');close.textContent='Fechar';close.onclick=()=>pane.remove();pane.appendChild(close);
+ const filter=document.createElement('input');filter.placeholder='Pesquisar produto';filter.style.cssText='display:block;width:100%;margin:14px 0;padding:10px';pane.appendChild(filter);
+ const list=document.createElement('div');pane.appendChild(list);
+ function draw(){list.innerHTML='';for(const r of rows.filter(r=>(r.category+' '+r.product).toLowerCase().includes(filter.value.toLowerCase()))){
+ const line=document.createElement('div');line.style.cssText='padding:10px 0;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+ const name=document.createElement('span');name.style.flex='1';name.textContent=r.category+' • '+r.product;
+ const price=document.createElement('input');price.type='number';price.min='0';price.step='0.01';price.value=Number(r.price).toFixed(2);price.style.width='90px';
+ const saveBtn=document.createElement('button');saveBtn.textContent='Salvar';saveBtn.onclick=async()=>{const v=Number(price.value);if(price.value.trim()===''||!Number.isFinite(v)||v<0||v>99999999)return alert('Preço inválido');if(!confirm(r.product+' — novo preço R$ '+v.toFixed(2)+'?'))return;saveBtn.disabled=true;try{const q='algaroba_catalog_prices?category=eq.'+encodeURIComponent(r.category)+'&product=eq.'+encodeURIComponent(r.product)+'&price=eq.'+encodeURIComponent(r.price);const out=await cloudRequest(q,{method:'PATCH',prefer:'return=representation',body:JSON.stringify({price:v})});if(!Array.isArray(out)||out.length!==1)throw Error('Sem permissão ou preço alterado em outro aparelho. Reabra a gestão.');r.price=out[0].price;price.value=Number(r.price).toFixed(2);alert('Preço atualizado na base central. Os aparelhos consultam a cada 30 segundos.')}catch(e){alert(e.message)}finally{saveBtn.disabled=false}};
+ line.append(name,price,saveBtn);list.appendChild(line);
+ }}
+ filter.oninput=draw;draw();document.body.appendChild(pane);
+}catch(e){alert('Não foi possível acessar o cadastro: '+e.message)}
+};
+})();
 </script></body></html>`;
 }
 function openPrintableReport(title,body){
