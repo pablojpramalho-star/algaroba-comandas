@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.85';
+ const VERSION='2.9.7.86';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -686,6 +686,17 @@
    try{
      const server=await getRows(),by=new Map(server.map(r=>[r.record_key,r]));
      const local=activeRows();
+     // Se a recuperação administrativa já tornou as bases idênticas,
+     // atualizar o snapshot sem reenviar dados ou depender de revisão antiga.
+     const identical=(a,b)=>a.length===b.length&&a.every(r=>b.some(v=>v.record_key===r.record_key&&canon(v.data)===canon(r.data)));
+     if(identical(local,server)){
+       const fresh=await getRows();
+       if(!identical(activeRows(),fresh))return notify('A central mudou durante a conferência. Tente novamente.');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao aplicar a base conferida.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Todos os registros conferidos. Caixa central sincronizado.');return;
+     }
      // Recuperação administrativa de exportações conferidas em 18/11/2026.
      // Não aceita dados locais novos nem uma revisão do servidor diferente.
      const approvedExports=new Set(['ac4d2e2eaba322942051cdb6e85cc423e16a137dee5b425a36b58f6ab4318d0b']);
