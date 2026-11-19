@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.84';
+ const VERSION='2.9.7.85';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -760,6 +760,43 @@
        try{applied=applyRows(fresh)}finally{cloudApplying=false}
        if(!applied)throw Error('Falha ao receber a central.');
        clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Caixa central recebido. Confira os dados antes de lançar.');return;
+     }
+     // Fechamento confirmado: aceitar somente quando todos os demais registros
+     // são idênticos ou comprovadamente preservados na central.
+     const confirmedClosure=(localRows,remoteRows)=>{
+       const map=new Map(remoteRows.map(r=>[r.record_key,r.data]));
+       const lm=localRows.find(r=>r.record_key==='meta')?.data,rm=map.get('meta');
+       if(!lm||!rm||localRows.length!==remoteRows.length)return false;
+       if(!recoveredRemoteDominates('meta',lm,rm))return false;
+       const added=rm.history.slice(lm.history.length);
+       const used=new Set();
+       return localRows.every(r=>{
+         const a=r.data,b=map.get(r.record_key);
+         if(!b)return false;
+         if(canon(a)===canon(b))return true;
+         if(r.record_key==='meta')return true;
+         if(r.record_key==='inventory')return recoveredRemoteDominates('inventory',a,b);
+         if(!r.record_key.startsWith('table:')||!a.items?.length||!a.orders?.length||
+           b.status!=='livre'||b.items?.length||b.orders?.length||
+           a.customerPayments?.length||a.customers?.length||b.customerPayments?.length||b.customers?.length)return false;
+         const name='Mesa '+r.record_key.slice(6).padStart(2,'0');
+         const last=Math.max(...a.orders.map(o=>Number(o.createdAt||o.id)));
+         const idx=added.findIndex((h,i)=>!used.has(i)&&
+           (h.name===name||h.name===name+' • Mesa / Compartilhado')&&
+           Date.parse(h.closedAt)>=last&&canon(h.items)===canon(a.items)&&
+           Math.abs(Number(h.total)-a.items.reduce((v,x)=>v+Number(x.qty)*Number(x.price),0))<0.001);
+         if(idx<0)return false;
+         used.add(idx);return true;
+       });
+     };
+     if(blocked&&authProfile&&confirmedClosure(local,server)){
+       const fresh=await getRows();
+       if(canon(activeRows())!==canon(local)||!confirmedClosure(local,fresh))throw Error('Dados alterados durante a conferência.');
+       backupRows(local,'Antes de receber fechamento confirmado no caixa central');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao receber a central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Fechamento confirmado; caixa central atualizado.');return;
      }
      const risks=dataLossSigns(local,server);
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
