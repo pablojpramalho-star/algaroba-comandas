@@ -453,6 +453,13 @@
        metaPlan.same=!!metaPlan.remote&&canon(metaPlan.remote.data)===canon(metaPlan.data);
        metaPlan.merged=true;
      }
+     // Não confirmar no servidor uma união que não poderá ser aplicada com segurança
+     // neste aparelho. A verificação precisa ocorrer ANTES do commit.
+     if(unrelatedDirty&&plans.some(p=>p.merged)){
+       backupRows(activeRows(),'Pendências locais antes de conciliação');
+       alertSync('Há outros lançamentos locais pendentes. Preserve o backup antes de conciliar.', 'PENDENCIAS_FORA_DO_LOTE');
+       throw Error('Conciliação suspensa antes da gravação: outros registros locais pendentes.');
+     }
      // Lote único: o PostgreSQL valida todas as versões e grava tudo em uma transação.
      // Se um aparelho modificar qualquer registro, o banco desfaz o lote inteiro.
      try{
@@ -469,7 +476,7 @@
        // Se houve mesclagem, atualizar a memória local somente depois do commit
        // confirmado, para evitar que um save posterior reenvie a versão antiga.
        if(plans.some(p=>p.merged)){
-         if(unrelatedDirty)throw Error('Outros registros locais pendentes; união preservada no servidor, atualização local suspensa.');
+         // Pendências externas ao lote foram verificadas antes do commit.
          const latest=await getRows();
          if(canon(activeRows())!==localAtPlanning)
            throw Error('Novo lançamento local durante a conciliação. O servidor já salvou o lote; preserve os dados e reavalie.');
