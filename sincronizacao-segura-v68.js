@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.89';
+ const VERSION='2.9.7.90';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -710,11 +710,13 @@
      // no servidor, sem reenviar vendas ou alterar estoque/caixa.
      // Recuperação Larissa: aceita somente o backup auditado de 20/11
      // ou registros que já coincidem integralmente com a central.
-     const larissaDigests={"table:1":"b279ce40e3de28aff1ceee72d33a55ae98cd2d925a32ac6bcbc5b1effd64ba4f","table:2":"233f9254ef1c0ce902cc8bdec8122ad82940b4d7d9a8efa6d10fd44737756b2e","table:3":"e1265fd4b462e3d3defdce62d198855e0cdaba0f0b74aef6df20a9c6fbfe3de5","table:4":"792fcde86775c1e53583540e5d0e52fbea29cc562c174116740861f8cd568486","table:5":"59dd7a9a98e476857d2465928f37447587fe051dd5851169dc2ec9f4ad0958df","table:6":"beccd5afb7cf30cba907610900923f62da3e9f683739722b819208d3621a39e7","table:7":"a8e166a23edba46ec4e4575f637a8d469edcf5f4e25917178fcf76896a248b43","table:8":"bdf4c6c3b790dd5c22417d621d71fd821ee4d62d268b1d96c730746228c03055","table:9":"aaa71583b5ca1abac0d9d337a27cca96afe5de54c0e753a72df619a425f66f0a","table:10":"ff956a1f6bab1b579cbd9c5cae17190ca66fb298ca08fd9fb350f6b73485b9db","counter":"5ada3cf6028908978ffa3a572646ad0c4b174866c89f23f0f404967011b31f68","inventory":"3ff744ec88a7c84ef4e69710c08c059da13bd28f4632235687c05d48713cc599","meta":"b2008a130b82f797e66ebdc5fe11c041096782c538c78149028ad91fbabc6192","credit_accounts":"c6c917fbfb111c8327bed03e117446ade941b833984035f63b39bf85aea89fff"};
+     const larissaDigests={"table:1":"2f602441bc1258e0c80bae2d8cee24c2c5e16a3d90739d2d2973e74d6be21aa2","table:2":"233f9254ef1c0ce902cc8bdec8122ad82940b4d7d9a8efa6d10fd44737756b2e","table:3":"e1265fd4b462e3d3defdce62d198855e0cdaba0f0b74aef6df20a9c6fbfe3de5","table:4":"792fcde86775c1e53583540e5d0e52fbea29cc562c174116740861f8cd568486","table:5":"59dd7a9a98e476857d2465928f37447587fe051dd5851169dc2ec9f4ad0958df","table:6":"beccd5afb7cf30cba907610900923f62da3e9f683739722b819208d3621a39e7","table:7":"f8c67c9027f1b562f256f9a7cfd0d86cbae669eb135b05fb0a8e294dcf2a7ee6","table:8":"9b88b03ec2eb3856d0a54b3c2e4c3e7c8deb97a9f4f79cf160092b87322cf5d5","table:9":"aaa71583b5ca1abac0d9d337a27cca96afe5de54c0e753a72df619a425f66f0a","table:10":"ff956a1f6bab1b579cbd9c5cae17190ca66fb298ca08fd9fb350f6b73485b9db","counter":"5ada3cf6028908978ffa3a572646ad0c4b174866c89f23f0f404967011b31f68","inventory":"8fdb80e24ff98d0cd72fd3d26dbaf75405977217871ea846759f8baa53bc6837","meta":"0f60a0fdfaad1aaa1dec230e4f847aa71046f32b7154f4e6120315fb48fa9535","credit_accounts":"222feb0766da8d2716ec49fbe8aa3eacdc561f7e0179022c890e2ccc6c0b335a"};
      const larissaRecovered=rows=>{
        const m=rows.find(r=>r.record_key==='meta')?.data;
        const inv=rows.find(r=>r.record_key==='inventory')?.data;
-       return !!(m&&inv&&(m.history||[]).length>=470
+       const table=rows.find(r=>r.record_key==='table:1')?.data;
+       const credits=rows.find(r=>r.record_key==='credit_accounts')?.data;
+       return !!(m&&inv&&table&&credits&&(table.orders||[]).some(o=>String(o.id)==='1795180042097')&&(table.orders||[]).some(o=>String(o.id)==='1795181244838')&&(m.counterQueue||[]).some(q=>String(q.id)==='1795177009698')&&(m.counterQueue||[]).some(q=>String(q.id)==='1795177168046')&&(credits.accounts||[]).some(a=>(a.charges||[]).some(c=>c.id==='consumo-mwoy4w3i-bwcbeo'))&&(inv.movements||[]).some(v=>v.at==='2026-11-20T13:27:24.838Z'&&v.operator==='Larissa miguel')&&(m.history||[]).length>=470
          &&(m.counterQueue||[]).some(q=>String(q.id)==='1795173412728')
          &&['2026-11-20T11:16:52.722Z','2026-11-20T11:16:52.723Z','2026-11-20T11:16:52.728Z','2026-11-20T11:18:48.235Z','2026-11-20T11:18:48.236Z'].every(t=>(inv.movements||[]).some(v=>v.at===t&&v.operator==='Larissa miguel')));
      };
