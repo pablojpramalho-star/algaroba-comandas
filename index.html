@@ -569,7 +569,7 @@ function renderCart(){let t=getT();let sent=t.items.map((x,i)=>`<div class=cart-
  const stockProblem=window.auditStockCart(cart);
  if(stockProblem)return alert(stockProblem);
  for(const it of cart){let snap=shakeCmvSnapshot(it);if(snap){let dc=disposableCostForItem(it);if(dc){snap.parts.disposables=dc;snap.total+=dc}it.cmvAtSale=snap.total;it.unitCost=snap.total;it.cmvSnapshot=snap}else{let dc=disposableCostForItem(it);if(dc)it.disposableCmvAtSale=dc}inventoryConsume(it);consumeDisposableForItem(it);}
- let t=getT(),order={id:Date.now(),createdAt:Date.now(),time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),operator:state.activeOperator,items:cart.map(x=>({...x})),status:'NOVO'};
+ let t=getT(),order={id:Date.now()*1000+Math.floor(Math.random()*1000),createdAt:Date.now(),time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),operator:state.activeOperator,items:cart.map(x=>({...x})),status:'NOVO'};
  if(current==='counter'){
    let ticket=nextCounterTicket(),items=cart.map(x=>({...x}));
    state.counterQueue=state.counterQueue||[];
