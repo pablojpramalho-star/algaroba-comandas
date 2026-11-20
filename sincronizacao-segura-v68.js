@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.87';
+ const VERSION='2.9.7.88';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -709,6 +709,22 @@
      // Recuperação 20/11: somente o backup exato de Claudevânia já conciliado
      // no servidor, sem reenviar vendas ou alterar estoque/caixa.
      const claudiaDigest='8f10f9e7c6a42710142ba2bd81ec5a53aa8ffd94766d8b7f8d42fab93f84a0ec';
+     // Permitir também sincronização parcial: cada registro local deve ser
+     // exatamente o backup auditado ou a versão já unificada do servidor.
+     const claudiaRecordDigests={"table:1":"88a75cc18e932cff704216f3fd4912e9597ac0e5083186d06b40489b000c768f","table:2":"9b4aca536e2ed5f3ba377098304ed2363b74fe7795bfb6760e101a0b8ca3d6b2","table:3":"1b2488536a259dbce4a23332b674431f5afcb698917d3353120039a9070a467b","table:4":"47a45c4e377e04932cad043965b765b6f1764fd19f492c8c0c30293d5da7fdf9","table:5":"4d6f5624a723b1da32960c8eb4d7c11fc62716649d6ad68c878ffcd20c1bff62","table:6":"372bcb824cd6409822761ca3b1ab5a9d317be3e4a180219ec3ae7b375e39cc3b","table:7":"843d8256e61a23bb0062b846c4d7bab9c206bf70d8e473f40048aab725ab96ab","table:8":"7683ccf7fe9200857e6b2c1fc8c0490e3cb870e029902ba0afb1c65f217a4e1b","table:9":"aaa71583b5ca1abac0d9d337a27cca96afe5de54c0e753a72df619a425f66f0a","table:10":"ff956a1f6bab1b579cbd9c5cae17190ca66fb298ca08fd9fb350f6b73485b9db","counter":"5ada3cf6028908978ffa3a572646ad0c4b174866c89f23f0f404967011b31f68","inventory":"36dcb8962d40fc121bbca86a5a51b5c320759e2b5f7434807589bf43a24d83b6","meta":"8853053057198026c4f02ef381d67cf12596315275827bb82e9b28e601762833","credit_accounts":"c6c917fbfb111c8327bed03e117446ade941b833984035f63b39bf85aea89fff"};
+     const digestData=async d=>{
+       const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canon(d)));
+       return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+     };
+     const claudiaPartial=async(local,server)=>{
+       if(local.length!==server.length)return false;
+       for(const r of local){
+         const remote=server.find(x=>x.record_key===r.record_key);
+         if(!remote||!claudiaRecordDigests[r.record_key])return false;
+         if(canon(r.data)!==canon(remote.data)&&await digestData(r.data)!==claudiaRecordDigests[r.record_key])return false;
+       }
+       return true;
+     };
      const claudiaRecovered=rows=>{
        const m=rows.find(r=>r.record_key==='meta')?.data;
        const inv=rows.find(r=>r.record_key==='inventory')?.data;
@@ -718,10 +734,10 @@
        const q=m.counterQueue||[];
        return q.length===3&&[18,19,1].every(n=>q.some(v=>Number(v.ticket)===n));
      };
-     if(authProfile&&globalThis.crypto?.subtle&&claudiaRecovered(server)&&await exportDigest(local)===claudiaDigest){
+     if(authProfile&&globalThis.crypto?.subtle&&claudiaRecovered(server)&&(await exportDigest(local)===claudiaDigest||await claudiaPartial(local,server))){
        if(!automatic&&!confirm('Backup de Claudevânia conciliado no servidor. Receber caixa único e voltar ONLINE?'))return;
        const fresh=await getRows();
-       if(!claudiaRecovered(fresh)||!identical(server,fresh)||await exportDigest(activeRows())!==claudiaDigest)
+       if(!claudiaRecovered(fresh)||!identical(server,fresh)||!(await exportDigest(activeRows())===claudiaDigest||await claudiaPartial(activeRows(),fresh)))
          throw Error('A central ou o aparelho mudou durante a conferência. Preserve o backup.');
        backupRows(local,'Backup Claudevânia antes de receber central unificada');
        cloudApplying=true;let applied=false;
