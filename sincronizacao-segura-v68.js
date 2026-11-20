@@ -743,15 +743,22 @@
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
        dismiss();notify('Pablo sincronizado com a central. Débito de Lucas preservado uma única vez.');return;
      }
-     const larissaDigests={"table:1":"2f602441bc1258e0c80bae2d8cee24c2c5e16a3d90739d2d2973e74d6be21aa2","table:2":"233f9254ef1c0ce902cc8bdec8122ad82940b4d7d9a8efa6d10fd44737756b2e","table:3":"e1265fd4b462e3d3defdce62d198855e0cdaba0f0b74aef6df20a9c6fbfe3de5","table:4":"792fcde86775c1e53583540e5d0e52fbea29cc562c174116740861f8cd568486","table:5":"59dd7a9a98e476857d2465928f37447587fe051dd5851169dc2ec9f4ad0958df","table:6":"beccd5afb7cf30cba907610900923f62da3e9f683739722b819208d3621a39e7","table:7":"f8c67c9027f1b562f256f9a7cfd0d86cbae669eb135b05fb0a8e294dcf2a7ee6","table:8":"9b88b03ec2eb3856d0a54b3c2e4c3e7c8deb97a9f4f79cf160092b87322cf5d5","table:9":"aaa71583b5ca1abac0d9d337a27cca96afe5de54c0e753a72df619a425f66f0a","table:10":"ff956a1f6bab1b579cbd9c5cae17190ca66fb298ca08fd9fb350f6b73485b9db","counter":"5ada3cf6028908978ffa3a572646ad0c4b174866c89f23f0f404967011b31f68","inventory":"8fdb80e24ff98d0cd72fd3d26dbaf75405977217871ea846759f8baa53bc6837","meta":"0f60a0fdfaad1aaa1dec230e4f847aa71046f32b7154f4e6120315fb48fa9535","credit_accounts":"222feb0766da8d2716ec49fbe8aa3eacdc561f7e0179022c890e2ccc6c0b335a"};
+     const larissaDigests={"table:1":"815581555beb862a7239808506d9e3cf4a747d854e8d44b63b167dafa81e98e1","table:2":"233f9254ef1c0ce902cc8bdec8122ad82940b4d7d9a8efa6d10fd44737756b2e","table:3":"9491e65de0f4b5934e7e8b9ff1b24ede50b722e200f8f7a69f758a661d2e7bab","table:4":"792fcde86775c1e53583540e5d0e52fbea29cc562c174116740861f8cd568486","table:5":"59dd7a9a98e476857d2465928f37447587fe051dd5851169dc2ec9f4ad0958df","table:6":"beccd5afb7cf30cba907610900923f62da3e9f683739722b819208d3621a39e7","table:7":"f8c67c9027f1b562f256f9a7cfd0d86cbae669eb135b05fb0a8e294dcf2a7ee6","table:8":"9b88b03ec2eb3856d0a54b3c2e4c3e7c8deb97a9f4f79cf160092b87322cf5d5","table:9":"aaa71583b5ca1abac0d9d337a27cca96afe5de54c0e753a72df619a425f66f0a","table:10":"ff956a1f6bab1b579cbd9c5cae17190ca66fb298ca08fd9fb350f6b73485b9db","counter":"5ada3cf6028908978ffa3a572646ad0c4b174866c89f23f0f404967011b31f68","inventory":"0fb30ca495ed21b50acf13f30bd27d4b31cae404f2d62a16a571bd64d9b6c425","meta":"283b20d5c0c3ab683b948fb30b8074ba416ddae2224c51beaf53cec5c5e7fb7c","credit_accounts":"139bb200b7dc68dbedefe2d5c41f7cce160c534c84b2f5144eb0526e6a4325bf"};
      const larissaRecovered=rows=>{
        const m=rows.find(r=>r.record_key==='meta')?.data;
        const inv=rows.find(r=>r.record_key==='inventory')?.data;
-       const table=rows.find(r=>r.record_key==='table:1')?.data;
+       const t1=rows.find(r=>r.record_key==='table:1')?.data;
+       const t3=rows.find(r=>r.record_key==='table:3')?.data;
        const credits=rows.find(r=>r.record_key==='credit_accounts')?.data;
-       return !!(m&&inv&&table&&credits&&(table.orders||[]).some(o=>String(o.id)==='1795180042097')&&(table.orders||[]).some(o=>String(o.id)==='1795181244838')&&(m.counterQueue||[]).some(q=>String(q.id)==='1795177009698')&&(m.counterQueue||[]).some(q=>String(q.id)==='1795177168046')&&(credits.accounts||[]).some(a=>(a.charges||[]).some(c=>c.id==='consumo-mwoy4w3i-bwcbeo'))&&(inv.movements||[]).some(v=>v.at==='2026-11-20T13:27:24.838Z'&&v.operator==='Larissa miguel')&&(m.history||[]).length>=470
-         &&(m.counterQueue||[]).some(q=>String(q.id)==='1795173412728')
-         &&['2026-11-20T11:16:52.722Z','2026-11-20T11:16:52.723Z','2026-11-20T11:16:52.728Z','2026-11-20T11:18:48.235Z','2026-11-20T11:18:48.236Z'].every(t=>(inv.movements||[]).some(v=>v.at===t&&v.operator==='Larissa miguel')));
+       // Recuperação auditada em 20/11: aceitar somente os pedidos das duas mesas
+       // e os três movimentos efetivamente gravados, sem exigir filas já fechadas.
+       const required=['2026-11-20T16:44:49.525Z','2026-11-20T16:48:17.040Z','2026-11-20T17:13:45.893Z'];
+       return !!(m&&inv&&t1&&t3&&credits&&
+         (t1.orders||[]).length>=8&&(t3.orders||[]).length>=4&&
+         ['1795190628499','1795194825895'].every(id=>(t1.orders||[]).some(o=>String(o.id)===id))&&
+         ['1795190479226','1795192449365'].every(id=>(t3.orders||[]).some(o=>String(o.id)===id))&&
+         required.every(at=>(inv.movements||[]).some(v=>v.at===at&&v.operator==='Larissa miguel'))&&
+         (m.history||[]).length>=483&&(credits.receipts||[]).length>=5);
      };
      const larissaSafe=async(local,remote)=>{
        if(local.length!==remote.length)return false;
