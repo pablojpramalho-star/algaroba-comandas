@@ -750,15 +750,14 @@
        const t1=rows.find(r=>r.record_key==='table:1')?.data;
        const t3=rows.find(r=>r.record_key==='table:3')?.data;
        const credits=rows.find(r=>r.record_key==='credit_accounts')?.data;
-       // Recuperação auditada em 20/11: aceitar somente os pedidos das duas mesas
-       // e os três movimentos efetivamente gravados, sem exigir filas já fechadas.
+       const sold=(name,total)=>(m?.history||[]).some(h=>h.name===name&&Number(h.total)===total&&String(h.closedAt||'').startsWith('2026-11-20T22:'));
+       const hasOrders=(table,ids)=>ids.every(id=>(table?.orders||[]).some(o=>String(o.id)===id));
+       const table1Safe=hasOrders(t1,['1795190628499','1795194825895'])||((t1?.status==='livre')&&sold('Mesa 01',143));
+       const table3Safe=hasOrders(t3,['1795190479226','1795192449365'])||((t3?.status==='livre')&&sold('Mesa 03',45));
        const required=['2026-11-20T16:44:49.525Z','2026-11-20T16:48:17.040Z','2026-11-20T17:13:45.893Z'];
-       return !!(m&&inv&&t1&&t3&&credits&&
-         (t1.orders||[]).length>=8&&(t3.orders||[]).length>=4&&
-         ['1795190628499','1795194825895'].every(id=>(t1.orders||[]).some(o=>String(o.id)===id))&&
-         ['1795190479226','1795192449365'].every(id=>(t3.orders||[]).some(o=>String(o.id)===id))&&
+       return !!(m&&inv&&t1&&t3&&credits&&table1Safe&&table3Safe&&
          required.every(at=>(inv.movements||[]).some(v=>v.at===at&&v.operator==='Larissa miguel'))&&
-         (m.history||[]).length>=483&&(credits.receipts||[]).length>=5);
+         (m.history||[]).length>=485&&(credits.receipts||[]).length>=5);
      };
      const larissaSafe=async(local,remote)=>{
        if(local.length!==remote.length)return false;
