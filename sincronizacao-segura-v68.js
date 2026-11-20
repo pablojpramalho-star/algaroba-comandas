@@ -3,7 +3,7 @@
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
  const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
- const VERSION='2.9.7.86';
+ const VERSION='2.9.7.87';
  const rawRequest=cloudRequest;
  const rawSave=save;
  let started=false,reading=false,writing=false,blocked=null,writeChain=Promise.resolve(),lastBackupSig={};
@@ -706,6 +706,31 @@
        const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
        return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
      };
+     // Recuperação 20/11: somente o backup exato de Claudevânia já conciliado
+     // no servidor, sem reenviar vendas ou alterar estoque/caixa.
+     const claudiaDigest='8f10f9e7c6a42710142ba2bd81ec5a53aa8ffd94766d8b7f8d42fab93f84a0ec';
+     const claudiaRecovered=rows=>{
+       const m=rows.find(r=>r.record_key==='meta')?.data;
+       const inv=rows.find(r=>r.record_key==='inventory')?.data;
+       if(!m||!inv||(m.history||[]).length!==459||(inv.movements||[]).length!==3268)return false;
+       const expected={'table:1':3,'table:2':1,'table:3':1,'table:4':3,'table:5':1,'table:6':2,'table:7':3,'table:8':3};
+       if(!Object.entries(expected).every(([k,n])=>(rows.find(r=>r.record_key===k)?.data?.orders||[]).length===n))return false;
+       const q=m.counterQueue||[];
+       return q.length===3&&[18,19,1].every(n=>q.some(v=>Number(v.ticket)===n));
+     };
+     if(authProfile&&globalThis.crypto?.subtle&&claudiaRecovered(server)&&await exportDigest(local)===claudiaDigest){
+       if(!automatic&&!confirm('Backup de Claudevânia conciliado no servidor. Receber caixa único e voltar ONLINE?'))return;
+       const fresh=await getRows();
+       if(!claudiaRecovered(fresh)||!identical(server,fresh)||await exportDigest(activeRows())!==claudiaDigest)
+         throw Error('A central ou o aparelho mudou durante a conferência. Preserve o backup.');
+       backupRows(local,'Backup Claudevânia antes de receber central unificada');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao aplicar base central conciliada.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       dismiss();notify('Claudevânia recebeu a central conciliada. Pedidos e estoque preservados.');return;
+     }
      const revisionMatch=rows=>rows.length===Object.keys(approvedRevisions).length&&rows.every(r=>approvedRevisions[r.record_key]===Date.parse(r.updated_at));
      if(canExport()&&revisionMatch(server)&&globalThis.crypto?.subtle&&approvedExports.has(await exportDigest(local))){
        if(!automatic&&!confirm('A cópia deste aparelho corresponde ao backup conferido. Receber a base central consolidada, preservando os arquivos de auditoria já exportados?'))return;
