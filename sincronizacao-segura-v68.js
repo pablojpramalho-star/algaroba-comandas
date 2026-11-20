@@ -710,6 +710,39 @@
      // no servidor, sem reenviar vendas ou alterar estoque/caixa.
      // Recuperação Larissa: aceita somente o backup auditado de 20/11
      // ou registros que já coincidem integralmente com a central.
+     // Recuperação pontual do aparelho Pablo, backup exportado 20/11 14:43 UTC.
+     // A cópia local anulou indevidamente um débito de Lucas; a central contém
+     // o lançamento válido. Nunca enviar esta anulação ao servidor.
+     const pabloAudited={"meta":"03153b243f8117baa35ee3298d5bb957bf0cfc4e425917fe7bd70aadc9454494","credit_accounts":"ed6e393e9bbf55bcc568c0d5dfa2c8f803630c26eb4e208730de20616d9c486c"};
+     const pabloSafe=async(localRows,serverRows)=>{
+       if(localRows.length!==serverRows.length)return false;
+       for(const row of localRows){
+         const remote=serverRows.find(r=>r.record_key===row.record_key);
+         if(!remote)return false;
+         if(canon(row.data)===canon(remote.data))continue;
+         if(!pabloAudited[row.record_key])return false;
+         const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canon(row.data)));
+         const hex=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+         if(hex!==pabloAudited[row.record_key])return false;
+       }
+       const meta=serverRows.find(r=>r.record_key==='meta')?.data;
+       const credits=serverRows.find(r=>r.record_key==='credit_accounts')?.data;
+       const lucas=(credits?.accounts||[]).find(a=>a.id==='cliente-mwdu0zxn-cbwgk8');
+       const charges=(lucas?.charges||[]).filter(c=>c.id==='consumo-mwoy4w3i-bwcbeo'&&String(c.orderId)==='1795177168046'&&Number(c.total)===21&&!c.voided);
+       return !!(meta&&credits&&charges.length===1&&!(meta.counterQueue||[]).some(q=>String(q.id)==='1795177168046')&&(meta.history||[]).length>=473);
+     };
+     if(authProfile&&globalThis.crypto?.subtle&&await pabloSafe(local,server)){
+       if(!automatic&&!confirm('Backup de Pablo conferido. O débito de Lucas (R$ 21) já está correto na central. Receber a base central, sem duplicar lançamentos?'))return;
+       const fresh=await getRows();
+       if(!identical(server,fresh)||!await pabloSafe(activeRows(),fresh))throw Error('A central ou o aparelho mudou durante a conferência. Exporte novo backup.');
+       backupRows(local,'Cópia auditada de Pablo antes de receber a central');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Falha ao aplicar base central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       dismiss();notify('Pablo sincronizado com a central. Débito de Lucas preservado uma única vez.');return;
+     }
      const larissaDigests={"table:1":"2f602441bc1258e0c80bae2d8cee24c2c5e16a3d90739d2d2973e74d6be21aa2","table:2":"233f9254ef1c0ce902cc8bdec8122ad82940b4d7d9a8efa6d10fd44737756b2e","table:3":"e1265fd4b462e3d3defdce62d198855e0cdaba0f0b74aef6df20a9c6fbfe3de5","table:4":"792fcde86775c1e53583540e5d0e52fbea29cc562c174116740861f8cd568486","table:5":"59dd7a9a98e476857d2465928f37447587fe051dd5851169dc2ec9f4ad0958df","table:6":"beccd5afb7cf30cba907610900923f62da3e9f683739722b819208d3621a39e7","table:7":"f8c67c9027f1b562f256f9a7cfd0d86cbae669eb135b05fb0a8e294dcf2a7ee6","table:8":"9b88b03ec2eb3856d0a54b3c2e4c3e7c8deb97a9f4f79cf160092b87322cf5d5","table:9":"aaa71583b5ca1abac0d9d337a27cca96afe5de54c0e753a72df619a425f66f0a","table:10":"ff956a1f6bab1b579cbd9c5cae17190ca66fb298ca08fd9fb350f6b73485b9db","counter":"5ada3cf6028908978ffa3a572646ad0c4b174866c89f23f0f404967011b31f68","inventory":"8fdb80e24ff98d0cd72fd3d26dbaf75405977217871ea846759f8baa53bc6837","meta":"0f60a0fdfaad1aaa1dec230e4f847aa71046f32b7154f4e6120315fb48fa9535","credit_accounts":"222feb0766da8d2716ec49fbe8aa3eacdc561f7e0179022c890e2ccc6c0b335a"};
      const larissaRecovered=rows=>{
        const m=rows.find(r=>r.record_key==='meta')?.data;
