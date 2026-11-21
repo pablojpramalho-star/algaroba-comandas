@@ -1547,7 +1547,7 @@ function intelligenceDashboard(a,b){
  let units=0,cmv=0,costKnown=0;
  for(const v of filtered){
    const d=new Date(v.closedAt);if(!Number.isFinite(d.getTime()))continue;
-   const k=dateKey(d),value=amount(v),day=days.get(k)||{name:d.toLocaleDateString('pt-BR'),total:0,count:0,date:k};
+   const k=algarobaOperationalDay(v),value=amount(v),day=days.get(k)||{name:k.split('-').reverse().join('/'),total:0,count:0,date:k};
    day.total+=value;day.count++;days.set(k,day);
    const wd=weekdayNames[d.getDay()],w=weekdays.get(wd)||{name:wd,total:0,count:0,days:new Set()};
    w.total+=value;w.count++;w.days.add(k);weekdays.set(wd,w);
