@@ -9,6 +9,11 @@ declare v_actor uuid:=auth.uid(); v_existing public.algaroba_v3_events%rowtype;
  v_result jsonb; v_claim jsonb;
 begin
  if v_actor is null then raise exception 'AUTH_REQUIRED' using errcode='28000'; end if;
+ -- Fase de homologação: somente administrador ativo pode testar a RPC.
+ -- Antes da operação real, autorizar por perfil e tipo de evento.
+ if not public.is_algaroba_admin() then
+   raise exception 'V3_ADMIN_ONLY_UNTIL_OPERATION_RULES_ARE_READY' using errcode='42501';
+ end if;
  if p_id is null or p_payload is null or p_device_id is null or btrim(p_device_id)='' or
     p_entity_id is null or btrim(p_entity_id)='' or p_occurred_at is null then
    raise exception 'INVALID_EVENT' using errcode='22023';
