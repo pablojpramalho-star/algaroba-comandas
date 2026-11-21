@@ -38,10 +38,21 @@ begin
  end if;
  insert into public.algaroba_v3_events
    (id,session_id,entity_type,entity_id,event_type,payload,actor_id,device_id,occurred_at)
- values(p_id,p_session_id,p_entity_type,p_entity_id,p_event_type,p_payload,v_actor,p_device_id,p_occurred_at);
- select jsonb_build_object('id',id,'status','received','received_at',received_at)
- into v_result from public.algaroba_v3_events where id=p_id;
- return v_result;
+ values(p_id,p_session_id,p_entity_type,p_entity_id,p_event_type,p_payload,v_actor,p_device_id,p_occurred_at)
+ on conflict (id) do nothing;
+ -- Trata também a corrida de dois dispositivos reenviando o mesmo UUID.
+ select * into v_existing from public.algaroba_v3_events where id=p_id;
+ if v_existing.actor_id is distinct from v_actor or
+    v_existing.entity_type is distinct from p_entity_type or
+    v_existing.entity_id is distinct from p_entity_id or
+    v_existing.event_type is distinct from p_event_type or
+    v_existing.payload is distinct from p_payload or
+    v_existing.device_id is distinct from p_device_id or
+    v_existing.occurred_at is distinct from p_occurred_at or
+    v_existing.session_id is distinct from p_session_id then
+    raise exception 'EVENT_ID_REUSED_WITH_DIFFERENT_CONTENT' using errcode='23505';
+ end if;
+ return jsonb_build_object('id',p_id,'status','received_or_already_received','received_at',v_existing.received_at);
 end $$;
 revoke all on function public.algaroba_v3_append_event(uuid,text,text,text,jsonb,text,timestamptz,uuid) from public,anon;
 grant execute on function public.algaroba_v3_append_event(uuid,text,text,text,jsonb,text,timestamptz,uuid) to authenticated;
