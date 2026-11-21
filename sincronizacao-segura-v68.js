@@ -624,16 +624,16 @@
  let cashTransition=false;
  async function centralCashTransition(opening,action){
    if(cashTransition)return;
-   if(blocked||!cloudReady||!navigator.onLine||reading||writing||isDirty()||pendingRead())
+   if(!cloudReady||!navigator.onLine||reading||writing||isDirty()||pendingRead())
      return alert('Caixa central ainda não confirmado. Aguarde a sincronização antes de abrir ou fechar.');
    cashTransition=true;
    try{
      const before=canon(activeRows());
      const rows=await getRows(),meta=rows.find(r=>r.record_key==='meta');
-     if(!meta?.data?.cash||blocked||reading||writing||canon(activeRows())!==before)
+     if(!meta?.data?.cash||reading||writing||canon(activeRows())!==before)
        return alert('Não foi possível confirmar o caixa central. Tente novamente.');
      const local=latestRow('meta')?.data;
-     if(canon(meta.data)!==canon(local)){
+     if(canon(meta.data.cash)!==canon(local?.cash)){
        return alert('O caixa central mudou em outro aparelho. Feche esta janela, aguarde a atualização e confira novamente.');
      }
      if(!!meta.data.cash.open===opening){
@@ -655,7 +655,7 @@
  let checkingPayment=false;
  finishPayment=async function(){
    if(checkingPayment)return;
-   if(blocked||!cloudReady||!navigator.onLine)return alert('Não receba por este aparelho: sincronização pendente. Confira a conta no caixa online.');
+   if(!cloudReady||!navigator.onLine)return alert('Sem conexão com o caixa central. Confira a conta no caixa online.');
    if(!payCtx)return;
    checkingPayment=true;
    const ctx=payCtx;
@@ -666,7 +666,7 @@
      const rows=await getRows();
      const remote=rows.find(r=>r.record_key===key)?.data;
      const select=x=>ctx.tableId==='counterQueue'?x?.counterQueue?.find(o=>String(o.id)===String(ctx.counterId)):x;
-     if(blocked||payCtx!==ctx||!select(local)||!select(remote)||canon(select(local))!==canon(select(remote))||canon(select(latestRow(key)?.data))!==canon(select(local))){
+     if(payCtx!==ctx||!select(local)||!select(remote)||canon(select(local))!==canon(select(remote))||canon(select(latestRow(key)?.data))!==canon(select(local))){
        return alert('Conta ainda não confirmada pelo servidor ou alterada por outro aparelho. Não cobre este valor. Confira a comanda no caixa online.');
      }
      await priorFinishPayment();
