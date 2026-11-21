@@ -1785,7 +1785,45 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js?v=73"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script><script src="./sincronizacao-segura-v68.js?v=91"></script><script>
+</script><script src="./mesa-clientes.js"></script><script src="./conferencias.js"></script><script src="./estoque-queijo-coalho.js"></script><script src="./estoque-pedidos-auditoria.js"></script><script src="./bebidas-caldos-v63.js?v=73"></script><script src="./caixa-turnos.js"></script><script src="./cervejas-litrinho-v66.js"></script><script src="./clientes-conta-prazo.js"></script><script src="./sincronizacao-segura-v68.js?v=92"></script><script>
+(function(){
+ const KEY='algarobaDeviceIdV1';
+ let id=localStorage.getItem(KEY);
+ if(!id){id=(crypto.randomUUID?crypto.randomUUID():'device-'+Date.now()+'-'+Math.random().toString(36).slice(2));localStorage.setItem(KEY,id)}
+ let sending=false,fetching=false;
+ const panel=document.createElement('div');panel.id='deviceMonitorV1';
+ panel.style.cssText='font-size:12px;margin:8px 0 0;padding:7px 10px;background:#ffffff18;border-radius:8px;line-height:1.7';
+ panel.textContent='Aparelhos: aguardando conexão';
+ document.querySelector('header')?.appendChild(panel);
+ async function beat(){
+  if(sending||!authProfile?.id||!navigator.onLine)return;
+  sending=true;
+  try{
+   const h=window.algarobaSyncHealth?.()||{};
+   const sync_status=h.blocked?'conflito':!h.cloudReady?'conectando':h.pending?'pendente':'sincronizado';
+   const data={device_id:id,user_id:authProfile.id,operator_name:authProfile.nome,app_version:'2.9.7.90',last_seen:new Date().toISOString(),updated_at:new Date().toISOString(),sync_status,pending:!!h.pending,blocked:!!h.blocked,last_error:h.error||null};
+   await cloudRequest('algaroba_device_presence?on_conflict=device_id',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify(data)});
+  }catch(e){console.warn('Monitoramento de aparelhos:',e.message)}finally{sending=false}
+ }
+ async function display(){
+  if(fetching||!authProfile?.id||!navigator.onLine)return;
+  fetching=true;
+  try{
+   const rows=await cloudRequest('algaroba_device_presence?select=device_id,operator_name,last_seen,sync_status,pending,blocked&order=operator_name.asc');
+   const now=Date.now();
+   const status=r=>{const age=now-Date.parse(r.last_seen);return age>60000?'OFFLINE ('+Math.round(age/60000)+' min)':r.blocked?'CONFLITO':r.pending?'PENDENTE':r.sync_status==='sincronizado'?'ONLINE / SINCRONIZADO':'ONLINE / '+r.sync_status.toUpperCase()};
+   if(authProfile.perfil==='administrador'||authProfile.perfil==='gerente'){
+    panel.textContent='Aparelhos: '+(rows.length?rows.map(r=>r.operator_name+': '+status(r)).join(' | '):'aguardando primeiro sinal');
+   }else{const own=rows.find(r=>r.device_id===id);panel.textContent='Este aparelho: '+(own?status(own):'aguardando primeiro sinal')}
+  }catch(e){panel.textContent='Monitoramento indisponível — dados locais preservados'}finally{fetching=false}
+ }
+ async function tick(){await beat();await display()}
+ setInterval(tick,20000);
+ window.addEventListener('online',tick);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+ setTimeout(tick,4000);
+})();
+</script><script>
 (function(){
 const groups=new Map(catalog.Espetinhos.map(p=>[p[0],Number(p[1])]));
 window.algarobaSkewerGroupPrice=p=>groups.get(p[0]);
