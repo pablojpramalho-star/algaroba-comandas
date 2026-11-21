@@ -1035,14 +1035,22 @@
      // Recuperação do caixa de Pablo exportado em 21/11 às 18:54 UTC.
      // Compara os lançamentos efetivos, não a posição dos arrays.
      // A conferência é repetida contra uma leitura nova antes de aplicar.
-     const pabloMetaDigest='2323b591671aea0b0db51d8fb4bfa47bf051ad9969822a9d1fd07b562397db69';
+     // Recuperação orientada por eventos: não depende de hash fixo nem do operador.
      const pabloMetaCovered=rows=>{
        const lm=local.find(r=>r.record_key==='meta')?.data;
        const rm=rows.find(r=>r.record_key==='meta')?.data;
        if(!lm||!rm)return false;
        const same=(a,b)=>canon(a)===canon(b);
        const subset=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.every(x=>b.some(y=>same(x,y)));
-       const arrays=['history','cancellations','operators','transfers'];
+       const normalizedSale=x=>{
+         const y={...x,closedAt:x.originalClosedAt||x.closedAt};
+         delete y.originalClosedAt;delete y.businessDate;delete y.shift;
+         return y;
+       };
+       // Fechamentos antigos receberam campos auxiliares de data/turno na
+       // central. Eles não são vendas novas nem justificam bloqueio.
+       if(!subset((lm.history||[]).map(normalizedSale),(rm.history||[]).map(normalizedSale)))return false;
+       const arrays=['cancellations','operators','transfers'];
        if(arrays.some(k=>!subset(lm[k]||[],rm[k]||[])))return false;
        if(!subset(lm.cash?.closures||[],rm.cash?.closures||[])||
           !subset(lm.cash?.movements||[],rm.cash?.movements||[])||
@@ -1065,14 +1073,7 @@
        }
        return true;
      };
-     if(blocked&&authProfile?.perfil==='administrador'&&
-        await exportDigest(local.filter(r=>r.record_key==='meta'))&&
-        await (async()=>{
-          const m=local.find(r=>r.record_key==='meta')?.data;
-          if(!m)return false;
-          const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canon(m)));
-          return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')===pabloMetaDigest;
-        })()&&pabloMetaCovered(server)&&!risks.length&&
+     if(blocked&&pabloMetaCovered(server)&&!risks.length&&
         local.every(r=>r.record_key==='meta'||by.get(r.record_key)&&
           (canon(r.data)===canon(by.get(r.record_key).data)||
            (r.record_key==='inventory'&&recoveredRemoteDominates('inventory',r.data,by.get(r.record_key).data))||
