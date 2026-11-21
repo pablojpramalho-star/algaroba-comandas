@@ -927,6 +927,49 @@
        if(!applied)throw Error('Falha ao receber a central.');
        clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');dismiss();notify('Fechamento confirmado; caixa central atualizado.');return;
      }
+     // Conciliação pontual do backup de Claudevânia exportado em 21/11 às 02:42 UTC.
+     // O servidor recebeu os pedidos e movimentos; o aparelho ainda mantém o caixa antigo.
+     // Somente aceitar se TODOS os eventos locais constarem integralmente na central.
+     const claudiaNov21Digest='88dc12db58369cc6d551dcc23dd40499a7bed7af5e0eb0550ed59a4ee67a59dd';
+     const claudiaNov21Covered=rows=>{
+       const byKey=new Map(rows.map(r=>[r.record_key,r.data]));
+       const lm=local.find(r=>r.record_key==='meta')?.data,rm=byKey.get('meta');
+       const li=local.find(r=>r.record_key==='inventory')?.data,ri=byKey.get('inventory');
+       if(rows.length!==14||!lm||!rm||!li||!ri||
+          ri.movements?.length<3407||rm.history?.length<486||
+          rm.internalAccounts?.withdrawals?.length<24)return false;
+       const includesAll=(small,big)=>{
+         if(!Array.isArray(small)||!Array.isArray(big))return false;
+         const count=new Map();for(const x of big){const k=canon(x);count.set(k,(count.get(k)||0)+1)}
+         for(const x of small){const k=canon(x),n=count.get(k)||0;if(!n)return false;count.set(k,n-1)}
+         return true;
+       };
+       const matchingSales=(lm.history||[]).every(h=>(rm.history||[]).some(x=>
+         x.closedAt===h.closedAt&&x.name===h.name&&Number(x.total)===Number(h.total)&&
+         canon(x.items)===canon(h.items)));
+       const withdrawals=includesAll(lm.internalAccounts?.withdrawals||[],rm.internalAccounts?.withdrawals||[]);
+       const cashMovements=includesAll(lm.cash?.movements||[],rm.cash?.movements||[]);
+       const stockMovements=includesAll(li.movements||[],ri.movements||[]);
+       const tables=local.filter(r=>r.record_key.startsWith('table:')).every(r=>
+         byKey.has(r.record_key)&&canon(byKey.get(r.record_key))===canon(r.data));
+       const other=local.filter(r=>!r.record_key.startsWith('table:')&&
+         !['meta','inventory'].includes(r.record_key)).every(r=>
+         byKey.has(r.record_key)&&canon(byKey.get(r.record_key))===canon(r.data));
+       return matchingSales&&withdrawals&&cashMovements&&stockMovements&&tables&&other;
+     };
+     if(blocked&&authProfile&&globalThis.crypto?.subtle&&
+        await exportDigest(local)===claudiaNov21Digest&&claudiaNov21Covered(server)){
+       const fresh=await getRows();
+       if(await exportDigest(activeRows())!==claudiaNov21Digest||!claudiaNov21Covered(fresh))
+         throw Error('Dados mudaram durante a conferência; nada foi aplicado.');
+       backupRows(local,'Antes da conciliação auditada Claudevânia 21/11');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Não foi possível receber os dados da central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       dismiss();notify('Conciliação Claudevânia concluída: todos os eventos locais conferidos e central recebida.');return;
+     }
      const risks=dataLossSigns(local,server);
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
      // permite unir inclusões independentes em vez de exigir exportação manual.
