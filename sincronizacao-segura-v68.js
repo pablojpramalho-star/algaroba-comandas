@@ -63,13 +63,16 @@
    }
  }
  function alertSync(message,details){
-   blocked={message,details:details||'',at:new Date().toISOString()};
-   cloudLastError=message;
+   // Divergências não paralisam o aplicativo inteiro. Mantemos os dados
+   // locais e a pendência; escrita incompatível continua recusada pelo RPC.
+   blocked=null;
+   cloudLastError=message+' '+(details||'');
    cloudFailures++;
-   setSyncStatus('error','⚠️ CONFLITO — CONFERIR');
-   backupRows(activeRows(),'Conflito de sincronização detectado');
-   try{localStorage.setItem('algarobaSyncConflictV68',JSON.stringify(blocked))}catch(e){}
-   console.warn('ALGAROBA / SINCRONIZAÇÃO SEGURA:',message,details||'');
+   backupRows(activeRows(),'Divergência preservada para conciliação');
+   pendingWrite();
+   try{localStorage.removeItem('algarobaSyncConflictV68')}catch(e){}
+   setSyncStatus('offline','PENDENTE DE CONCILIAÇÃO — DADOS LOCAIS PRESERVADOS');
+   console.warn('ALGAROBA / CONCILIAÇÃO PENDENTE:',message,details||'');
  }
  function clearBlock(){
    blocked=null;
