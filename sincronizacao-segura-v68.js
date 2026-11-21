@@ -970,6 +970,56 @@
        refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
        dismiss();notify('Conciliação Claudevânia concluída: todos os eventos locais conferidos e central recebida.');return;
      }
+     // Recuperação auditada do backup Larissa 21/11 17:28 UTC.
+     // A central já recebeu os eventos. A comparação de objetos inteiros de meta
+     // não é válida após conciliação administrativa e mudanças em outros aparelhos.
+     // Somente recebe a central se a cópia LOCAL EXATA e todos os eventos críticos
+     // estiverem preservados, inclusive em uma segunda leitura do servidor.
+     const larissaNov21Digest='ae56b72e6b7b785fe0d60a32c235c14f4cac47495f99491e2a7a319fdc106fde';
+     const larissaNov21Covered=rows=>{
+       if(rows.length!==local.length||local.length!==14)return false;
+       const map=new Map(rows.map(r=>[r.record_key,r.data]));
+       const lm=local.find(r=>r.record_key==='meta')?.data,rm=map.get('meta');
+       const li=local.find(r=>r.record_key==='inventory')?.data,ri=map.get('inventory');
+       const lc=local.find(r=>r.record_key==='credit_accounts')?.data,rc=map.get('credit_accounts');
+       if(!lm||!rm||!li||!ri||!lc||!rc)return false;
+       const contains=(small,big,key)=>Array.isArray(small)&&Array.isArray(big)&&small.every(x=>
+         big.some(y=>key(x)===key(y)&&canon(x)===canon(y)));
+       const id=x=>String(x.id);
+       const stockKey=x=>[x.at,x.key,x.type,x.qty,x.before,x.after].join('|');
+       if(!(li.movements||[]).every(x=>(ri.movements||[]).some(y=>stockKey(x)===stockKey(y))))return false;
+       if(!contains(lm.history||[],rm.history||[],x=>String(x.id||'')+'|'+String(x.closedAt)))return false;
+       if(!contains(lm.cash?.closures||[],rm.cash?.closures||[],x=>String(x.closedAt)))return false;
+       if(!contains(lm.cash?.movements||[],rm.cash?.movements||[],x=>String(x.id||x.at)))return false;
+       if(!contains(lm.internalAccounts?.withdrawals||[],rm.internalAccounts?.withdrawals||[],id))return false;
+       if(!contains(lm.internalAccounts?.settlements||[],rm.internalAccounts?.settlements||[],id))return false;
+       if(!contains(lm.counterQueue||[],rm.counterQueue||[],id))return false;
+       if(!contains(lc.receipts||[],rc.receipts||[],id))return false;
+       for(const a of lc.accounts||[]){
+         const b=(rc.accounts||[]).find(x=>String(x.id)===String(a.id));
+         if(!b||!contains(a.charges||[],b.charges||[],id))return false;
+       }
+       for(const row of local){
+         if(!row.record_key.startsWith('table:'))continue;
+         const remote=map.get(row.record_key);
+         if(!remote)return false;
+         if((row.data.orders||[]).length||(row.data.items||[]).length)return false;
+       }
+       return true;
+     };
+     if(blocked&&authProfile?.perfil==='atendimento'&&globalThis.crypto?.subtle&&
+        await exportDigest(local)===larissaNov21Digest&&larissaNov21Covered(server)){
+       const fresh=await getRows();
+       if(await exportDigest(activeRows())!==larissaNov21Digest||!larissaNov21Covered(fresh))
+         throw Error('O aparelho ou o servidor mudou durante a conferência; recuperação não aplicada.');
+       backupRows(local,'Larissa: antes de receber central com todos os eventos conferidos');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('Não foi possível aplicar os dados da central.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       dismiss();notify('Backup de Larissa conferido; dados centrais recebidos sem reenviar vendas.');return;
+     }
      const risks=dataLossSigns(local,server);
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
      // permite unir inclusões independentes em vez de exigir exportação manual.
