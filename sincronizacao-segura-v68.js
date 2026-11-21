@@ -1201,6 +1201,7 @@
      if(isDirty()){pendingWrite();scheduleCloudSave()}else{await pullRecords(false)}
    }catch(e){console.warn('Nova tentativa automática:',e)}finally{automaticBusy=false}
  }
+ window.algarobaSyncHealth=()=>({blocked:!!blocked,pending:!!pendingRead()||isDirty(),cloudReady:!!cloudReady,reading:!!reading,writing:!!writing,error:String(blocked?.message||cloudLastError||'').slice(0,240)});
  setInterval(automaticRecovery,15000);
  window.addEventListener('online',automaticRecovery);
  started=true;
