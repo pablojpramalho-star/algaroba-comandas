@@ -416,7 +416,8 @@
  async function safeWriteRows(requestRows){
    const requested=(Array.isArray(requestRows)?requestRows:[requestRows]).filter(x=>x?.record_key);
    if(!requested.length)return null;
-   if(blocked)throw Error('Sincronização bloqueada por divergência anterior. Confira as cópias antes de prosseguir.');
+   // Divergência em outro registro não impede envio deste lote: a transação
+   // valida a revisão de cada registro e rejeita substituições conflitantes.
    backupRows(requested,'Cópia antes do envio ao servidor');
    pendingWrite();
    writing=true;
@@ -522,7 +523,7 @@
    return rawRequest(path,opts);
  };
  pushChangedRecords=async function(){
-   if(!cloudReady||blocked||writing||reading)return;
+   if(!cloudReady||writing||reading)return;
    const changes=changedNow();
    if(!changes.length){pendingWrite();setSyncStatus('online','ONLINE • SALVO');return}
    setSyncStatus('offline','SALVANDO '+changes.length+' REGISTRO(S)…');
@@ -1412,7 +1413,11 @@
    automaticBusy=true;
    try{
      if(!cloudReady){await initCloud();return}
-     if(blocked){await window.retrySafeSyncV68(true);return}
+     if(blocked){
+       if(isDirty()){pendingWrite();await pushChangedRecords()}
+       else await window.retrySafeSyncV68(true);
+       return;
+     }
      if(isDirty()){pendingWrite();scheduleCloudSave()}else{await pullRecords(false)}
    }catch(e){console.warn('Nova tentativa automática:',e)}finally{automaticBusy=false}
  }
