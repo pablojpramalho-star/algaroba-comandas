@@ -1021,6 +1021,103 @@
        dismiss();notify('Backup de Larissa conferido; dados centrais recebidos sem reenviar vendas.');return;
      }
      const risks=dataLossSigns(local,server);
+     // Recuperação automática genérica: não depende de nomes de operadores,
+     // datas, hashes de backup nem da ordem de eventos no banco.
+     // Só recebe a central quando ela contém todos os lançamentos locais.
+     const allEventsPreserved=()=>{
+       if(risks.length||local.length!==server.length)return false;
+       const eq=(a,b)=>canon(a)===canon(b);
+       const subset=(small,big,key)=>Array.isArray(small)&&Array.isArray(big)&&
+         small.every(x=>big.some(y=>key(x)===key(y)&&eq(x,y)));
+       const eventId=x=>String(x.id||'')+'|'+String(x.originalClosedAt||x.closedAt||x.at||'');
+       for(const row of local){
+         const remote=by.get(row.record_key)?.data,v=row.data;
+         if(!remote)return false;
+         if(eq(v,remote))continue;
+         if(row.record_key.startsWith('table:')){
+           // Não troca mesas ativas; somente mesas comprovadamente vazias.
+           if(v.status!=='livre'||remote.status!=='livre'||
+             (v.items||[]).length||(remote.items||[]).length||
+             (v.orders||[]).length||(remote.orders||[]).length||
+             (v.customers||[]).length||(remote.customers||[]).length||
+             (v.customerPayments||[]).length||(remote.customerPayments||[]).length)return false;
+           continue;
+         }
+         if(row.record_key==='counter'){
+           if((v.items||[]).length||(v.orders||[]).length||
+             (remote.items||[]).length||(remote.orders||[]).length)return false;
+           continue;
+         }
+         if(row.record_key==='inventory'){
+           const mk=x=>[x.at,x.key,x.type,x.qty,x.before,x.after].join('|');
+           if(!subset(v.movements||[],remote.movements||[],mk))return false;
+           const l=v.items||{},b=remote.items||{};
+           const added=(remote.movements||[]).filter(x=>!(v.movements||[]).some(y=>mk(x)===mk(y)));
+           for(const [k,item] of Object.entries(l)){
+             if(!b[k]||!eq({...item,qty:0},{...b[k],qty:0}))return false;
+             const delta=added.filter(x=>x.key===k).reduce((n,x)=>n+Number(x.qty||0),0);
+             if(Math.abs(Number(item.qty)+delta-Number(b[k].qty))>.00001)return false;
+           }
+           if(Object.keys(b).some(k=>!l[k]&&(Number(b[k].qty)!==0||added.some(x=>x.key===k))))return false;
+           if(!eq({...v,items:{},movements:[]},{...remote,items:{},movements:[]}))return false;
+           continue;
+         }
+         if(row.record_key==='credit_accounts'){
+           if(!subset(v.receipts||[],remote.receipts||[],x=>String(x.id)))return false;
+           for(const a of v.accounts||[]){
+             const b=(remote.accounts||[]).find(x=>String(x.id)===String(a.id));
+             if(!b||!eq({...a,charges:[]},{...b,charges:[]})||
+               !subset(a.charges||[],b.charges||[],x=>String(x.id)))return false;
+           }
+           if(!eq({...v,accounts:[],receipts:[]},{...remote,accounts:[],receipts:[]}))return false;
+           continue;
+         }
+         if(row.record_key==='meta'){
+           if(!subset(v.history||[],remote.history||[],eventId)||
+             !subset(v.cancellations||[],remote.cancellations||[],eventId)||
+             !subset(v.cash?.closures||[],remote.cash?.closures||[],x=>String(x.closedAt))||
+             !subset(v.cash?.movements||[],remote.cash?.movements||[],eventId)||
+             !subset(v.internalAccounts?.withdrawals||[],remote.internalAccounts?.withdrawals||[],eventId)||
+             !subset(v.internalAccounts?.settlements||[],remote.internalAccounts?.settlements||[],eventId))return false;
+           // Pedido aberto só pode desaparecer após venda, crédito ou cancelamento.
+           for(const q of v.counterQueue||[]){
+             const b=(remote.counterQueue||[]).find(x=>String(x.id)===String(q.id));
+             if(b){if(!eq(q,b))return false;continue}
+             const sold=(remote.history||[]).some(h=>String(h.orderId)===String(q.id));
+             const credited=(by.get('credit_accounts')?.data?.accounts||[]).some(a=>
+               (a.charges||[]).some(c=>String(c.orderId)===String(q.id)));
+             const cancelled=(remote.cancellations||[]).some(c=>String(c.orderId)===String(q.id));
+             if(!sold&&!credited&&!cancelled)return false;
+           }
+           // O espelho legado de crédito não deve bloquear a centralização.
+           const strip=x=>({...x,history:[],cancellations:[],counterQueue:[],
+             counterTicket:null,revenue:0,creditAccounts:null,
+             internalAccounts:x.internalAccounts?{...x.internalAccounts,withdrawals:[],settlements:[]}:x.internalAccounts,
+             cash:x.cash?{...x.cash,closures:[],movements:[]}:x.cash});
+           if(!eq(strip(v),strip(remote)))return false;
+           const lTicket=v.counterTicket||{},rTicket=remote.counterTicket||{};
+           if(lTicket.date===rTicket.date&&Number(rTicket.last||0)<Number(lTicket.last||0))return false;
+           continue;
+         }
+         return false;
+       }
+       return true;
+     };
+     if(blocked&&allEventsPreserved()){
+       const fingerprint=canon(activeRows());
+       const fresh=await getRows();
+       const previous=server;
+       if(canon(fresh)!==canon(previous)||canon(activeRows())!==fingerprint)
+         throw Error('Os dados mudaram durante a recuperação; nova conferência necessária.');
+       backupRows(local,'Antes da reconciliação automática sem perda de eventos');
+       cloudApplying=true;let applied=false;
+       try{applied=applyRows(fresh)}finally{cloudApplying=false}
+       if(!applied)throw Error('A atualização local não foi confirmada.');
+       clearBlock();pendingWrite();cloudLastError='';cloudFailures=0;
+       refreshVisible();setSyncStatus('online','ONLINE • ATUALIZADO');
+       dismiss();notify('Eventos locais preservados; central recebida sem reenviar ou duplicar vendas.');
+       return;
+     }
      // Em conflitos surgidos durante esta sessão, a versão-base conhecida
      // permite unir inclusões independentes em vez de exigir exportação manual.
      const pending=changedNow();
