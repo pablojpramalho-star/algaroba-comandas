@@ -438,7 +438,13 @@
        if(remote&&canon(remote.data)!==canon(data)&&
           (!known||canon(remote.data)!==canon(JSON.parse(known)))){
          const combined=known?mergeRecord(key,JSON.parse(known),data,remote.data):null;
+         // Se o servidor já contém todos os eventos locais, não tentar
+         // reenviar um meta antigo inteiro sobre o caixa recuperado.
+         const covered=key==='meta'&&
+           !dataLossSigns([{record_key:key,data}],current).length&&
+           recoveredRemoteDominates('meta',data,remote.data);
          if(combined){data=combined;merged=true}
+         else if(covered){data=remote.data;merged=true}
          else{
            backupRows([remote],'Versão divergente recebida do banco');
            alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
