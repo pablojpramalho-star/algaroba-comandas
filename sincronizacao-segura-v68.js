@@ -486,7 +486,15 @@
        }
        for(const plan of plans)cloudSnapshot[plan.key]=JSON.stringify(plan.data);
      }catch(e){
-       if(!blocked){const msg=String(e.message||e);if(/CONCURRENT_WRITE|40001|conciliação|união/i.test(msg)){alertSync('Gravação simultânea detectada. Os dados locais estão preservados.',msg);}else{cloudLastError=msg;pendingWrite();setSyncStatus('offline','PENDENTE — NOVA TENTATIVA AUTOMÁTICA');}}
+       if(!blocked){const msg=String(e.message||e);if(/CONCURRENT_WRITE|40001/i.test(msg)){
+         // Concorrência é transitória: a próxima tentativa relê a versão central.
+         // Não congela todos os aparelhos por uma colisão normal entre gravações.
+         cloudLastError=msg;pendingWrite();
+         setSyncStatus('offline','CONCORRÊNCIA — RECONCILIANDO AUTOMATICAMENTE');
+       }else if(/conciliação|união/i.test(msg)){
+         cloudLastError=msg;pendingWrite();
+         setSyncStatus('offline','CONFERINDO GRAVAÇÃO — NOVA TENTATIVA');
+       }else{cloudLastError=msg;pendingWrite();setSyncStatus('offline','PENDENTE — NOVA TENTATIVA AUTOMÁTICA');}}
        throw e;
      }
      clearBlock();
