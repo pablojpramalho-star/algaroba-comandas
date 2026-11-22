@@ -485,6 +485,26 @@
      const localAtPlanning=canon(activeRows());
      const requestedKeys=new Set(requested.map(r=>r.record_key));
      const unrelatedDirty=changedNow().some(r=>!requestedKeys.has(r.record_key));
+     // Uma mesa local antiga pode ter sido encerrada no caixa central.
+     // Só aceitar a versão livre quando o fechamento comprovar mesmo total,
+     // data posterior a todos os pedidos e nome da mesa correspondente.
+     const coveredClosedTable=(key,localData,remoteData)=>{
+       if(!/^table:\\d+$/.test(key)||localData?.status!=='ocupada'||remoteData?.status!=='livre')return false;
+       if((remoteData.items||[]).length||(remoteData.orders||[]).length)return false;
+       const orders=localData.orders||[],items=localData.items||[];
+       if(!orders.length||!items.length)return false;
+       const ids=orders.map(o=>Number(o.createdAt||o.id));
+       if(ids.some(t=>!Number.isFinite(t)||t<=0))return false;
+       const total=items.reduce((n,i)=>n+Number(i.price||0)*Number(i.qty||0),0);
+       const history=by.get('meta')?.data?.history||[];
+       const mesa=Number(key.split(':')[1]);
+       return history.some(h=>{
+         const match=/^Mesa\\s*0*(\\d+)$/i.exec(String(h.name||''));
+         const closed=Date.parse(h.closedAt||'');
+         return match&&Number(match[1])===mesa&&Math.abs(Number(h.total)-total)<0.005&&
+           Number.isFinite(closed)&&ids.every(t=>t<=closed&&closed-t<36*3600000);
+       });
+     };
      // PRÉ-CONFERÊNCIA DO LOTE INTEIRO antes de mudar qualquer registro.
      // Evita fechar a mesa se o histórico do caixa já está divergente.
      const plans=requested.map(row=>{
@@ -502,7 +522,7 @@
          const closureRecovery=key==='meta'&&!combined?reconcileAdministrativeClosure(data,remote.data):null;
          if(closureRecovery){data=closureRecovery;merged=true}
          else if(combined){data=combined;merged=true}
-         else if(covered){data=remote.data;merged=true}
+         else if(covered||coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
          else{
            backupRows([remote],'Versão divergente recebida do banco');
            alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
