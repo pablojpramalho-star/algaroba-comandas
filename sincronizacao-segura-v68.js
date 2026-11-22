@@ -541,9 +541,10 @@
            !dataLossSigns([{record_key:key,data}],current).length&&
            recoveredRemoteDominates('meta',data,remote.data);
          const closureRecovery=key==='meta'&&!combined?reconcileAdministrativeClosure(data,remote.data):null;
-         if(closureRecovery){data=closureRecovery;merged=true}
+         if(coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
+         else if(closureRecovery){data=closureRecovery;merged=true}
          else if(combined){data=combined;merged=true}
-         else if(covered||coveredClosedTable(key,data,remote.data)||emptyLocalTable(key,data,remote.data)){data=remote.data;merged=true}
+         else if(covered||emptyLocalTable(key,data,remote.data)){data=remote.data;merged=true}
          else{
            backupRows([remote],'Versão divergente recebida do banco');
            alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
