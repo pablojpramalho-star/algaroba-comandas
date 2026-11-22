@@ -37,7 +37,7 @@
    const belongsToCash=record=>{
      const recordCash=record.cashSessionId||record.cashId||record.sessionId;
      const currentCash=cash.sessionId||cash.cashId||cash.id;
-     return !recordCash||!currentCash||String(recordCash)===String(currentCash);
+     return recordCash ? (!!currentCash&&String(recordCash)===String(currentCash)) : isInPeriod(record.closedAt||record.at);
    };
    for(const sale of allSales||[]){
      if(sale.voided||!isInPeriod(sale.closedAt)||!belongsToCash(sale))continue;
