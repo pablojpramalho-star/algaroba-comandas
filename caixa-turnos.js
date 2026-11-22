@@ -32,8 +32,15 @@
    const list=[turn(1),turn(2)];
    const which=d=>d<boundary?list[0]:list[1];
    const isInPeriod=value=>{const d=new Date(value||0);return Number.isFinite(d.getTime())&&d>=start&&d<=end};
+   // Uma venda identificada por caixa pertence exclusivamente ao seu caixa de origem.
+   // Registros antigos sem identificador continuam usando o intervalo histórico.
+   const belongsToCash=record=>{
+     const recordCash=record.cashSessionId||record.cashId||record.sessionId;
+     const currentCash=cash.sessionId||cash.cashId||cash.id;
+     return !recordCash||!currentCash||String(recordCash)===String(currentCash);
+   };
    for(const sale of allSales||[]){
-     if(sale.voided||!isInPeriod(sale.closedAt))continue;
+     if(sale.voided||!isInPeriod(sale.closedAt)||!belongsToCash(sale))continue;
      const shift=which(new Date(sale.closedAt));const value=Number(sale.total||0);
      shift.sales+=value;shift.salesCount++;
      const operator=String(sale.operator||"Não identificado");
@@ -44,7 +51,7 @@
      }
    }
    for(const settlement of settlements||[]){
-     if(!isInPeriod(settlement.at))continue;
+     if(!isInPeriod(settlement.at)||!belongsToCash(settlement))continue;
      const shift=which(new Date(settlement.at));
      const value=Number(settlement.value||0);shift.settlements+=value;
      const method=settlement.method||"Outro";
