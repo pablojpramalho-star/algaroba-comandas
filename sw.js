@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.104-syncfix';
+const CACHE = 'algaroba-shell-2.9.7.105-syncfix';
 
 const SHELL = [
   './',
