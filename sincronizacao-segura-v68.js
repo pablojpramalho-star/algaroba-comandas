@@ -208,18 +208,31 @@
  }
  const eventKey=x=>String(x.id||'')+'|'+String(x.originalClosedAt||x.closedAt||x.at||x.createdAt||'');
  function mergeQueue(base,local,remote){
- const eq=(a,b)=>canon(a)===canon(b), maps=[base,local,remote].map(a=>new Map(a.map(x=>[String(x.id),x])));
+ const eq=(a,b)=>canon(a)===canon(b),maps=[base,local,remote].map(a=>new Map(a.map(x=>[String(x.id),x])));
  if(maps.some((m,i)=>m.size!==[base,local,remote][i].length))return null;
- const [b,l,r]=maps,out=[];
- for(const id of new Set([...r.keys(),...l.keys(),...b.keys()])){
-   const x=b.get(id),y=l.get(id),z=r.get(id);
+ const [bm,lm,rm]=maps,out=[],rank={NOVO:0,PREPARANDO:1,PRONTO:2,ENTREGUE:3};
+ for(const id of new Set([...rm.keys(),...lm.keys(),...bm.keys()])){
+   const x=bm.get(id),y=lm.get(id),z=rm.get(id);
    if(eq(y,z)){if(y)out.push(y);continue}
    if(eq(x,y)){if(z)out.push(z);continue}
    if(eq(x,z)){if(y)out.push(y);continue}
-   return null;
+   const strip=q=>({...q,orders:(q.orders||[]).map(o=>({...o,status:null,stationStatus:null}))});
+   const valid=(a,b)=>a&&b&&eq(strip(a),strip(b))&&
+     (a.orders||[]).length===(b.orders||[]).length&&
+     a.orders.every((o,i)=>{const p=b.orders[i];
+       if(!(o.status in rank)||!(p.status in rank))return false;
+       const ak=Object.keys(o.stationStatus||{}),bk=Object.keys(p.stationStatus||{});
+       return eq(ak.sort(),bk.sort())&&ak.every(k=>o.stationStatus[k] in rank&&p.stationStatus[k] in rank);
+     });
+   if(!x||!valid(x,y)||!valid(x,z)||!valid(y,z))return null;
+   out.push({...z,orders:z.orders.map((o,i)=>{
+     const p=y.orders[i],stationStatus={...o.stationStatus};
+     for(const k of Object.keys(stationStatus))if(rank[p.stationStatus[k]]>rank[stationStatus[k]])stationStatus[k]=p.stationStatus[k];
+     return {...o,status:rank[p.status]>rank[o.status]?p.status:o.status,stationStatus};
+   })});
  }
  return out;
- }
+}
  function mergeRecord(key,base,local,remote){
    if(!base||!local||!remote)return null;
    if(canon(local)===canon(remote))return remote;
