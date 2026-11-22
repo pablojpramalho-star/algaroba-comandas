@@ -497,7 +497,7 @@
      // Só aceitar a versão livre quando o fechamento comprovar mesmo total,
      // data posterior a todos os pedidos e nome da mesa correspondente.
      const coveredClosedTable=(key,localData,remoteData)=>{
-       if(!/^table:\\d+$/.test(key)||localData?.status!=='ocupada'||remoteData?.status!=='livre')return false;
+       if(!/^table:\d+$/.test(key)||localData?.status!=='ocupada'||remoteData?.status!=='livre')return false;
        if((remoteData.items||[]).length||(remoteData.orders||[]).length)return false;
        const orders=localData.orders||[],items=localData.items||[];
        if(!orders.length||!items.length)return false;
@@ -507,7 +507,7 @@
        const history=by.get('meta')?.data?.history||[];
        const mesa=Number(key.split(':')[1]);
        return history.some(h=>{
-         const match=/^Mesa\\s*0*(\\d+)$/i.exec(String(h.name||''));
+         const match=/^Mesa\s*0*(\d+)$/i.exec(String(h.name||''));
          const closed=Date.parse(h.closedAt||'');
          return match&&Number(match[1])===mesa&&Math.abs(Number(h.total)-total)<0.005&&
            Number.isFinite(closed)&&ids.every(t=>t<=closed&&closed-t<36*3600000);
@@ -517,7 +517,7 @@
      // possui pedidos, adotar a versão central sem apagar a comanda.
      // Nunca aplicar se houver clientes, pagamentos ou itens locais.
      const emptyLocalTable=(key,localData,remoteData)=>
-       /^table:\\d+$/.test(key)&&localData?.status==='livre'&&
+       /^table:\d+$/.test(key)&&localData?.status==='livre'&&
        Array.isArray(localData.items)&&localData.items.length===0&&
        Array.isArray(localData.orders)&&localData.orders.length===0&&
        (!localData.customers||Array.isArray(localData.customers)&&localData.customers.length===0)&&
