@@ -15,14 +15,14 @@ begin
  select * into v_old from public.algaroba_v3_events where id=p_operation_id;
  if found then
   if v_old.actor_id is distinct from v_actor or v_old.session_id is distinct from p_session_id or v_old.entity_id is distinct from p_order_id
-   or v_old.event_type<>'order_item_added' or v_old.entity_type<>'order' or v_old.payload is distinct from v_payload or v_old.device_id is distinct from p_device_id
+   or v_old.event_type<>'order_item_added' or v_old.entity_type<>(case when p_order_id like 'mesa:%' then 'table' else 'counter' end) or v_old.payload is distinct from v_payload or v_old.device_id is distinct from p_device_id
   then raise exception 'OPERATION_ID_REUSED' using errcode='23505';end if;
   return jsonb_build_object('status','already_received','operation_id',p_operation_id,'order_id',p_order_id);
  end if;
  perform 1 from public.algaroba_v3_cash_sessions where id=p_session_id and closed_at is null for update;
  if not found then raise exception 'CASH_SESSION_NOT_OPEN' using errcode='22023';end if;
  insert into public.algaroba_v3_events(id,session_id,entity_type,entity_id,event_type,payload,actor_id,device_id,occurred_at)
- values(p_operation_id,p_session_id,'order',p_order_id,'order_item_added',v_payload,v_actor,p_device_id,now());
+ values(p_operation_id,p_session_id,(case when p_order_id like 'mesa:%' then 'table' else 'counter' end),p_order_id,'order_item_added',v_payload,v_actor,p_device_id,now());
  return jsonb_build_object('status','received','operation_id',p_operation_id,'order_id',p_order_id,'total',v_total);
 end $$;
 revoke all on function public.algaroba_v3_add_order_item(uuid,uuid,text,text,numeric,numeric,text) from public,anon;
