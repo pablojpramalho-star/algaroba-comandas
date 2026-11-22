@@ -1,7 +1,7 @@
 (function installSafeSyncV68(){
  const PENDING='algarobaSyncPendingV68';
  const canExport=()=>!!authProfile&&['administrador','gerente'].includes(authProfile.perfil);
- const canExportCurrent=()=>canExport()||!!(authProfile&&blocked&&authProfile.perfil==='atendimento');
+ const canExportCurrent=()=>canExport()||!!(authProfile&&authProfile.perfil==='atendimento');
  const BACKUPS='algarobaComandasBackupsV68';
  const VERSION='2.9.7.90';
  const rawRequest=cloudRequest;
