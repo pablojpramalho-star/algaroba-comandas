@@ -485,6 +485,14 @@
      const localAtPlanning=canon(activeRows());
      const requestedKeys=new Set(requested.map(r=>r.record_key));
      const unrelatedDirty=changedNow().some(r=>!requestedKeys.has(r.record_key));
+     // Nunca concluir uma conciliação parcial quando há outros lançamentos
+     // pendentes: o applyRows global apagaria a memória dessas alterações.
+     // Reagendar um lote completo, que será conciliado atomicamente.
+     if(unrelatedDirty){
+       pendingWrite();
+       scheduleCloudSave();
+       throw Error('PENDENCIAS_SIMULTANEAS: lote parcial adiado para conciliação integral.');
+     }
      // Uma mesa local antiga pode ter sido encerrada no caixa central.
      // Só aceitar a versão livre quando o fechamento comprovar mesmo total,
      // data posterior a todos os pedidos e nome da mesa correspondente.
@@ -568,7 +576,7 @@
        // Se houve mesclagem, atualizar a memória local somente depois do commit
        // confirmado, para evitar que um save posterior reenvie a versão antiga.
        if(plans.some(p=>p.merged)){
-         if(unrelatedDirty)throw Error('Outros registros locais pendentes; união preservada no servidor, atualização local suspensa.');
+         // A pré-conferência acima impediu lotes parciais com pendências simultâneas.
          const latest=await getRows();
          if(canon(activeRows())!==localAtPlanning)
            throw Error('Novo lançamento local durante a conciliação. O servidor já salvou o lote; preserve os dados e reavalie.');
