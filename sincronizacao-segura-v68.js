@@ -491,7 +491,8 @@
        const key=row.record_key,local=latestRow(key),remote=by.get(key),known=cloudSnapshot[key];
        let data=local?.data||row.data,merged=false;
        if(remote&&canon(remote.data)!==canon(data)&&
-          (!known||canon(remote.data)!==canon(JSON.parse(known)))){
+          (key==='meta'&&!!reconcileAdministrativeClosure(data,remote.data)||
+           !known||canon(remote.data)!==canon(JSON.parse(known)))){
          const combined=known?mergeRecord(key,JSON.parse(known),data,remote.data):null;
          // Se o servidor já contém todos os eventos locais, não tentar
          // reenviar um meta antigo inteiro sobre o caixa recuperado.
