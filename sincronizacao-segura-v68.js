@@ -505,6 +505,17 @@
            Number.isFinite(closed)&&ids.every(t=>t<=closed&&closed-t<36*3600000);
        });
      };
+     // Uma mesa vazia no aparelho não é um pedido novo: se o servidor
+     // possui pedidos, adotar a versão central sem apagar a comanda.
+     // Nunca aplicar se houver clientes, pagamentos ou itens locais.
+     const emptyLocalTable=(key,localData,remoteData)=>
+       /^table:\\d+$/.test(key)&&localData?.status==='livre'&&
+       Array.isArray(localData.items)&&localData.items.length===0&&
+       Array.isArray(localData.orders)&&localData.orders.length===0&&
+       (!localData.customers||Array.isArray(localData.customers)&&localData.customers.length===0)&&
+       (!localData.customerPayments||Array.isArray(localData.customerPayments)&&localData.customerPayments.length===0)&&
+       remoteData?.status==='ocupada'&&
+       Array.isArray(remoteData.orders)&&remoteData.orders.length>0;
      // PRÉ-CONFERÊNCIA DO LOTE INTEIRO antes de mudar qualquer registro.
      // Evita fechar a mesa se o histórico do caixa já está divergente.
      const plans=requested.map(row=>{
@@ -522,7 +533,7 @@
          const closureRecovery=key==='meta'&&!combined?reconcileAdministrativeClosure(data,remote.data):null;
          if(closureRecovery){data=closureRecovery;merged=true}
          else if(combined){data=combined;merged=true}
-         else if(covered||coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
+         else if(covered||coveredClosedTable(key,data,remote.data)||emptyLocalTable(key,data,remote.data)){data=remote.data;merged=true}
          else{
            backupRows([remote],'Versão divergente recebida do banco');
            alertSync('Outro aparelho alterou '+labelKey(key)+' antes da gravação. Nenhuma comanda será substituída.',key);
