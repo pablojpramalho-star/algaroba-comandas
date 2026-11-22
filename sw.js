@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.103-syncfix';
+const CACHE = 'algaroba-shell-2.9.7.104-syncfix';
 
 const SHELL = [
   './',
@@ -14,7 +14,7 @@ const SHELL = [
   './cervejas-litrinho-v66.js',
   './clientes-conta-prazo.js',
   './sincronizacao-segura-v68.js',
-  './sincronizacao-segura-v68.js?v=103',
+  './sincronizacao-segura-v68.js?v=104',
   './tablet.html',
   './icon-192.png',
   './icon-512.png'
