@@ -90,7 +90,7 @@
    return r;
  }
  function closureSnapshot(c){
-   return c?.shiftBreakdown||turnSnapshot({openedAt:c?.openedAt,opening:c?.opening,movements:c?.movements||[]},c?.closedAt,state.history||[],state.internalAccounts?.settlements||[]);
+   return c?.shiftBreakdown||turnSnapshot({openedAt:c?.openedAt,opening:c?.opening,sessionId:c?.cashSessionId||c?.sessionId||null,movements:c?.movements||[]},c?.closedAt,state.history||[],state.internalAccounts?.settlements||[]);
  }
  function shiftMethodRows(t){
    const methods=[...new Set([...financialMethods,...Object.keys(t.payments||{})])];
