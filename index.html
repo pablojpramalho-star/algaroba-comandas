@@ -692,6 +692,7 @@ async function openCash(){
 
  state.cash.open=true;
  state.cash.openedAt=new Date().toISOString();
+ state.cash.sessionId=(globalThis.crypto&&crypto.randomUUID)?crypto.randomUUID():('legacy-'+Date.now()+'-'+Math.random().toString(36).slice(2));
  state.cash.opening=v;
  state.cash.openedBy=state.activeOperator;
  state.cash.movements=[];
@@ -766,7 +767,7 @@ let t=payCtx.tableId==='counterQueue'?counterOrderById(payCtx.counterId):(payCtx
 if(!t||!t.items||!t.items.length)return alert('Esta comanda já foi fechada ou está vazia.');
 let liveTotal=t.items.reduce((a,x)=>a+x.price*x.qty,0);
 if(Math.abs(liveTotal-payCtx.sum)>.01)return alert('A comanda mudou enquanto o pagamento estava aberto. Feche esta tela e abra a conta novamente.');
-let closed={closedAt:new Date().toISOString(),businessDate:state.cash?.openedAt?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(state.cash.openedAt)):null,cashOpenedAt:state.cash?.openedAt||null,name:payCtx.name,ticket:payCtx.ticket||null,payment:payments.length===1?payments[0].method:'Dividido',payments:payments.map(x=>({...x})),total:liveTotal,operator:state.activeOperator,items:t.items.map(x=>({...x}))};
+let closed={closedAt:new Date().toISOString(),businessDate:state.cash?.openedAt?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Fortaleza',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(state.cash.openedAt)):null,cashOpenedAt:state.cash?.openedAt||null,cashSessionId:state.cash?.sessionId||null,name:payCtx.name,ticket:payCtx.ticket||null,payment:payments.length===1?payments[0].method:'Dividido',payments:payments.map(x=>({...x})),total:liveTotal,operator:state.activeOperator,items:t.items.map(x=>({...x}))};
 state.revenue=(state.revenue||0)+liveTotal;state.history=state.history||[];state.history.push(closed);
 if(payCtx.tableId==='counterQueue')state.counterQueue=state.counterQueue.filter(x=>x.id!==payCtx.counterId);else{t.items=[];t.orders=[];t.status='livre'};
 localStorage.setItem('algarobaState',JSON.stringify(state));
@@ -926,11 +927,11 @@ async function confirmCloseCash(){
  if(isNaN(counted)||counted<0)return alert('Informe o valor contado.');
  let expected=expectedCash(),diff=counted-expected,bp=cashByPayment(),lastOfDay=!!document.getElementById('lastCashOfDay')?.checked;
  if(!confirm(`Fechar o caixa?\n\nEsperado: ${brl(expected)}\nContado: ${brl(counted)}\nDiferença: ${brl(diff)}`))return;
- let closure={closedAt:new Date().toISOString(),openedAt:state.cash.openedAt,openedBy:state.cash.openedBy||'Não identificado',closedBy:state.activeOperator,opening:state.cash.opening,sales:cashSales(),byPayment:bp,expected,counted,difference:diff,movements:(state.cash.movements||[]).map(x=>({...x}))};
+ let closure={closedAt:new Date().toISOString(),openedAt:state.cash.openedAt,cashSessionId:state.cash.sessionId||null,openedBy:state.cash.openedBy||'Não identificado',closedBy:state.activeOperator,opening:state.cash.opening,sales:cashSales(),byPayment:bp,expected,counted,difference:diff,movements:(state.cash.movements||[]).map(x=>({...x}))};
  state.cash.closures=state.cash.closures||[];closure.shiftBreakdown=window.cashShiftBreakdownV65(state.cash,new Date(closure.closedAt),state.history||[],state.internalAccounts?.settlements||[]);
  closure.businessDate=closure.shiftBreakdown?.businessDate||null;
  state.cash.closures.push(closure);window.lastCashClosure=closure;
- state.cash.open=false;state.cash.openedAt=null;state.cash.openedBy=null;state.cash.opening=0;state.cash.movements=[];
+ state.cash.open=false;state.cash.sessionId=null;state.cash.openedAt=null;state.cash.openedBy=null;state.cash.opening=0;state.cash.movements=[];
  localStorage.setItem('algarobaState',JSON.stringify(state));
  try{
    if(cloudReady){
