@@ -400,6 +400,48 @@
    }
    return false;
  }
+ function reconcileAdministrativeClosure(local,remote){
+   if(!local||!remote||!local.cash||!remote.cash)return null;
+   const eq=(a,b)=>canon(a)===canon(b),lc=local.cash,rc=remote.cash;
+   if(lc.open!==true||rc.open!==false||!lc.openedAt||rc.openedAt||rc.openedBy)return null;
+   if(!Array.isArray(lc.closures)||!Array.isArray(rc.closures)||rc.closures.length!==lc.closures.length+1)return null;
+   if(!lc.closures.every((v,i)=>eq(v,rc.closures[i])))return null;
+   const closing=rc.closures[rc.closures.length-1];
+   if(!closing||closing.openedAt!==lc.openedAt||closing.openedBy!==lc.openedBy||
+     Number(closing.opening)!==Number(lc.opening)||!closing.closedAt||
+     !Number.isFinite(Date.parse(closing.closedAt))||
+     Date.parse(closing.closedAt)<Date.parse(lc.openedAt))return null;
+   if(!eq(lc.movements||[],rc.movements||[]))return null;
+   if(!eq({...local,cash:null,counterQueue:[]},{...remote,cash:null,counterQueue:[]}))return null;
+   const queue=mergeQueue(remote.counterQueue||[],local.counterQueue||[],remote.counterQueue||[]);
+   if(!queue)return null;
+   const lq=local.counterQueue||[],rq=remote.counterQueue||[];
+   if(lq.length!==rq.length||queue.length!==rq.length)return null;
+   const lm=new Map(lq.map(v=>[String(v.id),v])),rm=new Map(rq.map(v=>[String(v.id),v]));
+   if(lm.size!==lq.length||rm.size!==rq.length)return null;
+   for(const [id,l] of lm){
+     const v=rm.get(id);if(!v)return null;
+     if(eq(l,v))continue;
+     const strip=q=>({...q,orders:(q.orders||[]).map(o=>({...o,status:null,stationStatus:null}))});
+     if(!eq(strip(l),strip(v)))return null;
+     const rank={NOVO:0,PREPARANDO:1,PRONTO:2,ENTREGUE:3};
+     if((l.orders||[]).length!==(v.orders||[]).length)return null;
+     if(!l.orders.every((o,i)=>{const p=v.orders[i],a=Object.keys(o.stationStatus||{}),b=Object.keys(p.stationStatus||{});
+       return o.status in rank&&p.status in rank&&eq(a.sort(),b.sort())&&
+         a.every(k=>o.stationStatus[k] in rank&&p.stationStatus[k] in rank);
+     }))return null;
+   }
+   // Conservar o fechamento do servidor e o progresso mais avançado do balcão.
+   const mergedQueue=rq.map(v=>{
+     const l=lm.get(String(v.id));if(eq(l,v))return v;
+     return {...v,orders:v.orders.map((o,i)=>{
+       const p=l.orders[i],rank={NOVO:0,PREPARANDO:1,PRONTO:2,ENTREGUE:3},stationStatus={...o.stationStatus};
+       for(const k of Object.keys(stationStatus))if(rank[p.stationStatus[k]]>rank[stationStatus[k]])stationStatus[k]=p.stationStatus[k];
+       return {...o,status:rank[p.status]>rank[o.status]?p.status:o.status,stationStatus};
+     })};
+   });
+   return {...remote,counterQueue:mergedQueue};
+ }
  function remoteDominatesMeta(local,remote){
    if(!local||!remote)return false;
    const omit=x=>({...x,counterQueue:[],counterTicket:null,creditAccounts:null,
@@ -456,7 +498,9 @@
          const covered=key==='meta'&&
            !dataLossSigns([{record_key:key,data}],current).length&&
            recoveredRemoteDominates('meta',data,remote.data);
-         if(combined){data=combined;merged=true}
+         const closureRecovery=key==='meta'&&!combined?reconcileAdministrativeClosure(data,remote.data):null;
+         if(closureRecovery){data=closureRecovery;merged=true}
+         else if(combined){data=combined;merged=true}
          else if(covered){data=remote.data;merged=true}
          else{
            backupRows([remote],'Versão divergente recebida do banco');
