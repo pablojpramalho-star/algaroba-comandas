@@ -531,6 +531,8 @@
        let data=local?.data||row.data,merged=false;
        if(remote&&canon(remote.data)!==canon(data)&&
           (key==='meta'&&!!reconcileAdministrativeClosure(data,remote.data)||
+           coveredClosedTable(key,data,remote.data)||
+           emptyLocalTable(key,data,remote.data)||
            !known||canon(remote.data)!==canon(JSON.parse(known)))){
          const combined=known?mergeRecord(key,JSON.parse(known),data,remote.data):null;
          // Se o servidor já contém todos os eventos locais, não tentar
