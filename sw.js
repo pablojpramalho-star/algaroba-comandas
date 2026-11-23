@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.109-counter-recovery';
+const CACHE = 'algaroba-shell-2.9.7.110-corona-lata';
 
 const SHELL = [
   './',
