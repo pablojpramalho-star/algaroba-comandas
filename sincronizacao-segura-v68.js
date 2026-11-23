@@ -569,7 +569,13 @@
            recoveredRemoteDominates('meta',data,remote.data);
          const closureRecovery=key==='meta'&&!combined?reconcileAdministrativeClosure(data,remote.data):null;
          const auditedRecovery=key==='meta'&&auditedSettlementDominates(data,remote.data);
-         if(coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
+         if(key==='inventory'){
+           // Política operacional: Supabase é a fonte autoritativa do estoque.
+           // Preservar ambas as revisões em backups locais antes de descartar a divergência.
+           backupRows([{record_key:key,data},remote],'Estoque divergente: versão central prevalece');
+           data=remote.data;merged=true;
+         }
+         else if(coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
          else if(closureRecovery){data=closureRecovery;merged=true}
          else if(auditedRecovery){data=remote.data;merged=true}
          else if(combined){data=combined;merged=true}
