@@ -1074,11 +1074,11 @@ function inventoryCatalog(){
      if(cat==='Bebidas'&&k==='KS 290 ml'){ks.forEach(v=>add('KS 290 ml • '+v,cat,price));continue}
      if(cat==='Bebidas'&&k==='Refrigerante 1 L'){litro.forEach(v=>add('Refrigerante 1 L • '+v,cat,price));continue}
      if(cat==='Bebidas'&&k==='Suco 400 ml'){sucos.forEach(v=>add('Suco 400 ml • '+v,cat,v==='Maracujá'?7:price));continue}
-     if(cat==='Porções'&&['Filé com Fritas','Frango com Fritas','Calabresa com Fritas','Batata Frita G'].includes(k))continue; // combos são receitas, não itens de estoque
+     if(cat==='Porções'&&['Filé com Fritas','Frango com Fritas','Calabresa com Fritas','Batata Frita G','Língua com Macaxeira'].includes(k))continue; // combos são receitas, não itens de estoque
      add(k,cat,price)
    }
  }
- for(const k of ['Filé • Porção do Combo','Frango • Porção do Combo','Calabresa • Porção do Combo'])add(k,'Porções',0);
+ for(const k of ['Filé • Porção do Combo','Frango • Porção do Combo','Calabresa • Porção do Combo','Língua • Porção do Combo'])add(k,'Porções',0);
  return out
 }
 function ensureKitchenInputs(){
@@ -1143,7 +1143,8 @@ function portionRecipeComponents(name){
   'Batata Frita G':[['Batata Frita P',2]],
   'Filé com Fritas':[['Filé • Porção do Combo',1],['Batata Frita P',2]],
   'Frango com Fritas':[['Frango • Porção do Combo',1],['Batata Frita P',2]],
-  'Calabresa com Fritas':[['Calabresa • Porção do Combo',1],['Batata Frita P',2]]
+  'Calabresa com Fritas':[['Calabresa • Porção do Combo',1],['Batata Frita P',2]],
+  'Língua com Macaxeira':[['Língua • Porção do Combo',1],['Macaxeira Frita',1]]
  };
  return recipes[String(name||'').trim()]||null;
 }
@@ -1533,7 +1534,7 @@ function reportStockHtml(){
  ensureInventory();ensureShakeFlavorInventory();ensureShakeMilkInventory();ensureDisposableInventory();
  let inv=state.inventory?.items||{},groups={};
  for(const [key,x] of Object.entries(inv)){
-   if(!x||typeof x!=='object'||x.track===false||isGenericShakeSize({key})||['Filé com Fritas','Frango com Fritas','Calabresa com Fritas','Batata Frita G'].includes(key))continue;
+   if(!x||typeof x!=='object'||x.track===false||isGenericShakeSize({key})||['Filé com Fritas','Frango com Fritas','Calabresa com Fritas','Batata Frita G','Língua com Macaxeira'].includes(key))continue;
    let sec=reportStockSection(key,x);if(!sec)continue;
    (groups[sec]||(groups[sec]=[])).push([key,x]);
  }
