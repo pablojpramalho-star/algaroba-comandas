@@ -137,7 +137,9 @@
        const localHistory=x.data.history||[],remoteHistory=y.data.history||[];
        const saleKey=s=>String(s.id||'')+'|'+String(s.originalClosedAt||s.closedAt||'');
        const activeSales=new Set(remoteHistory.map(saleKey));
-       const disappeared=localHistory.slice(-80).filter(s=>!activeSales.has(saleKey(s)));
+       const auditedRemoved=(y.data.reconciliationAudit||[]).flatMap(a=>Array.isArray(a.removed)?a.removed:[]);
+       const disappeared=localHistory.slice(-80).filter(s=>!activeSales.has(saleKey(s))&&
+         !auditedRemoved.some(a=>canon(a)===canon(s)));
        if(disappeared.length)reasons.push(disappeared.length+' venda(s) do histórico local não constam na atualização');
        const withdrawals=new Set((y.data.internalAccounts?.withdrawals||[]).map(w=>String(w.id||'')+'|'+String(w.at||'')));
        const forgottenWithdrawals=(x.data.internalAccounts?.withdrawals||[]).slice(-30).filter(w=>
@@ -400,6 +402,31 @@
    }
    return false;
  }
+ // Reconciliação auditada de baixas administrativas, sem reenviar vendas antigas.
+ function auditedSettlementDominates(local,remote){
+   if(!local||!remote||!Array.isArray(local.history)||!Array.isArray(remote.history))return false;
+   const audit=remote.reconciliationAudit||[];
+   const removed=audit.flatMap(a=>Array.isArray(a.removed)?a.removed:[]);
+   const settlements=audit.filter(a=>a.action==='settle previously open tables 6,7,8');
+   if(!removed.length||!settlements.length)return false;
+   const eq=(a,b)=>canon(a)===canon(b);
+   const norm=x=>{const y={...x};delete y.businessDate;return y};
+   const localLeft=local.history.filter(h=>!removed.some(x=>eq(x,h)));
+   if(local.history.length-localLeft.length!==removed.length)return false;
+   const used=new Set();
+   for(const h of localLeft){
+     const index=remote.history.findIndex((x,i)=>!used.has(i)&&eq(norm(x),norm(h)));
+     if(index<0)return false;
+     used.add(index);
+   }
+   const extras=remote.history.filter((_,i)=>!used.has(i));
+   if(extras.length!==1||extras[0].reconciledFrom!=='table:8'||
+      extras[0].businessDate!=='2026-11-21'||Number(extras[0].total)!==19||
+      extras[0].payment!=='Pix')return false;
+   if(Number(local.revenue)!==Number(remote.revenue))return false;
+   const strip=x=>{const y={...x};delete y.history;delete y.reconciliationAudit;return y};
+   return eq(strip(local),strip(remote));
+ }
  function reconcileAdministrativeClosure(local,remote){
    if(!local||!remote||!local.cash||!remote.cash)return null;
    const eq=(a,b)=>canon(a)===canon(b),lc=local.cash,rc=remote.cash;
@@ -541,8 +568,10 @@
            !dataLossSigns([{record_key:key,data}],current).length&&
            recoveredRemoteDominates('meta',data,remote.data);
          const closureRecovery=key==='meta'&&!combined?reconcileAdministrativeClosure(data,remote.data):null;
+         const auditedRecovery=key==='meta'&&auditedSettlementDominates(data,remote.data);
          if(coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
          else if(closureRecovery){data=closureRecovery;merged=true}
+         else if(auditedRecovery){data=remote.data;merged=true}
          else if(combined){data=combined;merged=true}
          else if(covered||emptyLocalTable(key,data,remote.data)){data=remote.data;merged=true}
          else{
