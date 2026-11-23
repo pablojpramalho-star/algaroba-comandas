@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.108-stock-central';
+const CACHE = 'algaroba-shell-2.9.7.109-counter-recovery';
 
 const SHELL = [
   './',
@@ -14,7 +14,7 @@ const SHELL = [
   './cervejas-litrinho-v66.js',
   './clientes-conta-prazo.js',
   './sincronizacao-segura-v68.js',
-  './sincronizacao-segura-v68.js?v=108',
+  './sincronizacao-segura-v68.js?v=109',
   './tablet.html',
   './icon-192.png',
   './icon-512.png'
