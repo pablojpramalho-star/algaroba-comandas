@@ -1077,6 +1077,7 @@ function inventoryCatalog(){
      add(k,cat,price)
    }
  }
+ for(const k of ['Filé • Porção do Combo','Frango • Porção do Combo','Calabresa • Porção do Combo'])add(k,'Porções',0);
  return out
 }
 function ensureKitchenInputs(){
@@ -1135,7 +1136,29 @@ function ensureInventory(){state.inventory=state.inventory||{items:{},movements:
 function inventoryCostPerStockUnit(x){if(!x)return 0;let c=Number(x.cost||0);return x.stockUnit==='g'?c/1000:c}
 function inventoryStockValue(x){if(!x)return 0;return Number(x.qty||0)*inventoryCostPerStockUnit(x)}
 function addInvMovement(type,key,delta,reason,before,after,cost){state.inventory.movements.push({at:new Date().toISOString(),type,key,qty:Number(delta||0),before:Number(before||0),after:Number(after||0),unitCost:Number(cost||0),value:Math.abs(Number(delta||0))*Number(cost||0),operator:state.activeOperator,reason:reason||''})}
+function portionRecipeComponents(name){
+ const recipes={
+  'Batata Frita P':[['Batata Frita P',1]],
+  'Batata Frita G':[['Batata Frita P',2]],
+  'Filé com Fritas':[['Filé • Porção do Combo',1],['Batata Frita P',2]],
+  'Frango com Fritas':[['Frango • Porção do Combo',1],['Batata Frita P',2]],
+  'Calabresa com Fritas':[['Calabresa • Porção do Combo',1],['Batata Frita P',2]]
+ };
+ return recipes[String(name||'').trim()]||null;
+}
+function applyPortionRecipe(it,returning,reason){
+ const recipe=portionRecipeComponents(it?.name);if(!recipe)return false;
+ const units=Number(it.qty||1),factor=returning?1:-1;
+ for(const [key,perUnit] of recipe){
+  const x=state.inventory.items[key];if(!x||x.track===false)continue;
+  const before=Number(x.qty||0),delta=factor*units*perUnit;
+  x.qty=before+delta;
+  addInvMovement(returning?'retorno':'saida',key,delta,reason||(returning?'Estorno de porção':'Venda de porção • receita automática'),before,x.qty,inventoryCostPerStockUnit(x));
+ }
+ return true;
+}
 function inventoryConsume(it){ensureInventory();
+ if(applyPortionRecipe(it,false))return;
  let nm=String(it?.name||''),size300=/300\s*ml/i.test(nm),size500=/500\s*ml/i.test(nm);
  if(!/^Shake\s+(?:300|500)\s*ml/i.test(nm)){size300=false;size500=false;}
  if(/^Shake\s+(?:300|500)\s*ml/i.test(nm)&&!size300&&!size500){
@@ -1159,7 +1182,8 @@ function inventoryConsume(it){ensureInventory();
  if(/^Suco 400 ml/i.test(saleName)){consumeRaw('Açúcar',50*saleQty,'Consumo automático • Suco 400 ml • 50 g por copo');}
  if(/^Tapioca \(base\)/i.test(saleName)){consumeRaw('Goma de Tapioca',70*saleQty,'Consumo automático • Tapioca • 70 g por base');}
  for(const k of (it.stockComponents||[stockKey(it.name)])){if(/^Shake 500 ml • /i.test(k)){let fake={name:k,qty:it.qty};let p=resolveShakeFlavorStock(fake);if(p){ensureShakeStockUnit(p);let cfg=shakeCostConfig(),x=state.inventory.items[p.key],g=Number(cfg.grams500||130)*Number(it.qty||1),b=Number(x.qty||0);x.qty=Math.max(0,b-g);addInvMovement('saida',p.key,-g,'Combo • Shake 500 ml',b,x.qty,Number(x.cost||0)/1000);let milk=ensureShakeMilkInventory(),mx=state.inventory.items[milk.key],mg=Number(cfg.milk500||30)*Number(it.qty||1),mb=Number(mx.qty||0);mx.qty=Math.max(0,mb-mg);addInvMovement('saida',milk.key,-mg,'Combo • Shake 500 ml',mb,mx.qty,Number(mx.cost||0)/1000);}continue}let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=-Number(it.qty||0);x.qty=before+delta;addInvMovement('saida',k,delta,'Venda / pedido enviado',before,x.qty,inventoryCostPerStockUnit(x))}}
-function inventoryReturn(it,reason){ensureInventory();let z=[it?.name,it?.variant,it?.flavor,it?.option,it?.selectedVariant].filter(Boolean).join(' '),size300=/300\s*ml/i.test(z),size500=/500\s*ml/i.test(z);
+function inventoryReturn(it,reason){ensureInventory();
+ if(applyPortionRecipe(it,true,reason))return;let z=[it?.name,it?.variant,it?.flavor,it?.option,it?.selectedVariant].filter(Boolean).join(' '),size300=/300\s*ml/i.test(z),size500=/500\s*ml/i.test(z);
  if(!/^Shake\s+(?:300|500)\s*ml/i.test(String(it?.name||''))){size300=false;size500=false;}if(size300||size500){let p=resolveShakeFlavorStock(it),cfg=shakeCostConfig(),q=Number(it.qty||1);if(p){ensureShakeStockUnit(p);let x=state.inventory.items[p.key],g=(size300?Number(cfg.grams300||90):Number(cfg.grams500||130))*q,b=Number(x.qty||0);x.qty=b+g;addInvMovement('retorno',p.key,g,reason||'Retorno de shake',b,x.qty,Number(x.cost||0)/1000)}let milk=ensureShakeMilkInventory(),mx=state.inventory.items[milk.key],mg=(size300?Number(cfg.milk300||20):Number(cfg.milk500||30))*q,mb=Number(mx.qty||0);mx.qty=mb+mg;addInvMovement('retorno',milk.key,mg,reason||'Retorno de leite do shake',mb,mx.qty,Number(mx.cost||0)/1000);return}let saleName=String(it?.name||''),saleQty=Number(it?.qty||1);if(/^Suco 400 ml/i.test(saleName))returnRaw('Açúcar',50*saleQty,reason||'Retorno de açúcar • suco');if(/^Tapioca \(base\)/i.test(saleName))returnRaw('Goma de Tapioca',70*saleQty,reason||'Retorno de goma • tapioca');for(const k of (it.stockComponents||[stockKey(it.name)])){let x=state.inventory.items[k];if(!x||x.track===false)continue;let before=Number(x.qty||0),delta=Number(it.qty||0);x.qty=before+delta;addInvMovement('retorno',k,delta,reason||'Retorno',before,x.qty,inventoryCostPerStockUnit(x))}}
 async function saveInventoryNow(){localStorage.setItem('algarobaState',JSON.stringify(state));if(!cloudReady)return;cloudPausePullUntil=Date.now()+5000;let row={record_key:'inventory',data:state.inventory||{items:{},movements:[]},updated_at:new Date().toISOString()};try{setSyncStatus('offline','SALVANDO ESTOQUE…');await cloudRequest('algaroba_records?on_conflict=record_key',{method:'POST',prefer:'resolution=merge-duplicates,return=minimal',body:JSON.stringify([row])});cloudSnapshot['inventory']=JSON.stringify(row.data);setSyncStatus('online','ONLINE')}catch(e){cloudLastError=e.message||String(e);setSyncStatus('error','ERRO: TOQUE AQUI');throw e}finally{cloudPausePullUntil=Date.now()+2000}}
 async function editInventory(key){ensureInventory();let x=state.inventory.items[key];let q=prompt('Estoque atual de '+key+':',x.qty);if(q===null)return;let c=prompt(((String(x.cat||'').toLowerCase().includes('shake')||x.stockUnit==='g')?'Custo POR QUILO ':'Custo unitário de ')+key+' (R$):',x.cost);if(c===null)return;let m=prompt('Estoque mínimo para alerta:',x.min);if(m===null)return;q=parseFloat(String(q).replace(',','.'));c=parseFloat(String(c).replace(',','.'));m=parseFloat(String(m).replace(',','.'));if([q,c,m].some(Number.isNaN))return alert('Informe apenas valores numéricos.');let before=Number(x.qty||0),oldCost=Number(x.cost||0);x.qty=q;x.cost=c;x.min=m;x.track=true;addInvMovement('ajuste',key,q-before,'Cadastro/ajuste manual'+(oldCost!==c?' • custo '+brl(oldCost)+' → '+brl(c):''),before,q,inventoryCostPerStockUnit(x));localStorage.setItem('algarobaState',JSON.stringify(state));renderInventory();try{await saveInventoryNow();renderInventory();alert('Estoque atualizado: '+key)}catch(e){alert('O estoque foi salvo neste aparelho, mas houve erro ao sincronizar.')}}
