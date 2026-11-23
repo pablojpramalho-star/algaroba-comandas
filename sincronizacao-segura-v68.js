@@ -469,6 +469,41 @@
    });
    return {...remote,counterQueue:mergedQueue};
  }
+ function larissaRecoveredMetaDominates(local,remote){
+   // Recuperação de comandas de 21/11: aceitar o caixa central somente quando
+   // cada pedido local está representado por venda ou recuperação explícita.
+   if(!local||!remote||!Array.isArray(local.counterQueue)||!local.counterQueue.length)return false;
+   const eq=(a,b)=>canon(a)===canon(b);
+   const key=x=>String(x.id||'')+'|'+String(x.originalClosedAt||x.closedAt||'');
+   const sales=new Set((remote.history||[]).map(key));
+   const removed=(remote.reconciliationAudit||[]).flatMap(a=>a.removed||[]);
+   if(!(local.history||[]).every(h=>sales.has(key(h))||removed.some(x=>eq(x,h))))return false;
+   const recoveries=remote.recoveredPendingOrders||[];
+   const paid=remote.history||[];
+   const totalOf=q=>(q.items||[]).reduce((n,i)=>n+Number(i.qty||0)*Number(i.price||0),0);
+   for(const q of local.counterQueue){
+     const total=totalOf(q),created=Number(q.createdAt||q.id),ticket=String(q.ticket||'');
+     const recovered=recoveries.some(x=>String(x.id)===String(q.id)&&Math.abs(Number(x.total)-total)<.01);
+     const settled=paid.some(h=>String(h.ticket||'')===ticket&&Math.abs(Number(h.total)-total)<.01&&
+       Date.parse(h.closedAt||'')>=created&&Date.parse(h.closedAt||'')-created<72*3600000);
+     if(!recovered&&!settled)return false;
+   }
+   const localWithdrawals=local.internalAccounts?.withdrawals||[],remoteWithdrawals=remote.internalAccounts?.withdrawals||[];
+   const localSettlements=local.internalAccounts?.settlements||[],remoteSettlements=remote.internalAccounts?.settlements||[];
+   if(!localWithdrawals.every(x=>remoteWithdrawals.some(y=>eq(x,y)))||
+      !localSettlements.every(x=>remoteSettlements.some(y=>eq(x,y))))return false;
+   const localClosures=local.cash?.closures||[],remoteClosures=remote.cash?.closures||[];
+   if(!localClosures.every(x=>remoteClosures.some(y=>eq(x,y))))return false;
+   const localMoves=local.cash?.movements||[],remoteMoves=remote.cash?.movements||[];
+   if(!localMoves.every(x=>remoteMoves.some(y=>eq(x,y))))return false;
+   const localCredits=local.creditAccounts||{},remoteCredits=remote.creditAccounts||{};
+   for(const a of localCredits.accounts||[]){
+     const b=(remoteCredits.accounts||[]).find(x=>x.id===a.id);
+     if(!b||!(a.charges||[]).every(c=>(b.charges||[]).some(x=>eq(x,c))))return false;
+   }
+   if(!(localCredits.receipts||[]).every(x=>(remoteCredits.receipts||[]).some(y=>eq(x,y))))return false;
+   return true;
+ }
  function remoteDominatesMeta(local,remote){
    if(!local||!remote)return false;
    const omit=x=>({...x,counterQueue:[],counterTicket:null,creditAccounts:null,
@@ -577,7 +612,7 @@
          }
          else if(coveredClosedTable(key,data,remote.data)){data=remote.data;merged=true}
          else if(closureRecovery){data=closureRecovery;merged=true}
-         else if(auditedRecovery){data=remote.data;merged=true}
+         else if(auditedRecovery){data=remote.data;merged=true}\n         else if(key==='meta'&&larissaRecoveredMetaDominates(data,remote.data)){\n           backupRows([{record_key:key,data},remote],'Pedidos locais auditados: receber caixa central');\n           data=remote.data;merged=true;\n         }
          else if(combined){data=combined;merged=true}
          else if(covered||emptyLocalTable(key,data,remote.data)){data=remote.data;merged=true}
          else{
