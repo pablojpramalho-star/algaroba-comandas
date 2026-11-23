@@ -1074,6 +1074,7 @@ function inventoryCatalog(){
      if(cat==='Bebidas'&&k==='KS 290 ml'){ks.forEach(v=>add('KS 290 ml • '+v,cat,price));continue}
      if(cat==='Bebidas'&&k==='Refrigerante 1 L'){litro.forEach(v=>add('Refrigerante 1 L • '+v,cat,price));continue}
      if(cat==='Bebidas'&&k==='Suco 400 ml'){sucos.forEach(v=>add('Suco 400 ml • '+v,cat,v==='Maracujá'?7:price));continue}
+     if(cat==='Porções'&&['Filé com Fritas','Frango com Fritas','Calabresa com Fritas'].includes(k))continue; // combos são receitas, não itens de estoque
      add(k,cat,price)
    }
  }
@@ -1532,7 +1533,7 @@ function reportStockHtml(){
  ensureInventory();ensureShakeFlavorInventory();ensureShakeMilkInventory();ensureDisposableInventory();
  let inv=state.inventory?.items||{},groups={};
  for(const [key,x] of Object.entries(inv)){
-   if(!x||typeof x!=='object'||x.track===false||isGenericShakeSize({key}))continue;
+   if(!x||typeof x!=='object'||x.track===false||isGenericShakeSize({key})||['Filé com Fritas','Frango com Fritas','Calabresa com Fritas'].includes(key))continue;
    let sec=reportStockSection(key,x);if(!sec)continue;
    (groups[sec]||(groups[sec]=[])).push([key,x]);
  }
