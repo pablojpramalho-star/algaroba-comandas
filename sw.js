@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.112-portion-recipes';
+const CACHE = 'algaroba-shell-2.9.7.113-combo-stock-clean';
 
 const SHELL = [
   './',
