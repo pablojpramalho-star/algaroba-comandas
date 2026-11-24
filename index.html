@@ -537,7 +537,7 @@ function showCat(c,b){
  }
  redraw();
 }
-function pushCart(name,price,components=null){let comps=components||[stockKey(name)];let cost=comps.reduce((a,k)=>a+Number((state.inventory.items[k]||{}).cost||0),0);let x=cart.find(x=>x.name===name&&x.price===price);x?x.qty++:cart.push({name,price,qty:1,cost,stockComponents:comps,skewerLine:skewerLineForName(name)});renderCart()}
+function pushCart(name,price,components=null){let recipe=portionRecipeComponents(name);let comps=components||(recipe?recipe.flatMap(([key,n])=>Array(n).fill(key)):[stockKey(name)]);let cost=comps.reduce((a,k)=>a+Number((state.inventory.items[k]||{}).cost||0),0);let x=cart.find(x=>x.name===name&&x.price===price);x?x.qty++:cart.push({name,price,qty:1,cost,stockComponents:comps,skewerLine:skewerLineForName(name)});renderCart()}
 function closeModal(){document.getElementById('modal').classList.add('hide');document.getElementById('modalContent').innerHTML=''}
 function add(c,i){let p=catalog[c][i],name=p[0],price=p[1];if(c==='Combos')return chooseCombo(name,price);if(c==='Shakes')return chooseShake(name,price);if(c==='Bases'&&/^Base\s+/i.test(name))return chooseFillings(name,price);if(c==='Espetinhos')return choosePoint(name,price);if(c==='Bebidas'&&name==='KS 290 ml')return chooseKS(name,price);if(c==='Bebidas'&&name==='Refrigerante 1 L')return chooseRefri1L(name,price);if(c==='Bebidas'&&name==='Suco 400 ml')return chooseJuice(name,price);pushCart(name,price)}
 function openChoiceModal(title,subtitle,choices){const m=document.getElementById('modal'),mc=document.getElementById('modalContent');mc.innerHTML='';const h=document.createElement('h2');h.textContent=title;const p=document.createElement('p');p.className='muted';p.textContent=subtitle;const grid=document.createElement('div');grid.className='choice-grid';choices.forEach(ch=>{const btn=document.createElement('button');btn.type='button';btn.className='choice';btn.textContent=ch.label;btn.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();try{closeModal();ch.action()}catch(err){console.error(err);alert('Não foi possível adicionar o item. Erro: '+err.message)}});grid.appendChild(btn)});const actions=document.createElement('div');actions.className='sheet-actions';const cancel=document.createElement('button');cancel.type='button';cancel.className='btn';cancel.textContent='Cancelar';cancel.addEventListener('click',closeModal);actions.appendChild(cancel);mc.append(h,p,grid,actions);m.classList.remove('hide')}
@@ -1146,7 +1146,7 @@ function portionRecipeComponents(name){
   'Calabresa com Fritas':[['Calabresa • Porção do Combo',1],['Batata Frita P',2]],
   'Língua com Macaxeira':[['Língua • Porção do Combo',1],['Macaxeira Frita',1]]
  };
- return recipes[String(name||'').trim()]||null;
+ return recipes[String(name||'').split(' • ')[0].trim()]||null;
 }
 function applyPortionRecipe(it,returning,reason){
  const recipe=portionRecipeComponents(it?.name);if(!recipe)return false;
