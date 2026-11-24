@@ -38,6 +38,9 @@
      const qty=normalizeQty(item?.qty);
      if(qty<=0||!Number.isFinite(qty)){issues.push('Quantidade inválida no pedido: '+String(item?.name||'produto'));continue;}
      let name=String(item.name||'');
+     const recipe=typeof portionRecipeComponents==='function'?portionRecipeComponents(name):null;
+     if(recipe){for(const [key,units] of recipe)addRequirement(map,key,qty*units,name);continue;}
+
      if(isDrinkWithFlavor(name)){
        let problem=getShakeRequirements(item,qty,map,name);
        if(problem)issues.push(problem.issue);
