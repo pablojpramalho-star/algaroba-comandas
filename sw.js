@@ -1,4 +1,4 @@
-const CACHE = 'algaroba-shell-2.9.7.115-lingua-macaxeira';
+const CACHE = 'algaroba-shell-2.9.7.116-bonde-refri';
 
 const SHELL = [
   './',
