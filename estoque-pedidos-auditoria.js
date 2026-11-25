@@ -51,7 +51,7 @@
      if(/^Tapioca\s*\(base\)/i.test(name))addRequirement(map,'Goma de Tapioca',70*qty,name+' • Goma');
      const parts=Array.isArray(item.stockComponents)?item.stockComponents:[stockKey(name)];
      for(const raw of parts){
-       const key=String(raw||'').trim();
+       const key=breadStockKey(String(raw||'').trim());
        if(/^Shake\s+(?:300|500)\s*ml\s*•/i.test(key)){
          const problem=getShakeRequirements(key,qty,map,name);
          if(problem)issues.push(problem.issue);
